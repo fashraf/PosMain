@@ -65,7 +65,7 @@ const inventorySubItems = [
 const otherNavItems = [
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
   { titleKey: "nav.categories", url: "/categories", icon: Tag },
-  { titleKey: "nav.itemIngredients", url: "/item-ingredients", icon: Link2 },
+  { titleKey: "nav.itemIngredients", url: "/item-ingredient-mapping", icon: Link2 },
   { titleKey: "nav.itemPricing", url: "/item-pricing", icon: DollarSign },
   { titleKey: "branches.title", url: "/branches", icon: Building2 },
   { titleKey: "nav.settings", url: "/settings", icon: Settings },

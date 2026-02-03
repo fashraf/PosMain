@@ -3,8 +3,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -13,316 +11,191 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { useToast } from "@/components/ui/use-toast";
-import { Plus, Trash2, Link2, Save } from "lucide-react";
+import { Link2, Search, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  MappingSummaryTable,
+  type ItemWithMappings,
+} from "@/components/item-mapping";
 
-// Mock data - items
-const mockItems = [
-  { id: "1", name_en: "Margherita Pizza", name_ar: "بيتزا مارغريتا", name_ur: "مارگریٹا پیزا" },
-  { id: "2", name_en: "Chicken Burger", name_ar: "برجر دجاج", name_ur: "چکن برگر" },
-  { id: "3", name_en: "Family Meal Combo", name_ar: "كومبو وجبة عائلية", name_ur: "فیملی میل کومبو" },
+// Mock data - items with mappings
+const mockItemsWithMappings: ItemWithMappings[] = [
+  {
+    id: "1",
+    name_en: "Margherita Pizza",
+    name_ar: "بيتزا مارغريتا",
+    name_ur: "مارگریٹا پیزا",
+    item_type: "edible",
+    is_combo: false,
+    base_cost: 12.99,
+    sort_order: 1,
+    ingredient_count: 4,
+    sub_item_count: 0,
+    ingredients: [
+      { id: "m1", ingredient_id: "1", ingredient_name: "Tomato", quantity: 0.2, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 1.50, cost: 1.00 },
+      { id: "m2", ingredient_id: "2", ingredient_name: "Cheese", quantity: 0.15, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 2.00, cost: 1.80 },
+      { id: "m3", ingredient_id: "4", ingredient_name: "Olive Oil", quantity: 0.05, unit: "L", can_remove: false, can_add_extra: false, extra_cost: null, cost: 0.25 },
+      { id: "m4", ingredient_id: "5", ingredient_name: "Basil", quantity: 0.02, unit: "Kg", can_remove: true, can_add_extra: false, extra_cost: null, cost: 0.40 },
+    ],
+  },
+  {
+    id: "2",
+    name_en: "Chicken Burger",
+    name_ar: "برجر دجاج",
+    name_ur: "چکن برگر",
+    item_type: "edible",
+    is_combo: false,
+    base_cost: 8.99,
+    sort_order: 2,
+    ingredient_count: 3,
+    sub_item_count: 0,
+    ingredients: [
+      { id: "m5", ingredient_id: "3", ingredient_name: "Chicken Breast", quantity: 0.2, unit: "Kg", can_remove: false, can_add_extra: true, extra_cost: 3.00, cost: 2.40 },
+      { id: "m6", ingredient_id: "6", ingredient_name: "Lettuce", quantity: 2, unit: "Pcs", can_remove: true, can_add_extra: false, extra_cost: null, cost: 0.30 },
+      { id: "m7", ingredient_id: "2", ingredient_name: "Cheese", quantity: 0.05, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 1.00, cost: 0.60 },
+    ],
+  },
+  {
+    id: "3",
+    name_en: "Family Combo",
+    name_ar: "كومبو عائلي",
+    name_ur: "فیملی کومبو",
+    item_type: "edible",
+    is_combo: true,
+    base_cost: 45.99,
+    sort_order: 3,
+    ingredient_count: 6,
+    sub_item_count: 3,
+    sub_items: [
+      { id: "s1", sub_item_id: "1", sub_item_name: "Margherita Pizza", quantity: 2, unit_price: 12.99, subtotal: 25.98, sort_order: 1 },
+      { id: "s2", sub_item_id: "2", sub_item_name: "Chicken Burger", quantity: 4, unit_price: 8.99, subtotal: 35.96, sort_order: 2 },
+      { id: "s3", sub_item_id: "4", sub_item_name: "Soft Drink", quantity: 6, unit_price: 2.50, subtotal: 15.00, sort_order: 3 },
+    ],
+    ingredients: [
+      { id: "m8", ingredient_id: "1", ingredient_name: "Tomato", quantity: 0.6, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 1.50, cost: 3.00 },
+      { id: "m9", ingredient_id: "2", ingredient_name: "Cheese", quantity: 0.5, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 2.00, cost: 6.00 },
+      { id: "m10", ingredient_id: "3", ingredient_name: "Chicken Breast", quantity: 0.8, unit: "Kg", can_remove: false, can_add_extra: true, extra_cost: 3.00, cost: 9.60 },
+      { id: "m11", ingredient_id: "4", ingredient_name: "Olive Oil", quantity: 0.1, unit: "L", can_remove: false, can_add_extra: false, extra_cost: null, cost: 0.50 },
+      { id: "m12", ingredient_id: "5", ingredient_name: "Basil", quantity: 0.04, unit: "Kg", can_remove: true, can_add_extra: false, extra_cost: null, cost: 0.80 },
+      { id: "m13", ingredient_id: "6", ingredient_name: "Lettuce", quantity: 8, unit: "Pcs", can_remove: true, can_add_extra: false, extra_cost: null, cost: 1.20 },
+    ],
+  },
+  {
+    id: "4",
+    name_en: "Paper Napkins",
+    name_ar: "مناديل ورقية",
+    name_ur: "کاغذی نیپکن",
+    item_type: "non_edible",
+    is_combo: false,
+    base_cost: 2.99,
+    sort_order: 4,
+    ingredient_count: 0,
+    sub_item_count: 0,
+  },
 ];
-
-// Mock data - ingredients
-const mockIngredients = [
-  { id: "1", name_en: "Tomato", name_ar: "طماطم", name_ur: "ٹماٹر", base_unit: "kg" },
-  { id: "2", name_en: "Cheese", name_ar: "جبنة", name_ur: "پنیر", base_unit: "kg" },
-  { id: "3", name_en: "Chicken Breast", name_ar: "صدر دجاج", name_ur: "چکن بریسٹ", base_unit: "kg" },
-  { id: "4", name_en: "Olive Oil", name_ar: "زيت زيتون", name_ur: "زیتون کا تیل", base_unit: "liters" },
-  { id: "5", name_en: "Lettuce", name_ar: "خس", name_ur: "سلاد پتہ", base_unit: "pieces" },
-];
-
-interface IngredientMapping {
-  id: string;
-  ingredient_id: string;
-  quantity_used: number;
-  can_remove: boolean;
-  can_add_extra: boolean;
-  extra_quantity_limit: number | null;
-  extra_cost: number | null;
-}
-
-// Initial mappings for items
-const initialMappings: Record<string, IngredientMapping[]> = {
-  "1": [
-    { id: "m1", ingredient_id: "1", quantity_used: 0.2, can_remove: true, can_add_extra: true, extra_quantity_limit: 0.3, extra_cost: 1.50 },
-    { id: "m2", ingredient_id: "2", quantity_used: 0.15, can_remove: true, can_add_extra: true, extra_quantity_limit: 0.2, extra_cost: 2.00 },
-    { id: "m3", ingredient_id: "4", quantity_used: 0.05, can_remove: false, can_add_extra: false, extra_quantity_limit: null, extra_cost: null },
-  ],
-  "2": [
-    { id: "m4", ingredient_id: "3", quantity_used: 0.2, can_remove: false, can_add_extra: true, extra_quantity_limit: 0.15, extra_cost: 3.00 },
-    { id: "m5", ingredient_id: "5", quantity_used: 2, can_remove: true, can_add_extra: false, extra_quantity_limit: null, extra_cost: null },
-    { id: "m6", ingredient_id: "2", quantity_used: 0.05, can_remove: true, can_add_extra: true, extra_quantity_limit: 0.1, extra_cost: 1.00 },
-  ],
-};
 
 export default function ItemIngredientMapping() {
-  const { t, currentLanguage } = useLanguage();
-  const { toast } = useToast();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [items, setItems] = useState<ItemWithMappings[]>(mockItemsWithMappings);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
 
-  const [selectedItemId, setSelectedItemId] = useState<string>("");
-  const [mappings, setMappings] = useState<Record<string, IngredientMapping[]>>(initialMappings);
+  const filteredItems = items.filter((item) => {
+    const matchesSearch =
+      item.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.name_ar.includes(searchQuery) ||
+      item.name_ur.includes(searchQuery);
 
-  const getLocalizedName = (item: { name_en: string; name_ar: string; name_ur: string }) => {
-    const key = `name_${currentLanguage}` as keyof typeof item;
-    return item[key] || item.name_en;
-  };
+    const matchesFilter =
+      filterType === "all" ||
+      (filterType === "edible" && item.item_type === "edible" && !item.is_combo) ||
+      (filterType === "combo" && item.is_combo) ||
+      (filterType === "non_edible" && item.item_type === "non_edible");
 
-  const currentMappings = selectedItemId ? (mappings[selectedItemId] || []) : [];
-  const usedIngredientIds = currentMappings.map((m) => m.ingredient_id);
-  const availableIngredients = mockIngredients.filter((i) => !usedIngredientIds.includes(i.id));
+    return matchesSearch && matchesFilter;
+  });
 
-  const handleAddMapping = () => {
-    if (!selectedItemId || availableIngredients.length === 0) return;
-    
-    const newMapping: IngredientMapping = {
-      id: `m${Date.now()}`,
-      ingredient_id: availableIngredients[0].id,
-      quantity_used: 0,
-      can_remove: false,
-      can_add_extra: false,
-      extra_quantity_limit: null,
-      extra_cost: null,
-    };
-
-    setMappings((prev) => ({
-      ...prev,
-      [selectedItemId]: [...(prev[selectedItemId] || []), newMapping],
-    }));
-  };
-
-  const handleRemoveMapping = (mappingId: string) => {
-    setMappings((prev) => ({
-      ...prev,
-      [selectedItemId]: prev[selectedItemId].filter((m) => m.id !== mappingId),
-    }));
-  };
-
-  const handleUpdateMapping = (mappingId: string, updates: Partial<IngredientMapping>) => {
-    setMappings((prev) => ({
-      ...prev,
-      [selectedItemId]: prev[selectedItemId].map((m) =>
-        m.id === mappingId ? { ...m, ...updates } : m
-      ),
-    }));
-  };
-
-  const handleSave = () => {
-    toast({
-      title: t("common.saveChanges"),
-      description: "Ingredient mappings saved successfully.",
+  const handleReorder = (reorderedItems: ItemWithMappings[]) => {
+    // Update only the reordered items while preserving others
+    setItems((prev) => {
+      const updatedIds = new Set(reorderedItems.map((i) => i.id));
+      const unchangedItems = prev.filter((i) => !updatedIds.has(i.id));
+      return [...reorderedItems, ...unchangedItems].sort((a, b) => a.sort_order - b.sort_order);
     });
   };
-
-  const selectedItem = mockItems.find((i) => i.id === selectedItemId);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">{t("itemIngredients.title")}</h1>
-        {selectedItemId && currentMappings.length > 0 && (
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4 me-2" />
-            {t("common.saveChanges")}
-          </Button>
-        )}
+        <h1 className="text-3xl font-bold text-foreground">{t("itemMapping.title")}</h1>
+        <Button onClick={() => navigate("/items/add")}>
+          <Plus className="h-4 w-4 me-2" />
+          {t("items.addItem")}
+        </Button>
       </div>
 
-      {/* Item Selector */}
+      {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-2">
-            <Label>{t("itemIngredients.selectItem")}</Label>
-            <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-              <SelectTrigger className="max-w-md">
-                <SelectValue placeholder={t("common.selectItem")} />
+        <CardContent className="pt-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t("common.search")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="ps-9"
+              />
+            </div>
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t("common.filter")} />
               </SelectTrigger>
               <SelectContent>
-                {mockItems.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {getLocalizedName(item)}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">{t("itemMapping.filterAll")}</SelectItem>
+                <SelectItem value="edible">{t("items.edible")}</SelectItem>
+                <SelectItem value="combo">{t("itemMapping.combosOnly")}</SelectItem>
+                <SelectItem value="non_edible">{t("items.nonEdible")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Mapping List */}
-      {!selectedItemId ? (
-        <Card>
-          <CardContent className="pt-6">
-            <EmptyState
-              icon={Link2}
-              title={t("itemIngredients.selectItem")}
-              description={t("itemIngredients.noItemSelected")}
-            />
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">
-              {getLocalizedName(selectedItem!)} - {t("items.ingredientMapping")}
-            </CardTitle>
-            <Button
-              onClick={handleAddMapping}
-              disabled={availableIngredients.length === 0}
-              size="sm"
-            >
-              <Plus className="h-4 w-4 me-2" />
-              {t("itemIngredients.addIngredient")}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {currentMappings.length === 0 ? (
+      {/* Main Grid */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            {t("itemMapping.summaryGrid")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {filteredItems.length === 0 ? (
+            <div className="p-6">
               <EmptyState
                 icon={Link2}
-                title={t("common.noData")}
-                description={t("itemIngredients.noMappings")}
+                title={t("itemMapping.noItems")}
+                description={t("itemMapping.noItemsDescription")}
                 action={
-                  <Button onClick={handleAddMapping} disabled={availableIngredients.length === 0}>
+                  <Button onClick={() => navigate("/items/add")}>
                     <Plus className="h-4 w-4 me-2" />
-                    {t("itemIngredients.addIngredient")}
+                    {t("items.addItem")}
                   </Button>
                 }
               />
-            ) : (
-              <div className="space-y-4">
-                {currentMappings.map((mapping) => {
-                  const ingredient = mockIngredients.find((i) => i.id === mapping.ingredient_id);
-                  if (!ingredient) return null;
-
-                  return (
-                    <div
-                      key={mapping.id}
-                      className="border rounded-lg p-4 space-y-4 bg-muted/30"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Ingredient Selector */}
-                          <div className="space-y-2">
-                            <Label>{t("common.selectIngredient")}</Label>
-                            <Select
-                              value={mapping.ingredient_id}
-                              onValueChange={(value) =>
-                                handleUpdateMapping(mapping.id, { ingredient_id: value })
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={mapping.ingredient_id}>
-                                  {getLocalizedName(ingredient)}
-                                </SelectItem>
-                                {availableIngredients.map((ing) => (
-                                  <SelectItem key={ing.id} value={ing.id}>
-                                    {getLocalizedName(ing)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Quantity */}
-                          <div className="space-y-2">
-                            <Label>{t("itemIngredients.quantityUsed")} ({ingredient.base_unit})</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={mapping.quantity_used}
-                              onChange={(e) =>
-                                handleUpdateMapping(mapping.id, {
-                                  quantity_used: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                            />
-                          </div>
-
-                          {/* Toggles */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm">{t("itemIngredients.canRemove")}</Label>
-                              <Switch
-                                checked={mapping.can_remove}
-                                onCheckedChange={(checked) =>
-                                  handleUpdateMapping(mapping.id, { can_remove: checked })
-                                }
-                              />
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <Label className="text-sm">{t("itemIngredients.canAddExtra")}</Label>
-                              <Switch
-                                checked={mapping.can_add_extra}
-                                onCheckedChange={(checked) =>
-                                  handleUpdateMapping(mapping.id, {
-                                    can_add_extra: checked,
-                                    extra_quantity_limit: checked ? mapping.extra_quantity_limit : null,
-                                    extra_cost: checked ? mapping.extra_cost : null,
-                                  })
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveMapping(mapping.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-
-                      {/* Extra Options */}
-                      {mapping.can_add_extra && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
-                          <div className="space-y-2">
-                            <Label>{t("itemIngredients.extraQuantityLimit")} ({ingredient.base_unit})</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={mapping.extra_quantity_limit || ""}
-                              onChange={(e) =>
-                                handleUpdateMapping(mapping.id, {
-                                  extra_quantity_limit: e.target.value
-                                    ? parseFloat(e.target.value)
-                                    : null,
-                                })
-                              }
-                              placeholder="Max extra amount"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>{t("itemIngredients.extraCost")}</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={mapping.extra_cost || ""}
-                              onChange={(e) =>
-                                handleUpdateMapping(mapping.id, {
-                                  extra_cost: e.target.value ? parseFloat(e.target.value) : null,
-                                })
-                              }
-                              placeholder="Extra charge ($)"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+            </div>
+          ) : (
+            <>
+              <MappingSummaryTable items={filteredItems} onReorder={handleReorder} />
+              <div className="px-4 py-3 border-t bg-muted/30 text-xs text-muted-foreground">
+                {t("itemMapping.dragToReorderHint")}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
