@@ -25,7 +25,7 @@ export default function Settings() {
         <CardHeader>
           <CardTitle>{t("languages.title")}</CardTitle>
           <CardDescription>
-            Select your preferred language. The interface will update automatically.
+            {t("settings.languageDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
