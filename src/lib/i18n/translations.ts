@@ -222,6 +222,8 @@ export const translations = {
       confirmAndSave: "Confirm & Save",
       field: "Field",
       back: "Back",
+      select: "Select",
+      optional: "optional",
     },
     // Auth
     auth: {
@@ -538,6 +540,7 @@ export const translations = {
       noReplacements: "No replacements added",
       actualCost: "Actual Cost",
       summary: "Summary",
+      itemPrice: "Item Price",
       // Drag & Drop (kept for reference)
       dragToReorder: "Drag to reorder priority",
       dragToReorderHint: "Drag items to reorder priority. Changes are saved when you click Save.",
@@ -629,6 +632,8 @@ export const translations = {
       confirmAndSave: "تأكيد وحفظ",
       field: "الحقل",
       back: "رجوع",
+      select: "اختر",
+      optional: "اختياري",
     },
     // Auth
     auth: {
@@ -917,6 +922,8 @@ export const translations = {
       confirmAndSave: "تصدیق کریں اور محفوظ کریں",
       field: "فیلڈ",
       back: "واپس",
+      select: "منتخب کریں",
+      optional: "اختیاری",
     },
     // Auth
     auth: {

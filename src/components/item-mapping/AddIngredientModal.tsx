@@ -54,6 +54,9 @@ export function AddIngredientModal({
     return obj[key] || obj.name_en;
   };
 
+  // Filter out already mapped ingredients
+  const availableIngredients = ingredients.filter((ing) => !mappedIds.includes(ing.id));
+
   const handleConfirm = () => {
     if (!selectedIngredient) return;
     onConfirm(selectedIngredient, quantity, extraCost);
@@ -71,171 +74,146 @@ export function AddIngredientModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[480px] p-0 gap-0 rounded-lg overflow-hidden">
-        {/* Clean Header */}
+        {/* Header */}
         <DialogHeader className="px-5 py-4 border-b border-border bg-background">
           <DialogTitle className="text-base font-semibold">
             {t("itemMapping.addIngredient")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-5">
-          {/* Select Ingredient */}
-          <div className="space-y-2">
-            <label className="text-[13px] font-medium text-foreground">
-              {t("itemMapping.selectIngredient")}
-            </label>
-            <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={dropdownOpen}
-                  className="w-full justify-between h-10 text-[13px] font-normal border-border"
-                >
-                  {selectedIngredient ? (
-                    <span className="flex items-center gap-2 text-foreground">
-                      {getLocalizedName(selectedIngredient)}
-                      <span className="text-muted-foreground">
-                        · SAR {selectedIngredient.cost_per_unit.toFixed(2)}/{selectedIngredient.unit}
+        {/* 2x2 Grid Form */}
+        <div className="px-5 py-5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+            {/* Row 1: Select Ingredient */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.selectIngredient")} <span className="text-destructive">*</span>
+              </label>
+              <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={dropdownOpen}
+                    className="w-full justify-between h-9 text-[13px] font-normal border-border"
+                  >
+                    {selectedIngredient ? (
+                      <span className="truncate text-foreground">
+                        {getLocalizedName(selectedIngredient)} ({selectedIngredient.unit})
                       </span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">{t("itemMapping.selectIngredient")}...</span>
-                  )}
-                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder={t("itemMapping.searchIngredients")} className="h-10" />
-                  <CommandList className="max-h-[200px]">
-                    <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
-                      {t("common.noData")}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {ingredients.map((ing) => {
-                        const isAlreadyMapped = mappedIds.includes(ing.id);
-                        const isSelected = selectedIngredient?.id === ing.id;
-                        return (
-                          <CommandItem
-                            key={ing.id}
-                            value={getLocalizedName(ing)}
-                            disabled={isAlreadyMapped}
-                            onSelect={() => {
-                              if (!isAlreadyMapped) {
+                    ) : (
+                      <span className="text-muted-foreground">{t("common.select")}...</span>
+                    )}
+                    <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t("itemMapping.searchIngredients")} className="h-9" />
+                    <CommandList className="max-h-[200px]">
+                      <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
+                        {t("common.noData")}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {availableIngredients.map((ing) => {
+                          const isSelected = selectedIngredient?.id === ing.id;
+                          return (
+                            <CommandItem
+                              key={ing.id}
+                              value={getLocalizedName(ing)}
+                              onSelect={() => {
                                 setSelectedIngredient(ing);
                                 setDropdownOpen(false);
-                              }
-                            }}
-                            className={cn(
-                              "text-[13px] cursor-pointer py-2.5",
-                              isAlreadyMapped && "opacity-50 cursor-not-allowed"
-                            )}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4 text-primary",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="flex-1">{getLocalizedName(ing)} ({ing.unit})</span>
-                            <span className="text-muted-foreground ml-2">
-                              SAR {ing.cost_per_unit.toFixed(2)}/{ing.unit}
-                            </span>
-                            {isAlreadyMapped && (
-                              <span className="ml-2 text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
-                                {t("itemMapping.alreadyMapped")}
+                              }}
+                              className="text-[13px] cursor-pointer py-2"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 text-primary",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="flex-1">{getLocalizedName(ing)} ({ing.unit})</span>
+                              <span className="text-muted-foreground ml-2">
+                                SAR {ing.cost_per_unit.toFixed(2)}/{ing.unit}
                               </span>
-                            )}
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Preview Card */}
-          {selectedIngredient && (
-            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-              <div className="text-[12px] font-medium uppercase text-muted-foreground tracking-wide">
-                {t("common.view")}
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-                <div className="text-muted-foreground">{t("common.name")}</div>
-                <div className="font-medium text-foreground">{getLocalizedName(selectedIngredient)}</div>
-                <div className="text-muted-foreground">{t("common.unit")}</div>
-                <div className="font-medium text-foreground">{selectedIngredient.unit}</div>
-                <div className="text-muted-foreground">{t("items.baseCost")}</div>
-                <div className="font-medium text-foreground">SAR {selectedIngredient.cost_per_unit.toFixed(2)}/{selectedIngredient.unit}</div>
-                <div className="text-muted-foreground">{t("inventory.currentStock")}</div>
-                <div className="font-medium text-foreground">{selectedIngredient.current_stock} {selectedIngredient.unit}</div>
-              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
-          )}
 
-          {/* Configure Inputs */}
-          {selectedIngredient && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[13px] font-medium text-foreground">
-                  {t("itemMapping.quantity")}
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(0.01, parseFloat(e.target.value) || 0.01))}
-                    min={0.01}
-                    step={0.01}
-                    className="h-10 text-[13px]"
-                  />
+            {/* Row 1: Unit Price (read-only) */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.unitPrice")}
+              </label>
+              <Input
+                value={selectedIngredient ? `SAR ${selectedIngredient.cost_per_unit.toFixed(2)}/${selectedIngredient.unit}` : ""}
+                readOnly
+                placeholder="—"
+                className="h-9 text-[13px] bg-muted cursor-not-allowed"
+              />
+            </div>
+
+            {/* Row 2: Quantity */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.quantity")} <span className="text-destructive">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(0.01, parseFloat(e.target.value) || 0.01))}
+                  min={0.01}
+                  step={0.01}
+                  className="h-9 text-[13px] flex-1"
+                />
+                {selectedIngredient && (
                   <span className="text-[13px] text-muted-foreground whitespace-nowrap">
                     {selectedIngredient.unit}
                   </span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[13px] font-medium text-foreground">
-                  {t("itemMapping.extraCost")}
-                  <span className="font-normal text-muted-foreground ml-1">({t("common.optional")})</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] text-muted-foreground">SAR</span>
-                  <Input
-                    type="number"
-                    value={extraCost}
-                    onChange={(e) => setExtraCost(Math.max(0, parseFloat(e.target.value) || 0))}
-                    min={0}
-                    step={0.01}
-                    className={cn(
-                      "h-10 text-[13px]",
-                      extraCost > 0 && "bg-green-50 border-green-200"
-                    )}
-                  />
-                </div>
+                )}
               </div>
             </div>
-          )}
+
+            {/* Row 2: Extra Cost */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.extraCost")}
+                <span className="font-normal text-muted-foreground ml-1 text-[12px]">({t("common.optional")})</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] text-muted-foreground">SAR</span>
+                <Input
+                  type="number"
+                  value={extraCost}
+                  onChange={(e) => setExtraCost(Math.max(0, parseFloat(e.target.value) || 0))}
+                  min={0}
+                  step={0.01}
+                  className={cn(
+                    "h-9 text-[13px] flex-1",
+                    extraCost > 0 && "bg-[hsl(var(--success)/0.1)] border-[hsl(var(--success)/0.3)]"
+                  )}
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
-        <DialogFooter className="px-5 py-4 border-t border-border bg-muted/30 gap-3">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            className="h-10 px-5 text-[13px]"
-          >
-            {t("common.cancel")}
-          </Button>
+        <DialogFooter className="px-5 py-4 border-t border-border bg-muted/30">
           <Button
             onClick={handleConfirm}
             disabled={!selectedIngredient}
-            className="h-10 px-5 text-[13px] bg-primary hover:bg-primary/90"
+            className="h-9 px-6 text-[13px] bg-foreground text-background hover:bg-foreground/90"
           >
-            {t("common.confirm")}
+            {t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
