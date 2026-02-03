@@ -237,6 +237,16 @@ export const translations = {
       noAccount: "Don't have an account?",
       hasAccount: "Already have an account?",
       createAccount: "Create Account",
+      welcomeBack: "Welcome Back",
+      enterCredentials: "Enter your email and password to access your account",
+      emailPlaceholder: "Enter your email",
+      passwordPlaceholder: "Enter your password",
+      rememberMe: "Remember me",
+      invalidCredentials: "Invalid email or password",
+      signInSuccess: "Welcome back!",
+      wiseQuote: "A WISE QUOTE",
+      getEverything: "Get Everything You Want",
+      motivationalText: "You can get everything you want if you work hard, trust the process, and stick to the plan.",
     },
     // Roles
     roles: {
