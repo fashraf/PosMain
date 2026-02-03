@@ -464,7 +464,7 @@ export const translations = {
       canRemove: "Can Remove",
       canAddExtra: "Can Add Extra",
       extraCost: "Extra Cost",
-      ingredientCostTotal: "Ingredient Cost Total",
+      ingredientCostTotal: "Ingredient Total",
       subItemsTotal: "Sub-Items Total",
       itemsTotal: "Items Total",
       totalCost: "Total Cost",
@@ -479,15 +479,17 @@ export const translations = {
       // Empty States
       remove: "Remove",
       extra: "Extra",
-      noIngredientsMapped: "No ingredients mapped. Click 'Add Ingredient' to start.",
-      noSubItemsMapped: "No sub-items added. Click 'Add Item' to start.",
-      noItemsMapped: "No items added. Click 'Add Item' to start.",
-      notComboItem: "Only combo items can have sub-items.",
+      noIngredientsMapped: "No ingredients mapped. Click '+' to start.",
+      noSubItemsMapped: "No sub-items added. Click '+' to start.",
+      noItemsMapped: "No items added. Click '+' to start.",
+      notComboItem: "Only combo items can have items.",
       // Search Picker
       searchIngredients: "Search ingredients...",
       searchItems: "Search items...",
-      alreadyMapped: "Already mapped",
+      alreadyMapped: "Already added",
       selectToAdd: "Select to add",
+      selectIngredient: "Select Ingredient",
+      selectItem: "Select Item",
       // Validation & Warnings
       duplicateWarning: "Ingredient Already Mapped",
       duplicateDescription: "is already mapped to this item",
@@ -512,6 +514,16 @@ export const translations = {
       removedSubItem: "Removed Sub-Item",
       confirmChanges: "Confirm Mapping Changes",
       savedSuccessfully: "Mappings saved successfully",
+      // Live Cost Summary
+      comboPrice: "Combo Price",
+      costPrice: "Cost",
+      sellingPrice: "Sell",
+      profit: "Profit",
+      baseCost: "Base Cost",
+      confirmSave: "Confirm Save",
+      // Remove Modal
+      removeIngredientDescription: "This ingredient will be removed from the mapping.",
+      removeItemDescription: "This item will be removed from the mapping.",
       // Drag & Drop (kept for reference)
       dragToReorder: "Drag to reorder priority",
       dragToReorderHint: "Drag items to reorder priority. Changes are saved when you click Save.",
