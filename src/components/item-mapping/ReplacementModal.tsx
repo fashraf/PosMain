@@ -137,143 +137,150 @@ export function ReplacementModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-          {/* Add Replacement Section */}
-          <div className="space-y-3">
-            <div className="text-[13px] font-medium text-foreground">
-              {t("itemMapping.addReplacement")}
+        <div className="px-5 py-5 max-h-[60vh] overflow-y-auto">
+          {/* 2x2 Grid Form - Always visible */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Row 1: Select Item */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.selectItem")} <span className="text-destructive">*</span>
+              </label>
+              <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={dropdownOpen}
+                    className="w-full justify-between h-9 text-[13px] font-normal border-border"
+                  >
+                    {selectedItem ? (
+                      <span className="text-foreground truncate">
+                        {getLocalizedName(selectedItem)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">{t("common.select")}...</span>
+                    )}
+                    <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t("itemMapping.searchItems")} className="h-9" />
+                    <CommandList className="max-h-[200px]">
+                      <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
+                        {t("common.noData")}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {filteredItems.map((item) => {
+                          const isSelected = selectedItem?.id === item.id;
+                          return (
+                            <CommandItem
+                              key={item.id}
+                              value={getLocalizedName(item)}
+                              onSelect={() => {
+                                setSelectedItem(item);
+                                setDropdownOpen(false);
+                              }}
+                              className="text-[13px] cursor-pointer py-2"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4 text-primary",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="flex-1">{getLocalizedName(item)}</span>
+                              <span className="text-muted-foreground ml-2">
+                                SAR {item.base_cost.toFixed(2)}
+                              </span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            {/* Item Dropdown */}
-            <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={dropdownOpen}
-                  className="w-full justify-between h-9 text-[13px] font-normal border-border"
-                >
-                  {selectedItem ? (
-                    <span className="flex items-center gap-2 text-foreground">
-                      {getLocalizedName(selectedItem)}
-                      <span className="text-muted-foreground">
-                        · SAR {selectedItem.base_cost.toFixed(2)}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">{t("itemMapping.selectItem")}...</span>
+            {/* Row 1: Item Price (read-only) */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.itemPrice")}
+              </label>
+              <Input
+                value={selectedItem ? `SAR ${selectedItem.base_cost.toFixed(2)}` : "—"}
+                readOnly
+                className="h-9 text-[13px] bg-muted cursor-not-allowed"
+              />
+            </div>
+
+            {/* Row 2: Extra Cost */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.extraCost")}
+              </label>
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] text-muted-foreground">SAR</span>
+                <Input
+                  type="number"
+                  value={extraCost}
+                  onChange={(e) => setExtraCost(Math.max(0, parseFloat(e.target.value) || 0))}
+                  min={0}
+                  step={0.01}
+                  className={cn(
+                    "h-9 text-[13px] flex-1",
+                    extraCost > 0 && "bg-[hsl(var(--success)/0.1)] border-[hsl(var(--success)/0.3)]"
                   )}
-                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder={t("itemMapping.searchItems")} className="h-9" />
-                  <CommandList className="max-h-[200px]">
-                    <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
-                      {t("common.noData")}
-                    </CommandEmpty>
-                    <CommandGroup>
-                      {filteredItems.map((item) => {
-                        const isSelected = selectedItem?.id === item.id;
-                        return (
-                          <CommandItem
-                            key={item.id}
-                            value={getLocalizedName(item)}
-                            onSelect={() => {
-                              setSelectedItem(item);
-                              setDropdownOpen(false);
-                            }}
-                            className="text-[13px] cursor-pointer py-2"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4 text-primary",
-                                isSelected ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="flex-1">{getLocalizedName(item)}</span>
-                            <span className="text-muted-foreground ml-2">
-                              SAR {item.base_cost.toFixed(2)}
-                            </span>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* Config Section (only when item selected) */}
-            {selectedItem && (
-              <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
-                {/* 2-column: Extra Cost + Default */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium text-foreground">
-                      {t("itemMapping.extraCost")}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] text-muted-foreground">SAR</span>
-                      <Input
-                        type="number"
-                        value={extraCost}
-                        onChange={(e) => setExtraCost(Math.max(0, parseFloat(e.target.value) || 0))}
-                        min={0}
-                        step={0.01}
-                        className={cn(
-                          "h-9 text-[13px] flex-1",
-                          extraCost > 0 && "bg-[hsl(var(--success)/0.1)] border-[hsl(var(--success)/0.3)]"
-                        )}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[13px] font-medium text-foreground">
-                      {t("itemMapping.setAsDefault")}
-                    </label>
-                    <div className="flex items-center gap-2 h-9">
-                      <Checkbox
-                        id="default"
-                        checked={isDefault}
-                        onCheckedChange={(checked) => setIsDefault(checked as boolean)}
-                      />
-                      <label htmlFor="default" className="text-[13px] text-muted-foreground cursor-pointer">
-                        {t("itemMapping.default")}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Preview Line */}
-                <div className={cn(
-                  "flex items-center gap-2 text-[13px] py-2 px-3 rounded-md border",
-                  extraCost > 0 
-                    ? "bg-[hsl(var(--success)/0.05)] border-[hsl(var(--success)/0.2)] text-[hsl(var(--success))]" 
-                    : "bg-muted/50 border-border text-muted-foreground"
-                )}>
-                  <ArrowRight size={14} strokeWidth={1.5} />
-                  <span className="font-medium">{getLocalizedName(selectedItem)}</span>
-                  <span>(+SAR {extraCost.toFixed(2)})</span>
-                </div>
-
-                {/* Add Button */}
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleAddReplacement}
-                    size="sm"
-                    className="h-8 text-[13px] px-4"
-                  >
-                    {t("itemMapping.addReplacement")}
-                  </Button>
-                </div>
+                />
               </div>
-            )}
+              <span className="text-[11px] text-muted-foreground">{t("common.optional")}</span>
+            </div>
+
+            {/* Row 2: Set as Default */}
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-foreground">
+                {t("itemMapping.setAsDefault")}
+              </label>
+              <div className="flex items-center gap-2 h-9">
+                <Checkbox
+                  id="default-checkbox"
+                  checked={isDefault}
+                  onCheckedChange={(checked) => setIsDefault(checked as boolean)}
+                />
+                <label 
+                  htmlFor="default-checkbox" 
+                  className="text-[13px] text-muted-foreground cursor-pointer"
+                >
+                  {t("itemMapping.default")}
+                </label>
+              </div>
+            </div>
           </div>
 
+          {/* Live Preview + Add Button (when item selected) */}
+          {selectedItem && (
+            <div className="flex items-center justify-between mt-4">
+              <div className={cn(
+                "flex items-center gap-2 text-[13px]",
+                extraCost > 0 ? "text-[hsl(var(--success))]" : "text-muted-foreground"
+              )}>
+                <ArrowRight size={14} strokeWidth={1.5} />
+                <span className="font-medium">{getLocalizedName(selectedItem)}</span>
+                <span>(+SAR {extraCost.toFixed(2)})</span>
+              </div>
+              <Button
+                onClick={handleAddReplacement}
+                size="sm"
+                className="h-8 text-[13px] px-4 bg-[#1F2937] hover:bg-[#374151] text-white"
+              >
+                {t("itemMapping.addReplacement")}
+              </Button>
+            </div>
+          )}
+
           {/* Separator */}
-          <div className="border-t border-border" />
+          <div className="border-t border-border mt-5 pt-4" />
 
           {/* Current Replacements */}
           <div className="space-y-3">
@@ -348,7 +355,7 @@ export function ReplacementModal({
         <DialogFooter className="px-5 py-4 border-t border-border bg-muted/30">
           <Button
             onClick={handleClose}
-            className="h-9 px-6 text-[13px] bg-foreground text-background hover:bg-foreground/90"
+            className="h-9 px-6 text-[13px] bg-[#1F2937] hover:bg-[#374151] text-white"
           >
             {t("itemMapping.done")}
           </Button>
