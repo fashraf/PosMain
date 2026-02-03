@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Link2,
   Building2,
+  Tag,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -32,6 +33,7 @@ const navItems = [
   { titleKey: "nav.salesChannels", url: "/sales-channels", icon: Store },
   { titleKey: "nav.ingredients", url: "/ingredients", icon: Carrot },
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
+  { titleKey: "nav.categories", url: "/categories", icon: Tag },
   { titleKey: "nav.itemIngredients", url: "/item-ingredients", icon: Link2 },
   { titleKey: "nav.itemPricing", url: "/item-pricing", icon: DollarSign },
   { titleKey: "branches.title", url: "/branches", icon: Building2 },

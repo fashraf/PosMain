@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -15,15 +14,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MultiLanguageInput } from "@/components/shared/MultiLanguageInput";
+import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
+import { CheckboxGroup } from "@/components/shared/CheckboxGroup";
+import { AllergenPicker, type AllergenType } from "@/components/shared/AllergenPicker";
+import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { ConfirmChangesModal, type Change } from "@/components/shared/ConfirmChangesModal";
 import { ArrowLeft, ArrowRight, Save, X, ImageIcon, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Mock categories
+const mockCategories = [
+  { id: "1", name_en: "Breakfast" },
+  { id: "2", name_en: "Lunch Specials" },
+  { id: "3", name_en: "Dinner" },
+  { id: "4", name_en: "Snacks" },
+];
+
 // Mock data
 const mockItems = [
-  { id: "1", name_en: "Margherita Pizza", name_ar: "بيتزا مارغريتا", name_ur: "مارگریٹا پیزا", description_en: "Classic pizza with tomato and mozzarella", description_ar: "بيتزا كلاسيكية", description_ur: "کلاسک پیزا", item_type: "edible" as const, base_cost: 12.99, is_combo: false, image_url: null, is_active: true },
-  { id: "2", name_en: "Chicken Burger", name_ar: "برجر دجاج", name_ur: "چکن برگر", description_en: "Juicy chicken patty", description_ar: "قطعة دجاج", description_ur: "چکن پیٹی", item_type: "edible" as const, base_cost: 8.99, is_combo: false, image_url: null, is_active: true },
+  { 
+    id: "1", 
+    name_en: "Margherita Pizza", 
+    name_ar: "بيتزا مارغريتا", 
+    name_ur: "مارگریٹا پیزا", 
+    description_en: "Classic pizza with tomato and mozzarella", 
+    description_ar: "بيتزا كلاسيكية", 
+    description_ur: "کلاسک پیزا", 
+    item_type: "edible" as const, 
+    base_cost: 12.99, 
+    is_combo: false, 
+    image_url: null, 
+    is_active: true,
+    categories: ["2", "3"],
+    preparation_time_minutes: 20,
+    allergens: ["dairy", "gluten"] as AllergenType[],
+    calories: 850,
+  },
+  { 
+    id: "2", 
+    name_en: "Chicken Burger", 
+    name_ar: "برجر دجاج", 
+    name_ur: "چکن برگر", 
+    description_en: "Juicy chicken patty", 
+    description_ar: "قطعة دجاج", 
+    description_ur: "چکن پیٹی", 
+    item_type: "edible" as const, 
+    base_cost: 8.99, 
+    is_combo: false, 
+    image_url: null, 
+    is_active: true,
+    categories: ["2"],
+    preparation_time_minutes: 15,
+    allergens: ["gluten", "eggs"] as AllergenType[],
+    calories: 650,
+  },
 ];
 
 export default function ItemsEdit() {
@@ -44,6 +88,10 @@ export default function ItemsEdit() {
     is_combo: false,
     image_url: null as string | null,
     is_active: true,
+    categories: [] as string[],
+    preparation_time_minutes: 15,
+    allergens: [] as AllergenType[],
+    calories: null as number | null,
   });
 
   const [formData, setFormData] = useState({ ...initialData });
@@ -65,6 +113,10 @@ export default function ItemsEdit() {
         is_combo: item.is_combo,
         image_url: item.image_url,
         is_active: item.is_active,
+        categories: item.categories,
+        preparation_time_minutes: item.preparation_time_minutes,
+        allergens: item.allergens,
+        calories: item.calories,
       };
       setInitialData(data);
       setFormData(data);
@@ -75,6 +127,15 @@ export default function ItemsEdit() {
     setFormData((prev) => ({ ...prev, [`name_${lang}`]: value }));
   };
 
+  const handleDescriptionChange = (lang: "en" | "ar" | "ur", value: string) => {
+    setFormData((prev) => ({ ...prev, [`description_${lang}`]: value }));
+  };
+
+  const categoryOptions = mockCategories.map((cat) => ({
+    id: cat.id,
+    label: cat.name_en,
+  }));
+
   const getChanges = useMemo((): Change[] => {
     const changes: Change[] = [];
     if (formData.name_en !== initialData.name_en) changes.push({ field: t("common.name") + " (EN)", oldValue: initialData.name_en, newValue: formData.name_en });
@@ -83,6 +144,25 @@ export default function ItemsEdit() {
     if (formData.item_type !== initialData.item_type) changes.push({ field: t("items.itemType"), oldValue: initialData.item_type === "edible" ? t("items.edible") : t("items.nonEdible"), newValue: formData.item_type === "edible" ? t("items.edible") : t("items.nonEdible") });
     if (formData.base_cost !== initialData.base_cost) changes.push({ field: t("items.baseCost"), oldValue: `$${initialData.base_cost.toFixed(2)}`, newValue: `$${formData.base_cost.toFixed(2)}` });
     if (formData.is_combo !== initialData.is_combo) changes.push({ field: t("items.isCombo"), oldValue: initialData.is_combo ? t("common.yes") : t("common.no"), newValue: formData.is_combo ? t("common.yes") : t("common.no") });
+    
+    if (JSON.stringify(formData.categories) !== JSON.stringify(initialData.categories)) {
+      const oldCats = initialData.categories.map(id => mockCategories.find(c => c.id === id)?.name_en).filter(Boolean).join(", ");
+      const newCats = formData.categories.map(id => mockCategories.find(c => c.id === id)?.name_en).filter(Boolean).join(", ");
+      changes.push({ field: t("items.categories"), oldValue: oldCats || "None", newValue: newCats || "None" });
+    }
+    
+    if (formData.preparation_time_minutes !== initialData.preparation_time_minutes) {
+      changes.push({ field: t("items.preparationTime"), oldValue: `${initialData.preparation_time_minutes} min`, newValue: `${formData.preparation_time_minutes} min` });
+    }
+    
+    if (JSON.stringify(formData.allergens) !== JSON.stringify(initialData.allergens)) {
+      changes.push({ field: t("items.allergens"), oldValue: initialData.allergens.join(", ") || "None", newValue: formData.allergens.join(", ") || "None" });
+    }
+    
+    if (formData.calories !== initialData.calories) {
+      changes.push({ field: t("items.calories"), oldValue: initialData.calories ? `${initialData.calories} kcal` : "Not set", newValue: formData.calories ? `${formData.calories} kcal` : "Not set" });
+    }
+    
     if (formData.is_active !== initialData.is_active) changes.push({ field: t("common.status"), oldValue: initialData.is_active ? t("common.active") : t("common.inactive"), newValue: formData.is_active ? t("common.active") : t("common.inactive") });
     return changes;
   }, [formData, initialData, t]);
@@ -108,47 +188,29 @@ export default function ItemsEdit() {
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4">
+    <div className="space-y-4 pb-20">
+      <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/items")}>
           <BackIcon className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">{t("items.editItem")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("items.editItem")}</h1>
       </div>
 
       {/* Basic Info */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("branches.basicInfo")}</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">{t("branches.basicInfo")}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <MultiLanguageInput
-            label={t("items.itemName")}
-            values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
-            onChange={handleNameChange}
-            required
-          />
-
-          <div className="space-y-2">
-            <Label>{t("common.description")} (EN)</Label>
-            <Textarea
-              value={formData.description_en}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description_en: e.target.value }))}
-              rows={3}
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <CompactMultiLanguageInput
+              label={t("items.itemName")}
+              values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
+              onChange={handleNameChange}
+              required
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Classification */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("items.itemType")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t("items.itemType")}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t("items.itemType")}</Label>
               <Select value={formData.item_type} onValueChange={(value: "edible" | "non_edible") => setFormData((prev) => ({ ...prev, item_type: value }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -157,64 +219,132 @@ export default function ItemsEdit() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="baseCost">{t("items.baseCost")}</Label>
+          <CompactMultiLanguageInput
+            label={t("common.description")}
+            values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
+            onChange={handleDescriptionChange}
+            multiline
+          />
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="baseCost" className="text-sm">{t("items.baseCost")}</Label>
               <Input id="baseCost" type="number" min="0" step="0.01" value={formData.base_cost} onChange={(e) => setFormData((prev) => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))} />
+            </div>
+
+            <div className="flex items-center gap-2 pt-6">
+              <Switch id="isCombo" checked={formData.is_combo} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))} />
+              <Label htmlFor="isCombo" className="text-sm font-normal">{t("items.isCombo")}</Label>
+            </div>
+
+            <div className="flex items-center gap-2 pt-6">
+              <Switch id="status" checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
+              <Label htmlFor="status" className="text-sm font-normal">{formData.is_active ? t("common.active") : t("common.inactive")}</Label>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Categories */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">{t("items.categories")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CheckboxGroup
+            label={t("items.assignCategories")}
+            options={categoryOptions}
+            value={formData.categories}
+            onChange={(cats) => setFormData((prev) => ({ ...prev, categories: cats }))}
+            columns={4}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Preparation & Nutrition */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">{t("items.preparationAndNutrition")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="prepTime" className="text-sm">{t("items.preparationTimeMinutes")}</Label>
+                <TooltipInfo content={t("tooltips.preparationTime")} />
+              </div>
+              <div className="relative max-w-[150px]">
+                <Input
+                  id="prepTime"
+                  type="number"
+                  min="0"
+                  value={formData.preparation_time_minutes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, preparation_time_minutes: parseInt(e.target.value) || 0 }))}
+                  className="pe-10"
+                />
+                <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">min</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="calories" className="text-sm">{t("items.calories")}</Label>
+                <TooltipInfo content={t("tooltips.calories")} />
+              </div>
+              <div className="relative max-w-[150px]">
+                <Input
+                  id="calories"
+                  type="number"
+                  min="0"
+                  value={formData.calories ?? ""}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value ? parseInt(e.target.value) : null }))}
+                  placeholder="Optional"
+                  className="pe-10"
+                />
+                <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">kcal</span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="isCombo">{t("items.isCombo")}</Label>
-            <Switch id="isCombo" checked={formData.is_combo} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))} />
-          </div>
+          <AllergenPicker
+            label={t("items.allergens")}
+            value={formData.allergens}
+            onChange={(allergens) => setFormData((prev) => ({ ...prev, allergens }))}
+            tooltip={t("tooltips.allergens")}
+          />
         </CardContent>
       </Card>
 
       {/* Image */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("items.image")}</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium">{t("items.image")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="border-2 border-dashed border-muted rounded-lg p-8 flex flex-col items-center justify-center gap-4">
+          <div className="border-2 border-dashed border-muted rounded-lg p-6 flex flex-col items-center justify-center gap-3">
             {formData.image_url ? (
-              <img src={formData.image_url} alt="Preview" className="h-32 w-32 object-cover rounded-lg" />
+              <img src={formData.image_url} alt="Preview" className="h-24 w-24 object-cover rounded-lg" />
             ) : (
-              <div className="h-32 w-32 rounded-lg bg-muted flex items-center justify-center">
-                <ImageIcon className="h-12 w-12 text-muted-foreground" />
+              <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center">
+                <ImageIcon className="h-8 w-8 text-muted-foreground" />
               </div>
             )}
-            <Button variant="outline" disabled>
-              <Upload className="h-4 w-4 me-2" />
+            <Button variant="outline" size="sm" disabled>
+              <Upload className="h-4 w-4 me-1" />
               {t("items.uploadImage")}
             </Button>
-            <p className="text-sm text-muted-foreground">Image upload coming soon</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("common.status")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="status">{t("common.status")}</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
-              <Switch id="status" checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
-            </div>
+            <p className="text-xs text-muted-foreground">Image upload coming soon</p>
           </div>
         </CardContent>
       </Card>
 
       {/* Sticky Footer */}
-      <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-4 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
-        <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" onClick={() => navigate("/items")} disabled={isSaving}><X className="h-4 w-4 me-2" />{t("common.cancel")}</Button>
-          <Button onClick={handleSave} disabled={isSaving}><Save className="h-4 w-4 me-2" />{t("common.save")}</Button>
+      <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
+        <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}><X className="h-4 w-4 me-1" />{t("common.cancel")}</Button>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}><Save className="h-4 w-4 me-1" />{t("common.save")}</Button>
         </div>
       </div>
 
