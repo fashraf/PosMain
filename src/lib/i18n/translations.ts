@@ -7,6 +7,7 @@ export const translations = {
       ingredients: "Ingredients",
       items: "Items",
       itemPricing: "Item Pricing",
+      itemIngredients: "Item Ingredients",
       settings: "Settings",
     },
     // Common
@@ -35,6 +36,15 @@ export const translations = {
       noData: "No data available",
       selectBranch: "Select Branch",
       allBranches: "All Branches",
+      activate: "Activate",
+      deactivate: "Deactivate",
+      type: "Type",
+      code: "Code",
+      saveChanges: "Save Changes",
+      selectItem: "Select Item",
+      selectIngredient: "Select Ingredient",
+      addRow: "Add Row",
+      remove: "Remove",
     },
     // Auth
     auth: {
@@ -62,10 +72,16 @@ export const translations = {
       arabic: "العربية",
       urdu: "اردو",
     },
+    // Settings
+    settings: {
+      languageDescription: "Select your preferred language. The interface will update automatically.",
+    },
     // Sales Channels
     salesChannels: {
       title: "Sales Channels",
       addChannel: "Add Channel",
+      editChannel: "Edit Channel",
+      deleteChannel: "Delete Channel",
       channelName: "Channel Name",
       icon: "Icon",
       inStore: "In-Store",
@@ -73,11 +89,15 @@ export const translations = {
       swiggy: "Swiggy",
       uberEats: "Uber Eats",
       online: "Online",
+      code: "Code",
+      confirmDelete: "Are you sure you want to delete this channel?",
+      noChannels: "No sales channels found. Add your first channel to get started.",
     },
     // Ingredients
     ingredients: {
       title: "Ingredients",
       addIngredient: "Add Ingredient",
+      editIngredient: "Edit Ingredient",
       ingredientName: "Ingredient Name",
       unitType: "Unit Type",
       costPerUnit: "Cost per Unit",
@@ -87,6 +107,12 @@ export const translations = {
       canAddAsExtra: "Can Add as Extra",
       extraCost: "Extra Cost",
       lowStock: "Low Stock",
+      type: "Type",
+      liquid: "Liquid",
+      solid: "Solid",
+      baseUnit: "Base Unit",
+      sellingPrice: "Selling Price",
+      noIngredients: "No ingredients found. Add your first ingredient to get started.",
       units: {
         kg: "Kilogram (kg)",
         g: "Gram (g)",
@@ -99,6 +125,7 @@ export const translations = {
     items: {
       title: "Items",
       addItem: "Add Item",
+      editItem: "Edit Item",
       itemName: "Item Name",
       itemType: "Item Type",
       edible: "Edible",
@@ -111,6 +138,22 @@ export const translations = {
       canRemove: "Can Remove",
       canAddExtra: "Can Add Extra",
       maxExtra: "Max Extra Quantity",
+      isCombo: "Is Combo",
+      noItems: "No items found. Add your first item to get started.",
+      uploadImage: "Upload Image",
+    },
+    // Item Ingredients Mapping
+    itemIngredients: {
+      title: "Item-Ingredient Mapping",
+      selectItem: "Select an Item",
+      noItemSelected: "Please select an item to manage its ingredients.",
+      noMappings: "No ingredients mapped to this item. Add ingredients below.",
+      quantityUsed: "Quantity Used",
+      canRemove: "Can Remove",
+      canAddExtra: "Can Add Extra",
+      extraQuantityLimit: "Extra Quantity Limit",
+      extraCost: "Extra Cost",
+      addIngredient: "Add Ingredient",
     },
     // Item Pricing
     itemPricing: {
@@ -118,6 +161,8 @@ export const translations = {
       priceMatrix: "Price Matrix",
       bulkEdit: "Bulk Edit",
       differsFromBase: "Differs from base cost",
+      saveAll: "Save All",
+      noItems: "No items or channels found. Create items and sales channels first.",
     },
     // Dashboard
     dashboard: {
@@ -138,6 +183,7 @@ export const translations = {
       ingredients: "المكونات",
       items: "الأصناف",
       itemPricing: "تسعير الأصناف",
+      itemIngredients: "مكونات الأصناف",
       settings: "الإعدادات",
     },
     // Common
@@ -166,6 +212,15 @@ export const translations = {
       noData: "لا توجد بيانات",
       selectBranch: "اختر الفرع",
       allBranches: "جميع الفروع",
+      activate: "تفعيل",
+      deactivate: "إلغاء التفعيل",
+      type: "النوع",
+      code: "الكود",
+      saveChanges: "حفظ التغييرات",
+      selectItem: "اختر الصنف",
+      selectIngredient: "اختر المكون",
+      addRow: "إضافة صف",
+      remove: "إزالة",
     },
     // Auth
     auth: {
@@ -193,10 +248,16 @@ export const translations = {
       arabic: "العربية",
       urdu: "اردو",
     },
+    // Settings
+    settings: {
+      languageDescription: "اختر لغتك المفضلة. سيتم تحديث الواجهة تلقائياً.",
+    },
     // Sales Channels
     salesChannels: {
       title: "قنوات البيع",
       addChannel: "إضافة قناة",
+      editChannel: "تعديل القناة",
+      deleteChannel: "حذف القناة",
       channelName: "اسم القناة",
       icon: "أيقونة",
       inStore: "في المتجر",
@@ -204,11 +265,15 @@ export const translations = {
       swiggy: "سويجي",
       uberEats: "أوبر إيتس",
       online: "عبر الإنترنت",
+      code: "الكود",
+      confirmDelete: "هل أنت متأكد من حذف هذه القناة؟",
+      noChannels: "لا توجد قنوات بيع. أضف قناتك الأولى للبدء.",
     },
     // Ingredients
     ingredients: {
       title: "المكونات",
       addIngredient: "إضافة مكون",
+      editIngredient: "تعديل المكون",
       ingredientName: "اسم المكون",
       unitType: "نوع الوحدة",
       costPerUnit: "التكلفة لكل وحدة",
@@ -218,6 +283,12 @@ export const translations = {
       canAddAsExtra: "يمكن إضافته كإضافة",
       extraCost: "تكلفة الإضافة",
       lowStock: "مخزون منخفض",
+      type: "النوع",
+      liquid: "سائل",
+      solid: "صلب",
+      baseUnit: "الوحدة الأساسية",
+      sellingPrice: "سعر البيع",
+      noIngredients: "لا توجد مكونات. أضف مكونك الأول للبدء.",
       units: {
         kg: "كيلوجرام",
         g: "جرام",
@@ -230,6 +301,7 @@ export const translations = {
     items: {
       title: "الأصناف",
       addItem: "إضافة صنف",
+      editItem: "تعديل الصنف",
       itemName: "اسم الصنف",
       itemType: "نوع الصنف",
       edible: "صالح للأكل",
@@ -242,6 +314,22 @@ export const translations = {
       canRemove: "يمكن الإزالة",
       canAddExtra: "يمكن إضافة المزيد",
       maxExtra: "أقصى كمية إضافية",
+      isCombo: "كومبو",
+      noItems: "لا توجد أصناف. أضف صنفك الأول للبدء.",
+      uploadImage: "رفع صورة",
+    },
+    // Item Ingredients Mapping
+    itemIngredients: {
+      title: "ربط المكونات بالأصناف",
+      selectItem: "اختر صنفاً",
+      noItemSelected: "يرجى اختيار صنف لإدارة مكوناته.",
+      noMappings: "لا توجد مكونات مربوطة بهذا الصنف. أضف المكونات أدناه.",
+      quantityUsed: "الكمية المستخدمة",
+      canRemove: "يمكن الإزالة",
+      canAddExtra: "يمكن إضافة المزيد",
+      extraQuantityLimit: "حد الكمية الإضافية",
+      extraCost: "تكلفة الإضافة",
+      addIngredient: "إضافة مكون",
     },
     // Item Pricing
     itemPricing: {
@@ -249,6 +337,8 @@ export const translations = {
       priceMatrix: "مصفوفة الأسعار",
       bulkEdit: "تعديل جماعي",
       differsFromBase: "يختلف عن التكلفة الأساسية",
+      saveAll: "حفظ الكل",
+      noItems: "لا توجد أصناف أو قنوات. أنشئ الأصناف وقنوات البيع أولاً.",
     },
     // Dashboard
     dashboard: {
@@ -269,6 +359,7 @@ export const translations = {
       ingredients: "اجزاء",
       items: "اشیاء",
       itemPricing: "اشیاء کی قیمتیں",
+      itemIngredients: "اشیاء کے اجزاء",
       settings: "سیٹنگز",
     },
     // Common
@@ -297,6 +388,15 @@ export const translations = {
       noData: "کوئی ڈیٹا دستیاب نہیں",
       selectBranch: "شاخ منتخب کریں",
       allBranches: "تمام شاخیں",
+      activate: "فعال کریں",
+      deactivate: "غیر فعال کریں",
+      type: "قسم",
+      code: "کوڈ",
+      saveChanges: "تبدیلیاں محفوظ کریں",
+      selectItem: "شے منتخب کریں",
+      selectIngredient: "جزو منتخب کریں",
+      addRow: "قطار شامل کریں",
+      remove: "ہٹائیں",
     },
     // Auth
     auth: {
@@ -324,10 +424,16 @@ export const translations = {
       arabic: "العربية",
       urdu: "اردو",
     },
+    // Settings
+    settings: {
+      languageDescription: "اپنی پسندیدہ زبان منتخب کریں۔ انٹرفیس خود بخود اپڈیٹ ہو جائے گا۔",
+    },
     // Sales Channels
     salesChannels: {
       title: "سیلز چینلز",
       addChannel: "چینل شامل کریں",
+      editChannel: "چینل میں ترمیم",
+      deleteChannel: "چینل حذف کریں",
       channelName: "چینل کا نام",
       icon: "آئیکن",
       inStore: "اسٹور میں",
@@ -335,11 +441,15 @@ export const translations = {
       swiggy: "سویگی",
       uberEats: "اوبر ایٹس",
       online: "آن لائن",
+      code: "کوڈ",
+      confirmDelete: "کیا آپ واقعی اس چینل کو حذف کرنا چاہتے ہیں؟",
+      noChannels: "کوئی سیلز چینل نہیں ملا۔ شروع کرنے کے لیے اپنا پہلا چینل شامل کریں۔",
     },
     // Ingredients
     ingredients: {
       title: "اجزاء",
       addIngredient: "جزو شامل کریں",
+      editIngredient: "جزو میں ترمیم",
       ingredientName: "جزو کا نام",
       unitType: "اکائی کی قسم",
       costPerUnit: "فی اکائی لاگت",
@@ -349,6 +459,12 @@ export const translations = {
       canAddAsExtra: "اضافی کے طور پر شامل ہو سکتا ہے",
       extraCost: "اضافی لاگت",
       lowStock: "کم اسٹاک",
+      type: "قسم",
+      liquid: "مائع",
+      solid: "ٹھوس",
+      baseUnit: "بنیادی اکائی",
+      sellingPrice: "فروخت کی قیمت",
+      noIngredients: "کوئی اجزاء نہیں ملے۔ شروع کرنے کے لیے اپنا پہلا جزو شامل کریں۔",
       units: {
         kg: "کلوگرام",
         g: "گرام",
@@ -361,6 +477,7 @@ export const translations = {
     items: {
       title: "اشیاء",
       addItem: "شے شامل کریں",
+      editItem: "شے میں ترمیم",
       itemName: "شے کا نام",
       itemType: "شے کی قسم",
       edible: "کھانے کے قابل",
@@ -373,6 +490,22 @@ export const translations = {
       canRemove: "ہٹا سکتے ہیں",
       canAddExtra: "مزید شامل کر سکتے ہیں",
       maxExtra: "زیادہ سے زیادہ اضافی مقدار",
+      isCombo: "کومبو",
+      noItems: "کوئی اشیاء نہیں ملیں۔ شروع کرنے کے لیے اپنی پہلی شے شامل کریں۔",
+      uploadImage: "تصویر اپ لوڈ کریں",
+    },
+    // Item Ingredients Mapping
+    itemIngredients: {
+      title: "اشیاء اور اجزاء کی نقشہ بندی",
+      selectItem: "شے منتخب کریں",
+      noItemSelected: "براہ کرم اس کے اجزاء کا انتظام کرنے کے لیے ایک شے منتخب کریں۔",
+      noMappings: "اس شے سے کوئی اجزاء منسلک نہیں ہیں۔ نیچے اجزاء شامل کریں۔",
+      quantityUsed: "استعمال شدہ مقدار",
+      canRemove: "ہٹا سکتے ہیں",
+      canAddExtra: "مزید شامل کر سکتے ہیں",
+      extraQuantityLimit: "اضافی مقدار کی حد",
+      extraCost: "اضافی لاگت",
+      addIngredient: "جزو شامل کریں",
     },
     // Item Pricing
     itemPricing: {
@@ -380,6 +513,8 @@ export const translations = {
       priceMatrix: "قیمت میٹرکس",
       bulkEdit: "بلک ترمیم",
       differsFromBase: "بنیادی لاگت سے مختلف",
+      saveAll: "سب محفوظ کریں",
+      noItems: "کوئی اشیاء یا چینلز نہیں ملے۔ پہلے اشیاء اور سیلز چینلز بنائیں۔",
     },
     // Dashboard
     dashboard: {

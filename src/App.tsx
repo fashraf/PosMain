@@ -8,6 +8,7 @@ import Dashboard from "@/pages/Dashboard";
 import SalesChannels from "@/pages/SalesChannels";
 import Ingredients from "@/pages/Ingredients";
 import Items from "@/pages/Items";
+import ItemIngredientMapping from "@/pages/ItemIngredientMapping";
 import ItemPricing from "@/pages/ItemPricing";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/sales-channels" element={<SalesChannels />} />
             <Route path="/ingredients" element={<Ingredients />} />
             <Route path="/items" element={<Items />} />
+            <Route path="/item-ingredients" element={<ItemIngredientMapping />} />
             <Route path="/item-pricing" element={<ItemPricing />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
