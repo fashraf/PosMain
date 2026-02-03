@@ -13,10 +13,12 @@ import {
   RemoveConfirmModal,
   SaveSummaryModal,
   DuplicateSaveWarningModal,
+  ReplacementModal,
   type IngredientMappingItem,
   type SubItemMappingItem,
   type AvailableIngredient,
   type AvailableItem,
+  type ReplacementItem,
 } from "@/components/item-mapping";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -50,6 +52,9 @@ const mockAvailableItems: AvailableItem[] = [
   { id: "2", name_en: "Chicken Burger", name_ar: "برجر دجاج", name_ur: "چکن برگر", base_cost: 8.99, is_combo: false },
   { id: "4", name_en: "Soft Drink", name_ar: "مشروب غازي", name_ur: "سافٹ ڈرنک", base_cost: 2.50, is_combo: false },
   { id: "5", name_en: "French Fries", name_ar: "بطاطس مقلية", name_ur: "فرنچ فرائز", base_cost: 3.99, is_combo: false },
+  { id: "6", name_en: "Cola", name_ar: "كولا", name_ur: "کولا", base_cost: 2.00, is_combo: false },
+  { id: "7", name_en: "Sprite", name_ar: "سبرايت", name_ur: "سپرائٹ", base_cost: 2.00, is_combo: false },
+  { id: "8", name_en: "Fanta", name_ar: "فانتا", name_ur: "فانٹا", base_cost: 2.00, is_combo: false },
 ];
 
 // Initial mappings per item
@@ -68,9 +73,22 @@ const initialIngredientMappings: Record<string, IngredientMappingItem[]> = {
 
 const initialSubItemMappings: Record<string, SubItemMappingItem[]> = {
   "3": [
-    { id: "s1", sub_item_id: "1", sub_item_name: "Margherita Pizza", quantity: 2, unit_price: 12.99, sort_order: 1 },
-    { id: "s2", sub_item_id: "2", sub_item_name: "Chicken Burger", quantity: 4, unit_price: 8.99, sort_order: 2 },
-    { id: "s3", sub_item_id: "4", sub_item_name: "Soft Drink", quantity: 6, unit_price: 2.50, sort_order: 3 },
+    { id: "s1", sub_item_id: "1", sub_item_name: "Margherita Pizza", quantity: 2, unit_price: 12.99, sort_order: 1, combo_price: 0, replacements: [] },
+    { id: "s2", sub_item_id: "2", sub_item_name: "Chicken Burger", quantity: 4, unit_price: 8.99, sort_order: 2, combo_price: 0, replacements: [] },
+    { 
+      id: "s3", 
+      sub_item_id: "4", 
+      sub_item_name: "Soft Drink", 
+      quantity: 6, 
+      unit_price: 2.50, 
+      sort_order: 3, 
+      combo_price: 0,
+      replacements: [
+        { id: "rep1", item_id: "6", item_name: "Cola", extra_cost: 0, is_default: true },
+        { id: "rep2", item_id: "7", item_name: "Sprite", extra_cost: 1.00, is_default: false },
+        { id: "rep3", item_id: "8", item_name: "Fanta", extra_cost: 1.00, is_default: false },
+      ]
+    },
   ],
 };
 
@@ -99,6 +117,13 @@ export default function ItemIngredientMappingEdit() {
     name: string;
     type: "ingredient" | "item";
   } | null>(null);
+
+  // Replacement modal state
+  const [replacementModalState, setReplacementModalState] = useState<{
+    open: boolean;
+    mappingId: string;
+    parentName: string;
+  }>({ open: false, mappingId: "", parentName: "" });
 
   const getLocalizedName = (obj: { name_en: string; name_ar: string; name_ur: string }) => {
     const key = `name_${currentLanguage}` as keyof typeof obj;
@@ -133,6 +158,8 @@ export default function ItemIngredientMappingEdit() {
       quantity,
       unit_price: subItem.base_cost,
       sort_order: subItemMappings.length + 1,
+      combo_price: 0,
+      replacements: [],
     };
     setSubItemMappings([...subItemMappings, newMapping]);
   };
@@ -174,6 +201,55 @@ export default function ItemIngredientMappingEdit() {
     );
   };
 
+  // Replacement handlers
+  const handleOpenReplacementModal = (mappingId: string) => {
+    const mapping = subItemMappings.find((m) => m.id === mappingId);
+    if (mapping) {
+      setReplacementModalState({
+        open: true,
+        mappingId,
+        parentName: mapping.sub_item_name,
+      });
+    }
+  };
+
+  const handleReplacementsChange = (replacements: ReplacementItem[]) => {
+    setSubItemMappings(
+      subItemMappings.map((m) =>
+        m.id === replacementModalState.mappingId
+          ? { ...m, replacements }
+          : m
+      )
+    );
+  };
+
+  const handleRemoveReplacement = (mappingId: string, replacementId: string) => {
+    setSubItemMappings(
+      subItemMappings.map((m) => {
+        if (m.id === mappingId && m.replacements) {
+          const filtered = m.replacements.filter((r) => r.id !== replacementId);
+          // If we removed the default, make the first one default
+          if (filtered.length > 0 && !filtered.some((r) => r.is_default)) {
+            filtered[0].is_default = true;
+          }
+          return { ...m, replacements: filtered };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handleViewReplacement = (mappingId: string, _replacementId: string) => {
+    // Open the replacement modal for editing
+    handleOpenReplacementModal(mappingId);
+  };
+
+  // Get current replacements for modal
+  const currentReplacements = useMemo(() => {
+    const mapping = subItemMappings.find((m) => m.id === replacementModalState.mappingId);
+    return mapping?.replacements || [];
+  }, [subItemMappings, replacementModalState.mappingId]);
+
   // Cost calculations
   const totalIngredientCost = useMemo(() => {
     return ingredientMappings.reduce((sum, m) => {
@@ -184,6 +260,14 @@ export default function ItemIngredientMappingEdit() {
 
   const totalSubItemCost = useMemo(() => {
     return subItemMappings.reduce((sum, m) => sum + m.quantity * m.unit_price, 0);
+  }, [subItemMappings]);
+
+  const totalComboPrice = useMemo(() => {
+    return subItemMappings.reduce((sum, m) => sum + (m.combo_price || 0), 0);
+  }, [subItemMappings]);
+
+  const totalReplacements = useMemo(() => {
+    return subItemMappings.reduce((sum, m) => sum + (m.replacements?.length || 0), 0);
   }, [subItemMappings]);
 
   const baseCost = totalIngredientCost + totalSubItemCost;
@@ -341,7 +425,11 @@ export default function ItemIngredientMappingEdit() {
               if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
             }}
             onAdd={() => setShowAddItemModal(true)}
+            onReplacement={handleOpenReplacementModal}
+            onRemoveReplacement={handleRemoveReplacement}
+            onViewReplacement={handleViewReplacement}
             totalCost={totalSubItemCost}
+            totalComboPrice={totalComboPrice}
             isCombo={item.is_combo}
           />
         </div>
@@ -367,6 +455,17 @@ export default function ItemIngredientMappingEdit() {
         currentLanguage={currentLanguage}
       />
 
+      <ReplacementModal
+        open={replacementModalState.open}
+        onOpenChange={(open) => setReplacementModalState({ ...replacementModalState, open })}
+        parentItemName={replacementModalState.parentName}
+        parentItemId={replacementModalState.mappingId}
+        replacements={currentReplacements}
+        onReplacementsChange={handleReplacementsChange}
+        availableItems={mockAvailableItems}
+        currentLanguage={currentLanguage}
+      />
+
       <RemoveConfirmModal
         open={!!removeConfirm}
         onOpenChange={() => setRemoveConfirm(null)}
@@ -387,6 +486,9 @@ export default function ItemIngredientMappingEdit() {
         comboPrice={comboPrice}
         sellingPrice={sellingPrice}
         profit={profit}
+        ingredientMappings={ingredientMappings}
+        itemMappings={subItemMappings}
+        totalReplacements={totalReplacements}
       />
 
       <DuplicateSaveWarningModal
