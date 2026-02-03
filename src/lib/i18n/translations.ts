@@ -584,6 +584,19 @@ export const translations = {
       activeChannels: "Active Channels",
       lowStockAlerts: "Low Stock Alerts",
     },
+    // Grid
+    grid: {
+      showingOf: "Showing {{start}}-{{end}} of {{total}}",
+      noResults: "No results found",
+      clearFilters: "Clear filters",
+      allStatuses: "All Statuses",
+      allTypes: "All Types",
+      searchPlaceholder: "Search...",
+      sortAsc: "Sort ascending",
+      sortDesc: "Sort descending",
+      expand: "Expand",
+      collapse: "Collapse",
+    },
   },
   ar: {
     // Navigation

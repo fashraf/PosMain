@@ -194,4 +194,59 @@
   .density-table tbody tr:hover td {
     background: hsl(var(--accent));
   }
+
+  /* Premium Grid System */
+  .premium-grid {
+    @apply border border-[#E5E7EB] rounded-md overflow-hidden;
+  }
+  
+  .premium-grid-header {
+    @apply sticky top-0 z-10 bg-[#F9FAFB] border-b border-[#E5E7EB];
+  }
+  
+  .premium-grid-row {
+    @apply h-[42px] border-b border-[#E5E7EB];
+    @apply even:bg-[#F9FAFB] odd:bg-white;
+    @apply hover:bg-[#F3F0FF] transition-colors;
+  }
+  
+  .premium-grid-cell {
+    @apply px-3 py-2 align-middle text-[14px];
+  }
+  
+  .premium-grid-cell-number {
+    @apply text-right font-medium tabular-nums;
+  }
+  
+  .premium-grid-cell-serial {
+    @apply text-center text-[#6B7280] text-[13px];
+  }
+
+  /* Sortable column header */
+  .sortable-header {
+    @apply cursor-pointer select-none;
+    @apply hover:text-[#8B5CF6];
+  }
+  
+  .sortable-header.active {
+    @apply text-[#8B5CF6];
+  }
+
+  /* Action icon button */
+  .grid-action-btn {
+    @apply w-6 h-6 inline-flex items-center justify-center rounded;
+    @apply hover:bg-[#F3F0FF] transition-colors;
+  }
+  
+  .grid-action-btn svg {
+    @apply text-[#6B7280];
+  }
+  
+  .grid-action-btn:hover svg {
+    @apply text-[#8B5CF6];
+  }
+  
+  .grid-action-btn.danger:hover svg {
+    @apply text-[#EF4444];
+  }
 }
