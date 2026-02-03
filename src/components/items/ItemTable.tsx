@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge, YesNoBadge, TypeBadge } from "@/components/shared/StatusBadge";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Edit, ImageIcon } from "lucide-react";
+import { Edit, ImageIcon, Eye } from "lucide-react";
 
 export interface Item {
   id: string;
@@ -31,9 +31,10 @@ interface ItemTableProps {
   items: Item[];
   onEdit: (item: Item) => void;
   onToggleStatus: (item: Item) => void;
+  onView?: (item: Item) => void;
 }
 
-export function ItemTable({ items, onEdit, onToggleStatus }: ItemTableProps) {
+export function ItemTable({ items, onEdit, onToggleStatus, onView }: ItemTableProps) {
   const { t, currentLanguage } = useLanguage();
 
   const getLocalizedName = (item: Item) => {
@@ -92,7 +93,12 @@ export function ItemTable({ items, onEdit, onToggleStatus }: ItemTableProps) {
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end gap-1">
+                  {onView && (
+                    <Button variant="ghost" size="icon" onClick={() => onView(item)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
                     <Edit className="h-4 w-4" />
                   </Button>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,103 +12,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IngredientTable, type Ingredient } from "@/components/ingredients/IngredientTable";
-import { IngredientDialog } from "@/components/ingredients/IngredientDialog";
+import { ViewDetailsModal } from "@/components/shared/ViewDetailsModal";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { StatusBadge, YesNoBadge } from "@/components/shared/StatusBadge";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Search, Package } from "lucide-react";
+import { Plus, Search, Package, Scale, DollarSign, AlertTriangle } from "lucide-react";
 
 // Mock data
 const initialIngredients: Ingredient[] = [
-  {
-    id: "1",
-    name_en: "Tomato",
-    name_ar: "طماطم",
-    name_ur: "ٹماٹر",
-    type: "solid",
-    base_unit: "kg",
-    current_quantity: 50,
-    alert_threshold: 10,
-    cost_price: 2.50,
-    selling_price: null,
-    can_sell_individually: false,
-    can_add_extra: true,
-    extra_cost: 0.50,
-    is_active: true,
-  },
-  {
-    id: "2",
-    name_en: "Olive Oil",
-    name_ar: "زيت زيتون",
-    name_ur: "زیتون کا تیل",
-    type: "liquid",
-    base_unit: "liters",
-    current_quantity: 5,
-    alert_threshold: 3,
-    cost_price: 15.00,
-    selling_price: null,
-    can_sell_individually: false,
-    can_add_extra: false,
-    extra_cost: null,
-    is_active: true,
-  },
-  {
-    id: "3",
-    name_en: "Chicken Breast",
-    name_ar: "صدر دجاج",
-    name_ur: "چکن بریسٹ",
-    type: "solid",
-    base_unit: "kg",
-    current_quantity: 8,
-    alert_threshold: 10,
-    cost_price: 8.00,
-    selling_price: null,
-    can_sell_individually: false,
-    can_add_extra: true,
-    extra_cost: 2.00,
-    is_active: true,
-  },
-  {
-    id: "4",
-    name_en: "Cheese",
-    name_ar: "جبنة",
-    name_ur: "پنیر",
-    type: "solid",
-    base_unit: "kg",
-    current_quantity: 15,
-    alert_threshold: 5,
-    cost_price: 12.00,
-    selling_price: 15.00,
-    can_sell_individually: true,
-    can_add_extra: true,
-    extra_cost: 1.50,
-    is_active: true,
-  },
-  {
-    id: "5",
-    name_en: "Milk",
-    name_ar: "حليب",
-    name_ur: "دودھ",
-    type: "liquid",
-    base_unit: "liters",
-    current_quantity: 20,
-    alert_threshold: 10,
-    cost_price: 1.50,
-    selling_price: null,
-    can_sell_individually: false,
-    can_add_extra: false,
-    extra_cost: null,
-    is_active: true,
-  },
+  { id: "1", name_en: "Tomato", name_ar: "طماطم", name_ur: "ٹماٹر", type: "solid", base_unit: "kg", current_quantity: 50, alert_threshold: 10, cost_price: 2.50, selling_price: null, can_sell_individually: false, can_add_extra: true, extra_cost: 0.50, is_active: true },
+  { id: "2", name_en: "Olive Oil", name_ar: "زيت زيتون", name_ur: "زیتون کا تیل", type: "liquid", base_unit: "liters", current_quantity: 5, alert_threshold: 3, cost_price: 15.00, selling_price: null, can_sell_individually: false, can_add_extra: false, extra_cost: null, is_active: true },
+  { id: "3", name_en: "Chicken Breast", name_ar: "صدر دجاج", name_ur: "چکن بریسٹ", type: "solid", base_unit: "kg", current_quantity: 8, alert_threshold: 10, cost_price: 8.00, selling_price: null, can_sell_individually: false, can_add_extra: true, extra_cost: 2.00, is_active: true },
+  { id: "4", name_en: "Cheese", name_ar: "جبنة", name_ur: "پنیر", type: "solid", base_unit: "kg", current_quantity: 15, alert_threshold: 5, cost_price: 12.00, selling_price: 15.00, can_sell_individually: true, can_add_extra: true, extra_cost: 1.50, is_active: true },
+  { id: "5", name_en: "Milk", name_ar: "حليب", name_ur: "دودھ", type: "liquid", base_unit: "liters", current_quantity: 20, alert_threshold: 10, cost_price: 1.50, selling_price: null, can_sell_individually: false, can_add_extra: false, extra_cost: null, is_active: true },
 ];
 
 export default function Ingredients() {
   const { t, currentLanguage } = useLanguage();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+  const [viewingIngredient, setViewingIngredient] = useState<Ingredient | null>(null);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,11 +44,15 @@ export default function Ingredients() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const getLocalizedName = (ingredient: Ingredient) => {
+    const nameKey = `name_${currentLanguage}` as keyof Ingredient;
+    return (ingredient[nameKey] as string) || ingredient.name_en;
+  };
+
   // Filter ingredients
   const filteredIngredients = useMemo(() => {
     return ingredients.filter((ingredient) => {
-      const nameKey = `name_${currentLanguage}` as keyof Ingredient;
-      const name = (ingredient[nameKey] as string) || ingredient.name_en;
+      const name = getLocalizedName(ingredient);
       const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = typeFilter === "all" || ingredient.type === typeFilter;
       return matchesSearch && matchesType;
@@ -137,13 +68,11 @@ export default function Ingredients() {
   const totalPages = Math.ceil(filteredIngredients.length / pageSize);
 
   const handleAddIngredient = () => {
-    setEditingIngredient(null);
-    setDialogOpen(true);
+    navigate("/ingredients/add");
   };
 
   const handleEditIngredient = (ingredient: Ingredient) => {
-    setEditingIngredient(ingredient);
-    setDialogOpen(true);
+    navigate(`/ingredients/${ingredient.id}/edit`);
   };
 
   const handleToggleStatus = (ingredient: Ingredient) => {
@@ -158,29 +87,47 @@ export default function Ingredients() {
     });
   };
 
-  const handleSaveIngredient = (ingredientData: Omit<Ingredient, "id"> & { id?: string }) => {
-    if (ingredientData.id) {
-      setIngredients((prev) =>
-        prev.map((i) =>
-          i.id === ingredientData.id ? { ...i, ...ingredientData } as Ingredient : i
-        )
-      );
-      toast({
-        title: t("ingredients.editIngredient"),
-        description: `${ingredientData.name_en} has been updated.`,
-      });
-    } else {
-      const newIngredient: Ingredient = {
-        ...ingredientData,
-        id: Date.now().toString(),
-      };
-      setIngredients((prev) => [...prev, newIngredient]);
-      toast({
-        title: t("ingredients.addIngredient"),
-        description: `${ingredientData.name_en} has been added.`,
-      });
-    }
+  const handleViewIngredient = (ingredient: Ingredient) => {
+    setViewingIngredient(ingredient);
   };
+
+  const isLowStock = (ingredient: Ingredient) => ingredient.current_quantity <= ingredient.alert_threshold;
+
+  const getViewSections = (ingredient: Ingredient) => [
+    {
+      title: t("branches.basicInfo"),
+      fields: [
+        { label: t("common.name") + " (EN)", value: ingredient.name_en, icon: Package },
+        { label: t("common.name") + " (AR)", value: ingredient.name_ar },
+        { label: t("common.name") + " (UR)", value: ingredient.name_ur },
+        { label: t("ingredients.type"), value: ingredient.type === "liquid" ? t("ingredients.liquid") : t("ingredients.solid"), icon: Scale },
+        { label: t("ingredients.baseUnit"), value: ingredient.base_unit },
+        { label: t("common.status"), value: <StatusBadge isActive={ingredient.is_active} /> },
+      ],
+    },
+    {
+      title: t("ingredients.currentStock"),
+      fields: [
+        { label: t("ingredients.currentStock"), value: <span className={isLowStock(ingredient) ? "text-warning font-medium" : ""}>{ingredient.current_quantity} {ingredient.base_unit}</span>, icon: isLowStock(ingredient) ? AlertTriangle : Package },
+        { label: t("ingredients.alertThreshold"), value: `${ingredient.alert_threshold} ${ingredient.base_unit}` },
+      ],
+    },
+    {
+      title: t("common.price"),
+      fields: [
+        { label: t("ingredients.costPerUnit"), value: `$${ingredient.cost_price.toFixed(2)}`, icon: DollarSign },
+        { label: t("ingredients.sellingPrice"), value: ingredient.selling_price ? `$${ingredient.selling_price.toFixed(2)}` : "-" },
+      ],
+    },
+    {
+      title: t("ingredients.canAddAsExtra"),
+      fields: [
+        { label: t("ingredients.canSellIndividually"), value: <YesNoBadge value={ingredient.can_sell_individually} /> },
+        { label: t("ingredients.canAddAsExtra"), value: <YesNoBadge value={ingredient.can_add_extra} /> },
+        { label: t("ingredients.extraCost"), value: ingredient.extra_cost ? `$${ingredient.extra_cost.toFixed(2)}` : "-" },
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -255,6 +202,7 @@ export default function Ingredients() {
                 ingredients={paginatedIngredients}
                 onEdit={handleEditIngredient}
                 onToggleStatus={handleToggleStatus}
+                onView={handleViewIngredient}
               />
               {totalPages > 1 && (
                 <DataTablePagination
@@ -274,12 +222,14 @@ export default function Ingredients() {
         </CardContent>
       </Card>
 
-      <IngredientDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        ingredient={editingIngredient}
-        onSave={handleSaveIngredient}
-      />
+      {viewingIngredient && (
+        <ViewDetailsModal
+          open={!!viewingIngredient}
+          onOpenChange={() => setViewingIngredient(null)}
+          title={getLocalizedName(viewingIngredient)}
+          sections={getViewSections(viewingIngredient)}
+        />
+      )}
     </div>
   );
 }

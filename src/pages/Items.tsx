@@ -1,100 +1,57 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ItemTable, type Item } from "@/components/items/ItemTable";
-import { ItemDialog } from "@/components/items/ItemDialog";
+import { ViewDetailsModal } from "@/components/shared/ViewDetailsModal";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { StatusBadge, YesNoBadge, TypeBadge } from "@/components/shared/StatusBadge";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, Search, ShoppingBag } from "lucide-react";
+import { Plus, Search, ShoppingBag, DollarSign, Image } from "lucide-react";
 
 // Mock data
 const initialItems: Item[] = [
-  {
-    id: "1",
-    name_en: "Margherita Pizza",
-    name_ar: "بيتزا مارغريتا",
-    name_ur: "مارگریٹا پیزا",
-    description_en: "Classic pizza with tomato and mozzarella",
-    description_ar: "بيتزا كلاسيكية مع الطماطم والموزاريلا",
-    description_ur: "ٹماٹر اور موزاریلا کے ساتھ کلاسک پیزا",
-    item_type: "edible",
-    base_cost: 12.99,
-    is_combo: false,
-    image_url: null,
-    is_active: true,
-  },
-  {
-    id: "2",
-    name_en: "Chicken Burger",
-    name_ar: "برجر دجاج",
-    name_ur: "چکن برگر",
-    description_en: "Juicy chicken patty with fresh vegetables",
-    description_ar: "قطعة دجاج عصيرية مع خضروات طازجة",
-    description_ur: "تازہ سبزیوں کے ساتھ رسیلی چکن پیٹی",
-    item_type: "edible",
-    base_cost: 8.99,
-    is_combo: false,
-    image_url: null,
-    is_active: true,
-  },
-  {
-    id: "3",
-    name_en: "Family Meal Combo",
-    name_ar: "كومبو وجبة عائلية",
-    name_ur: "فیملی میل کومبو",
-    description_en: "2 pizzas, 4 burgers, and drinks",
-    description_ar: "2 بيتزا، 4 برجر، ومشروبات",
-    description_ur: "2 پیزا، 4 برگر، اور مشروبات",
-    item_type: "edible",
-    base_cost: 45.99,
-    is_combo: true,
-    image_url: null,
-    is_active: true,
-  },
-  {
-    id: "4",
-    name_en: "Paper Napkins",
-    name_ar: "مناديل ورقية",
-    name_ur: "کاغذی نیپکن",
-    description_en: "Pack of 100 napkins",
-    description_ar: "عبوة من 100 منديل",
-    description_ur: "100 نیپکن کا پیک",
-    item_type: "non_edible",
-    base_cost: 2.99,
-    is_combo: false,
-    image_url: null,
-    is_active: true,
-  },
+  { id: "1", name_en: "Margherita Pizza", name_ar: "بيتزا مارغريتا", name_ur: "مارگریٹا پیزا", description_en: "Classic pizza with tomato and mozzarella", description_ar: "بيتزا كلاسيكية مع الطماطم والموزاريلا", description_ur: "ٹماٹر اور موزاریلا کے ساتھ کلاسک پیزا", item_type: "edible", base_cost: 12.99, is_combo: false, image_url: null, is_active: true },
+  { id: "2", name_en: "Chicken Burger", name_ar: "برجر دجاج", name_ur: "چکن برگر", description_en: "Juicy chicken patty with fresh vegetables", description_ar: "قطعة دجاج عصيرية مع خضروات طازجة", description_ur: "تازہ سبزیوں کے ساتھ رسیلی چکن پیٹی", item_type: "edible", base_cost: 8.99, is_combo: false, image_url: null, is_active: true },
+  { id: "3", name_en: "Family Meal Combo", name_ar: "كومبو وجبة عائلية", name_ur: "فیملی میل کومبو", description_en: "2 pizzas, 4 burgers, and drinks", description_ar: "2 بيتزا، 4 برجر، ومشروبات", description_ur: "2 پیزا، 4 برگر، اور مشروبات", item_type: "edible", base_cost: 45.99, is_combo: true, image_url: null, is_active: true },
+  { id: "4", name_en: "Paper Napkins", name_ar: "مناديل ورقية", name_ur: "کاغذی نیپکن", description_en: "Pack of 100 napkins", description_ar: "عبوة من 100 منديل", description_ur: "100 نیپکن کا پیک", item_type: "non_edible", base_cost: 2.99, is_combo: false, image_url: null, is_active: true },
 ];
 
 export default function Items() {
   const { t, currentLanguage } = useLanguage();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const [items, setItems] = useState<Item[]>(initialItems);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [viewingItem, setViewingItem] = useState<Item | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const getLocalizedName = (item: Item) => {
+    const nameKey = `name_${currentLanguage}` as keyof Item;
+    return (item[nameKey] as string) || item.name_en;
+  };
+
+  const getLocalizedDescription = (item: Item) => {
+    const descKey = `description_${currentLanguage}` as keyof Item;
+    return (item[descKey] as string) || item.description_en || "";
+  };
 
   // Filter items
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const nameKey = `name_${currentLanguage}` as keyof Item;
-      const name = (item[nameKey] as string) || item.name_en;
+      const name = getLocalizedName(item);
       return name.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [items, searchQuery, currentLanguage]);
 
   const handleAddItem = () => {
-    setEditingItem(null);
-    setDialogOpen(true);
+    navigate("/items/add");
   };
 
   const handleEditItem = (item: Item) => {
-    setEditingItem(item);
-    setDialogOpen(true);
+    navigate(`/items/${item.id}/edit`);
   };
 
   const handleToggleStatus = (item: Item) => {
@@ -107,27 +64,35 @@ export default function Items() {
     });
   };
 
-  const handleSaveItem = (itemData: Omit<Item, "id"> & { id?: string }) => {
-    if (itemData.id) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === itemData.id ? { ...i, ...itemData } as Item : i))
-      );
-      toast({
-        title: t("items.editItem"),
-        description: `${itemData.name_en} has been updated.`,
-      });
-    } else {
-      const newItem: Item = {
-        ...itemData,
-        id: Date.now().toString(),
-      };
-      setItems((prev) => [...prev, newItem]);
-      toast({
-        title: t("items.addItem"),
-        description: `${itemData.name_en} has been added.`,
-      });
-    }
+  const handleViewItem = (item: Item) => {
+    setViewingItem(item);
   };
+
+  const getViewSections = (item: Item) => [
+    {
+      title: t("branches.basicInfo"),
+      fields: [
+        { label: t("common.name") + " (EN)", value: item.name_en, icon: ShoppingBag },
+        { label: t("common.name") + " (AR)", value: item.name_ar },
+        { label: t("common.name") + " (UR)", value: item.name_ur },
+        { label: t("common.description"), value: getLocalizedDescription(item) || "-" },
+        { label: t("common.status"), value: <StatusBadge isActive={item.is_active} /> },
+      ],
+    },
+    {
+      title: t("items.itemType"),
+      fields: [
+        { label: t("items.itemType"), value: <TypeBadge type={item.item_type === "edible" ? t("items.edible") : t("items.nonEdible")} variant={item.item_type === "edible" ? "default" : "secondary"} /> },
+        { label: t("items.isCombo"), value: <YesNoBadge value={item.is_combo} /> },
+      ],
+    },
+    {
+      title: t("common.price"),
+      fields: [
+        { label: t("items.baseCost"), value: `$${item.base_cost.toFixed(2)}`, icon: DollarSign },
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -176,17 +141,20 @@ export default function Items() {
               items={filteredItems}
               onEdit={handleEditItem}
               onToggleStatus={handleToggleStatus}
+              onView={handleViewItem}
             />
           )}
         </CardContent>
       </Card>
 
-      <ItemDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        item={editingItem}
-        onSave={handleSaveItem}
-      />
+      {viewingItem && (
+        <ViewDetailsModal
+          open={!!viewingItem}
+          onOpenChange={() => setViewingItem(null)}
+          title={getLocalizedName(viewingItem)}
+          sections={getViewSections(viewingItem)}
+        />
+      )}
     </div>
   );
 }
