@@ -1,5 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { Plus, X } from "lucide-react";
+import { Plus, RefreshCw, X } from "lucide-react";
 import { QuantityControl } from "./QuantityControl";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SubItemMappingItem } from "./SubItemMappingList";
@@ -9,6 +9,7 @@ interface ItemTableProps {
   onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onAdd: () => void;
+  onReplacement?: (id: string) => void;
   totalCost: number;
   isCombo: boolean;
 }
@@ -18,6 +19,7 @@ export function ItemTable({
   onQuantityChange,
   onRemove,
   onAdd,
+  onReplacement,
   totalCost,
   isCombo,
 }: ItemTableProps) {
@@ -68,16 +70,17 @@ export function ItemTable({
       <table className="density-table">
         <thead>
           <tr>
-            <th className="w-[45%]">{t("common.name")}</th>
-            <th className="w-[25%] text-center">{t("itemMapping.quantity")}</th>
-            <th className="w-[25%] text-right">{t("common.price")}</th>
+            <th className="w-[40%]">{t("common.name")}</th>
+            <th className="w-[20%] text-center">{t("itemMapping.quantity")}</th>
+            <th className="w-[20%] text-right">{t("common.price")}</th>
+            <th className="w-[15%] text-center">{t("itemMapping.replacement")}</th>
             <th className="w-[5%]"></th>
           </tr>
         </thead>
         <tbody>
           {mappings.length === 0 ? (
             <tr>
-              <td colSpan={4} className="text-center text-muted-foreground py-4">
+              <td colSpan={5} className="text-center text-muted-foreground py-4">
                 {t("itemMapping.noItemsMapped")}
               </td>
             </tr>
@@ -110,6 +113,25 @@ export function ItemTable({
                         <TooltipTrigger asChild>
                           <button
                             type="button"
+                            onClick={() => onReplacement?.(mapping.id)}
+                            className="inline-flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded transition-colors"
+                          >
+                            <RefreshCw size={12} strokeWidth={1.5} />
+                            <span>{t("itemMapping.addReplacement")}</span>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t("itemMapping.addReplacementTooltip")}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </td>
+                  <td className="text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
                             onClick={() => onRemove(mapping.id)}
                             className="p-0.5 text-muted-foreground hover:text-destructive transition-colors"
                           >
@@ -130,7 +152,7 @@ export function ItemTable({
         {mappings.length > 0 && (
           <tfoot>
             <tr>
-              <td colSpan={2} className="text-right font-medium uppercase text-[12px]">
+              <td colSpan={3} className="text-right font-medium uppercase text-[12px]">
                 {t("itemMapping.itemsTotal")}
               </td>
               <td className="text-right font-bold">SAR {totalCost.toFixed(2)}</td>

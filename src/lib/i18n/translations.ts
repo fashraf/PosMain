@@ -524,6 +524,10 @@ export const translations = {
       // Remove Modal
       removeIngredientDescription: "This ingredient will be removed from the mapping.",
       removeItemDescription: "This item will be removed from the mapping.",
+      // Replacement
+      replacement: "Replacement",
+      addReplacement: "Replace",
+      addReplacementTooltip: "Add replacement options for this item",
       // Drag & Drop (kept for reference)
       dragToReorder: "Drag to reorder priority",
       dragToReorderHint: "Drag items to reorder priority. Changes are saved when you click Save.",

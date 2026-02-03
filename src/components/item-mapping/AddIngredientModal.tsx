@@ -70,18 +70,19 @@ export function AddIngredientModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0">
-        <DialogHeader className="p-4 pb-2 border-b border-border">
-          <DialogTitle className="text-[15px]">
+      <DialogContent className="sm:max-w-[480px] p-0 gap-0 rounded-lg overflow-hidden">
+        {/* Clean Header */}
+        <DialogHeader className="px-5 py-4 border-b border-border bg-background">
+          <DialogTitle className="text-base font-semibold">
             {t("itemMapping.addIngredient")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="p-4 space-y-4">
-          {/* Step 1: Select via Dropdown */}
+        <div className="px-5 py-4 space-y-5">
+          {/* Select Ingredient */}
           <div className="space-y-2">
-            <label className="text-[12px] font-medium uppercase text-muted-foreground">
-              Step 1: {t("itemMapping.selectIngredient")}
+            <label className="text-[13px] font-medium text-foreground">
+              {t("itemMapping.selectIngredient")}
             </label>
             <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <PopoverTrigger asChild>
@@ -89,24 +90,28 @@ export function AddIngredientModal({
                   variant="outline"
                   role="combobox"
                   aria-expanded={dropdownOpen}
-                  className="w-full justify-between h-9 text-[13px] font-normal"
+                  className="w-full justify-between h-10 text-[13px] font-normal border-border"
                 >
                   {selectedIngredient ? (
-                    <span className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      {getLocalizedName(selectedIngredient)} - SAR {selectedIngredient.cost_per_unit.toFixed(2)}/{selectedIngredient.unit}
+                    <span className="flex items-center gap-2 text-foreground">
+                      {getLocalizedName(selectedIngredient)}
+                      <span className="text-muted-foreground">
+                        · SAR {selectedIngredient.cost_per_unit.toFixed(2)}/{selectedIngredient.unit}
+                      </span>
                     </span>
                   ) : (
                     <span className="text-muted-foreground">{t("itemMapping.selectIngredient")}...</span>
                   )}
-                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder={t("itemMapping.searchIngredients")} className="h-9" />
+                  <CommandInput placeholder={t("itemMapping.searchIngredients")} className="h-10" />
                   <CommandList className="max-h-[200px]">
-                    <CommandEmpty>{t("common.noData")}</CommandEmpty>
+                    <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
+                      {t("common.noData")}
+                    </CommandEmpty>
                     <CommandGroup>
                       {ingredients.map((ing) => {
                         const isAlreadyMapped = mappedIds.includes(ing.id);
@@ -123,14 +128,14 @@ export function AddIngredientModal({
                               }
                             }}
                             className={cn(
-                              "text-[13px] cursor-pointer",
+                              "text-[13px] cursor-pointer py-2.5",
                               isAlreadyMapped && "opacity-50 cursor-not-allowed"
                             )}
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-4 w-4",
-                                isSelected ? "opacity-100 text-green-500" : "opacity-0"
+                                "mr-2 h-4 w-4 text-primary",
+                                isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="flex-1">{getLocalizedName(ing)} ({ing.unit})</span>
@@ -138,7 +143,7 @@ export function AddIngredientModal({
                               SAR {ing.cost_per_unit.toFixed(2)}/{ing.unit}
                             </span>
                             {isAlreadyMapped && (
-                              <span className="ml-2 text-[11px] bg-muted px-1.5 py-0.5 rounded">
+                              <span className="ml-2 text-[11px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                                 {t("itemMapping.alreadyMapped")}
                               </span>
                             )}
@@ -152,81 +157,83 @@ export function AddIngredientModal({
             </Popover>
           </div>
 
-          {/* Step 2: Preview */}
+          {/* Preview Card */}
           {selectedIngredient && (
-            <div className="space-y-2">
-              <label className="text-[12px] font-medium uppercase text-muted-foreground">
-                Step 2: {t("common.view")}
-              </label>
-              <div className="border border-border rounded-[6px] p-3 bg-muted text-[13px] space-y-1">
-                <div><strong>{t("common.name")}:</strong> {getLocalizedName(selectedIngredient)}</div>
-                <div><strong>{t("common.unit")}:</strong> {selectedIngredient.unit}</div>
-                <div><strong>{t("items.baseCost")}:</strong> SAR {selectedIngredient.cost_per_unit.toFixed(2)}/{selectedIngredient.unit}</div>
-                <div><strong>{t("inventory.currentStock")}:</strong> {selectedIngredient.current_stock} {selectedIngredient.unit}</div>
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+              <div className="text-[12px] font-medium uppercase text-muted-foreground tracking-wide">
+                {t("common.view")}
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+                <div className="text-muted-foreground">{t("common.name")}</div>
+                <div className="font-medium text-foreground">{getLocalizedName(selectedIngredient)}</div>
+                <div className="text-muted-foreground">{t("common.unit")}</div>
+                <div className="font-medium text-foreground">{selectedIngredient.unit}</div>
+                <div className="text-muted-foreground">{t("items.baseCost")}</div>
+                <div className="font-medium text-foreground">SAR {selectedIngredient.cost_per_unit.toFixed(2)}/{selectedIngredient.unit}</div>
+                <div className="text-muted-foreground">{t("inventory.currentStock")}</div>
+                <div className="font-medium text-foreground">{selectedIngredient.current_stock} {selectedIngredient.unit}</div>
               </div>
             </div>
           )}
 
-          {/* Step 3: Configure */}
+          {/* Configure Inputs */}
           {selectedIngredient && (
-            <div className="space-y-2">
-              <label className="text-[12px] font-medium uppercase text-muted-foreground">
-                Step 3: Configure
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[12px] text-muted-foreground">
-                    {t("itemMapping.quantity")}
-                  </label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => setQuantity(Math.max(0.01, parseFloat(e.target.value) || 0.01))}
-                      min={0.01}
-                      step={0.01}
-                      className="h-8 text-[13px]"
-                    />
-                    <span className="text-[13px] text-muted-foreground">
-                      {selectedIngredient.unit}
-                    </span>
-                  </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[13px] font-medium text-foreground">
+                  {t("itemMapping.quantity")}
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(0.01, parseFloat(e.target.value) || 0.01))}
+                    min={0.01}
+                    step={0.01}
+                    className="h-10 text-[13px]"
+                  />
+                  <span className="text-[13px] text-muted-foreground whitespace-nowrap">
+                    {selectedIngredient.unit}
+                  </span>
                 </div>
-                <div>
-                  <label className="text-[12px] text-muted-foreground">
-                    {t("itemMapping.extraCost")} ({t("common.optional")})
-                  </label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[13px] text-muted-foreground">SAR</span>
-                    <Input
-                      type="number"
-                      value={extraCost}
-                      onChange={(e) => setExtraCost(Math.max(0, parseFloat(e.target.value) || 0))}
-                      min={0}
-                      step={0.01}
-                      className="h-8 text-[13px]"
-                    />
-                  </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[13px] font-medium text-foreground">
+                  {t("itemMapping.extraCost")}
+                  <span className="font-normal text-muted-foreground ml-1">({t("common.optional")})</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] text-muted-foreground">SAR</span>
+                  <Input
+                    type="number"
+                    value={extraCost}
+                    onChange={(e) => setExtraCost(Math.max(0, parseFloat(e.target.value) || 0))}
+                    min={0}
+                    step={0.01}
+                    className={cn(
+                      "h-10 text-[13px]",
+                      extraCost > 0 && "bg-green-50 border-green-200"
+                    )}
+                  />
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <DialogFooter className="p-4 pt-0 border-t border-border gap-2">
+        {/* Footer */}
+        <DialogFooter className="px-5 py-4 border-t border-border bg-muted/30 gap-3">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
             onClick={handleClose}
-            className="h-8 text-[13px]"
+            className="h-10 px-5 text-[13px]"
           >
             {t("common.cancel")}
           </Button>
           <Button
-            size="sm"
             onClick={handleConfirm}
             disabled={!selectedIngredient}
-            className="h-8 text-[13px]"
+            className="h-10 px-5 text-[13px] bg-primary hover:bg-primary/90"
           >
             {t("common.confirm")}
           </Button>
