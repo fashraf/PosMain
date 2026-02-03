@@ -9,8 +9,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import type { AvailableItem } from "./SubItemSearchPicker";
 
 interface AddItemModalProps {
@@ -33,7 +46,7 @@ export function AddItemModal({
   currentLanguage,
 }: AddItemModalProps) {
   const { t } = useLanguage();
-  const [search, setSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<AvailableItem | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [extraCost, setExtraCost] = useState(0);
@@ -43,14 +56,10 @@ export function AddItemModal({
     return obj[key] || obj.name_en;
   };
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      // Exclude combos and current item
-      if (item.is_combo || item.id === currentItemId) return false;
-      const name = getLocalizedName(item).toLowerCase();
-      return name.includes(search.toLowerCase());
-    });
-  }, [items, search, currentLanguage, currentItemId]);
+  // Filter out combos and the current item
+  const availableItems = useMemo(() => {
+    return items.filter((item) => !item.is_combo && item.id !== currentItemId);
+  }, [items, currentItemId]);
 
   const handleConfirm = () => {
     if (!selectedItem) return;
@@ -59,7 +68,7 @@ export function AddItemModal({
   };
 
   const handleClose = () => {
-    setSearch("");
+    setDropdownOpen(false);
     setSelectedItem(null);
     setQuantity(1);
     setExtraCost(0);
@@ -76,66 +85,78 @@ export function AddItemModal({
         </DialogHeader>
 
         <div className="p-4 space-y-4">
-          {/* Step 1: Search & Select */}
+          {/* Step 1: Select via Dropdown */}
           <div className="space-y-2">
             <label className="text-[12px] font-medium uppercase text-muted-foreground">
               Step 1: {t("itemMapping.selectItem")}
             </label>
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("itemMapping.searchItems")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8 pl-8 text-[13px]"
-              />
-            </div>
-            <div className="border border-border rounded-[6px] max-h-[160px] overflow-y-auto">
-              {filteredItems.length === 0 ? (
-                <div className="p-3 text-center text-muted-foreground text-[13px]">
-                  {t("common.noData")}
-                </div>
-              ) : (
-                filteredItems.map((item) => {
-                  const isAlreadyMapped = mappedIds.includes(item.id);
-                  const isSelected = selectedItem?.id === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      disabled={isAlreadyMapped}
-                      onClick={() => setSelectedItem(item)}
-                      className={cn(
-                        "w-full flex items-center justify-between px-3 py-2 text-[13px] border-b border-border last:border-b-0",
-                        "hover:bg-accent transition-colors",
-                        isAlreadyMapped && "opacity-50 cursor-not-allowed",
-                        isSelected && "bg-accent"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className={cn(
-                          "w-4 h-4 rounded-full border flex items-center justify-center",
-                          isSelected ? "border-primary bg-primary" : "border-muted-foreground"
-                        )}>
-                          {isSelected && <Check size={12} className="text-primary-foreground" />}
-                        </div>
-                        <span>{getLocalizedName(item)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
-                          SAR {item.base_cost.toFixed(2)}
-                        </span>
-                        {isAlreadyMapped && (
-                          <span className="text-[11px] bg-muted px-1.5 py-0.5 rounded">
-                            {t("itemMapping.alreadyMapped")}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
+            <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={dropdownOpen}
+                  className="w-full justify-between h-9 text-[13px] font-normal"
+                >
+                  {selectedItem ? (
+                    <span className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-green-500" />
+                      {getLocalizedName(selectedItem)} - SAR {selectedItem.base_cost.toFixed(2)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">{t("itemMapping.selectItem")}...</span>
+                  )}
+                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder={t("itemMapping.searchItems")} className="h-9" />
+                  <CommandList className="max-h-[200px]">
+                    <CommandEmpty>{t("common.noData")}</CommandEmpty>
+                    <CommandGroup>
+                      {availableItems.map((item) => {
+                        const isAlreadyMapped = mappedIds.includes(item.id);
+                        const isSelected = selectedItem?.id === item.id;
+                        return (
+                          <CommandItem
+                            key={item.id}
+                            value={getLocalizedName(item)}
+                            disabled={isAlreadyMapped}
+                            onSelect={() => {
+                              if (!isAlreadyMapped) {
+                                setSelectedItem(item);
+                                setDropdownOpen(false);
+                              }
+                            }}
+                            className={cn(
+                              "text-[13px] cursor-pointer",
+                              isAlreadyMapped && "opacity-50 cursor-not-allowed"
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                isSelected ? "opacity-100 text-green-500" : "opacity-0"
+                              )}
+                            />
+                            <span className="flex-1">{getLocalizedName(item)}</span>
+                            <span className="text-muted-foreground ml-2">
+                              SAR {item.base_cost.toFixed(2)}
+                            </span>
+                            {isAlreadyMapped && (
+                              <span className="ml-2 text-[11px] bg-muted px-1.5 py-0.5 rounded">
+                                {t("itemMapping.alreadyMapped")}
+                              </span>
+                            )}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Step 2: Preview */}
