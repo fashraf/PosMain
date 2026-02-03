@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, ChevronDown, Star, Eye, X } from "lucide-react";
+import { Check, ChevronDown, Star, Eye, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
@@ -137,9 +137,9 @@ export function ReplacementModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-5 py-4 space-y-5 max-h-[60vh] overflow-y-auto">
+        <div className="px-5 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
           {/* Add Replacement Section */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="text-[13px] font-medium text-foreground">
               {t("itemMapping.addReplacement")}
             </div>
@@ -151,7 +151,7 @@ export function ReplacementModal({
                   variant="outline"
                   role="combobox"
                   aria-expanded={dropdownOpen}
-                  className="w-full justify-between h-10 text-[13px] font-normal border-border"
+                  className="w-full justify-between h-9 text-[13px] font-normal border-border"
                 >
                   {selectedItem ? (
                     <span className="flex items-center gap-2 text-foreground">
@@ -168,7 +168,7 @@ export function ReplacementModal({
               </PopoverTrigger>
               <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder={t("itemMapping.searchItems")} className="h-10" />
+                  <CommandInput placeholder={t("itemMapping.searchItems")} className="h-9" />
                   <CommandList className="max-h-[200px]">
                     <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
                       {t("common.noData")}
@@ -184,7 +184,7 @@ export function ReplacementModal({
                               setSelectedItem(item);
                               setDropdownOpen(false);
                             }}
-                            className="text-[13px] cursor-pointer py-2.5"
+                            className="text-[13px] cursor-pointer py-2"
                           >
                             <Check
                               className={cn(
@@ -205,14 +205,12 @@ export function ReplacementModal({
               </PopoverContent>
             </Popover>
 
-            {/* Extra Cost & Default */}
+            {/* Config Section (only when item selected) */}
             {selectedItem && (
-              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-                <div className="text-[12px] font-medium uppercase text-muted-foreground tracking-wide">
-                  {getLocalizedName(selectedItem)}
-                </div>
+              <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+                {/* 2-column: Extra Cost + Default */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-[13px] font-medium text-foreground">
                       {t("itemMapping.extraCost")}
                     </label>
@@ -225,17 +223,17 @@ export function ReplacementModal({
                         min={0}
                         step={0.01}
                         className={cn(
-                          "h-10 text-[13px]",
-                          extraCost > 0 && "bg-green-50 border-green-200"
+                          "h-9 text-[13px] flex-1",
+                          extraCost > 0 && "bg-[hsl(var(--success)/0.1)] border-[hsl(var(--success)/0.3)]"
                         )}
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label className="text-[13px] font-medium text-foreground">
                       {t("itemMapping.setAsDefault")}
                     </label>
-                    <div className="flex items-center gap-2 h-10">
+                    <div className="flex items-center gap-2 h-9">
                       <Checkbox
                         id="default"
                         checked={isDefault}
@@ -247,11 +245,25 @@ export function ReplacementModal({
                     </div>
                   </div>
                 </div>
+
+                {/* Live Preview Line */}
+                <div className={cn(
+                  "flex items-center gap-2 text-[13px] py-2 px-3 rounded-md border",
+                  extraCost > 0 
+                    ? "bg-[hsl(var(--success)/0.05)] border-[hsl(var(--success)/0.2)] text-[hsl(var(--success))]" 
+                    : "bg-muted/50 border-border text-muted-foreground"
+                )}>
+                  <ArrowRight size={14} strokeWidth={1.5} />
+                  <span className="font-medium">{getLocalizedName(selectedItem)}</span>
+                  <span>(+SAR {extraCost.toFixed(2)})</span>
+                </div>
+
+                {/* Add Button */}
                 <div className="flex justify-end">
                   <Button
                     onClick={handleAddReplacement}
                     size="sm"
-                    className="h-9 text-[13px]"
+                    className="h-8 text-[13px] px-4"
                   >
                     {t("itemMapping.addReplacement")}
                   </Button>
@@ -270,7 +282,7 @@ export function ReplacementModal({
             </div>
 
             {replacements.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground text-[13px] border border-dashed border-border rounded-lg">
+              <div className="text-center py-5 text-muted-foreground text-[13px] border border-dashed border-border rounded-lg">
                 {t("itemMapping.noReplacements")}
               </div>
             ) : (
@@ -279,7 +291,7 @@ export function ReplacementModal({
                   <div
                     key={rep.id}
                     className={cn(
-                      "flex items-center justify-between px-3 py-2.5 text-[13px]",
+                      "flex items-center justify-between px-3 py-2 text-[13px]",
                       index !== replacements.length - 1 && "border-b border-border"
                     )}
                   >
@@ -297,7 +309,7 @@ export function ReplacementModal({
                       )}
                       <span className="font-medium">{rep.item_name}</span>
                       {rep.is_default && (
-                        <span className="text-[11px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">
                           {t("itemMapping.default")}
                         </span>
                       )}
@@ -305,7 +317,7 @@ export function ReplacementModal({
                     <div className="flex items-center gap-3">
                       <span className={cn(
                         "text-muted-foreground",
-                        rep.extra_cost > 0 && "text-green-600"
+                        rep.extra_cost > 0 && "text-[hsl(var(--success))]"
                       )}>
                         {rep.extra_cost > 0 ? `+SAR ${rep.extra_cost.toFixed(2)}` : "+0"}
                       </span>
@@ -336,7 +348,7 @@ export function ReplacementModal({
         <DialogFooter className="px-5 py-4 border-t border-border bg-muted/30">
           <Button
             onClick={handleClose}
-            className="h-10 px-5 text-[13px]"
+            className="h-9 px-6 text-[13px] bg-foreground text-background hover:bg-foreground/90"
           >
             {t("itemMapping.done")}
           </Button>
