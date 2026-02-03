@@ -2,14 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { MultiLanguageInput } from "@/components/shared/MultiLanguageInput";
+import { FormSectionCard } from "@/components/shared/FormSectionCard";
+import { FormField } from "@/components/shared/FormField";
+import { FormRow } from "@/components/shared/FormRow";
+import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
 import { ConfirmChangesModal, type Change } from "@/components/shared/ConfirmChangesModal";
-import { ArrowLeft, ArrowRight, Save, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, X, FileText, Smile } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const iconOptions = ["🏪", "🛵", "📱", "🍽️", "🌐", "📦", "🚗", "🏠"];
@@ -33,7 +34,6 @@ export default function SalesChannelsAdd() {
 
   const handleNameChange = (lang: "en" | "ar" | "ur", value: string) => {
     setFormData((prev) => ({ ...prev, [`name_${lang}`]: value }));
-    // Auto-generate code from English name
     if (lang === "en" && !formData.code) {
       const code = value.toUpperCase().replace(/\s+/g, "_").slice(0, 20);
       setFormData((prev) => ({ ...prev, code }));
@@ -53,11 +53,7 @@ export default function SalesChannelsAdd() {
 
   const handleSave = () => {
     if (!formData.name_en || !formData.code) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in required fields.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Please fill in required fields.", variant: "destructive" });
       return;
     }
     setShowConfirmModal(true);
@@ -65,12 +61,8 @@ export default function SalesChannelsAdd() {
 
   const handleConfirmSave = () => {
     setIsSaving(true);
-    // Simulate API call
     setTimeout(() => {
-      toast({
-        title: t("salesChannels.addChannel"),
-        description: `${formData.name_en} has been added.`,
-      });
+      toast({ title: t("salesChannels.addChannel"), description: `${formData.name_en} has been added.` });
       setIsSaving(false);
       setShowConfirmModal(false);
       navigate("/sales-channels");
@@ -80,113 +72,73 @@ export default function SalesChannelsAdd() {
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+    <div className="space-y-3 pb-20">
+      <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/sales-channels")}>
           <BackIcon className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">{t("salesChannels.addChannel")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("salesChannels.addChannel")}</h1>
       </div>
 
-      {/* Form Sections */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("salesChannels.channelName")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MultiLanguageInput
-            label={t("salesChannels.channelName")}
-            values={{
-              en: formData.name_en,
-              ar: formData.name_ar,
-              ur: formData.name_ur,
-            }}
-            onChange={handleNameChange}
-            required
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("salesChannels.code")} & {t("salesChannels.icon")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="code">{t("salesChannels.code")}</Label>
-            <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  code: e.target.value.toUpperCase().replace(/\s+/g, "_"),
-                }))
-              }
-              placeholder="CHANNEL_CODE"
-              required
+      {/* Basic Info */}
+      <FormSectionCard title={t("salesChannels.channelName")} icon={FileText}>
+        <FormRow columns={2}>
+          <FormField label={t("salesChannels.channelName")} required>
+            <CompactMultiLanguageInput
+              label=""
+              values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
+              onChange={handleNameChange}
             />
-          </div>
+          </FormField>
+          <FormField label={t("salesChannels.code")} required>
+            <Input
+              value={formData.code}
+              onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase().replace(/\s+/g, "_") }))}
+              placeholder="CHANNEL_CODE"
+              className="h-9"
+            />
+          </FormField>
+        </FormRow>
+      </FormSectionCard>
 
-          <div className="space-y-2">
-            <Label>{t("salesChannels.icon")}</Label>
-            <div className="flex flex-wrap gap-2">
-              {iconOptions.map((icon) => (
-                <Button
-                  key={icon}
-                  type="button"
-                  variant={formData.icon === icon ? "default" : "outline"}
-                  size="icon"
-                  className="text-xl"
-                  onClick={() => setFormData((prev) => ({ ...prev, icon }))}
-                >
-                  {icon}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Icon */}
+      <FormSectionCard title={t("salesChannels.icon")} icon={Smile}>
+        <div className="flex flex-wrap gap-2">
+          {iconOptions.map((icon) => (
+            <Button
+              key={icon}
+              type="button"
+              variant={formData.icon === icon ? "default" : "outline"}
+              size="icon"
+              className="text-xl h-10 w-10"
+              onClick={() => setFormData((prev) => ({ ...prev, icon }))}
+            >
+              {icon}
+            </Button>
+          ))}
+        </div>
+      </FormSectionCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("common.status")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="status">{t("common.status")}</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {formData.is_active ? t("common.active") : t("common.inactive")}
-              </span>
-              <Switch
-                id="status"
-                checked={formData.is_active}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, is_active: checked }))
-                }
-              />
-            </div>
+      {/* Status */}
+      <FormSectionCard title={t("common.status")} icon={FileText}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("common.status")}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
+            <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormSectionCard>
 
       {/* Sticky Footer */}
-      <div
-        className={cn(
-          "fixed bottom-0 inset-x-0 bg-background border-t p-4 z-10",
-          "flex items-center gap-3",
-          isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4"
-        )}
-      >
-        <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" onClick={() => navigate("/sales-channels")} disabled={isSaving}>
-            <X className="h-4 w-4 me-2" />
+      <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
+        <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/sales-channels")} disabled={isSaving}>
+            <X className="h-4 w-4 me-1" />
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            <Save className="h-4 w-4 me-2" />
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
+            <Save className="h-4 w-4 me-1" />
             {t("common.save")}
           </Button>
         </div>

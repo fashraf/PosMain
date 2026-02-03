@@ -16,6 +16,7 @@ interface CompactRadioGroupProps {
   onChange: (value: string) => void;
   tooltip?: string;
   orientation?: "horizontal" | "vertical";
+  layout?: "horizontal" | "vertical";
   className?: string;
 }
 
@@ -26,8 +27,10 @@ export function CompactRadioGroup({
   onChange,
   tooltip,
   orientation = "vertical",
+  layout,
   className,
 }: CompactRadioGroupProps) {
+  const effectiveOrientation = layout || orientation;
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
@@ -40,7 +43,7 @@ export function CompactRadioGroup({
         value={value}
         onValueChange={onChange}
         className={cn(
-          orientation === "horizontal"
+          effectiveOrientation === "horizontal"
             ? "flex flex-wrap gap-4"
             : "space-y-2"
         )}

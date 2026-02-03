@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MultiLanguageInput } from "@/components/shared/MultiLanguageInput";
-import { TooltipInfo } from "@/components/shared/TooltipInfo";
+import { FormSectionCard } from "@/components/shared/FormSectionCard";
+import { FormField } from "@/components/shared/FormField";
+import { FormRow } from "@/components/shared/FormRow";
+import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
 import { ConfirmChangesModal, type Change } from "@/components/shared/ConfirmChangesModal";
-import { ArrowLeft, ArrowRight, Save, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, X, FileText, Package, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const unitOptions = [
@@ -28,7 +29,6 @@ const unitOptions = [
   { value: "ml", label: "Milliliters (mL)" },
 ];
 
-// Mock data
 const mockIngredients = [
   { id: "1", name_en: "Tomato", name_ar: "طماطم", name_ur: "ٹماٹر", type: "solid" as const, base_unit: "kg", current_quantity: 50, alert_threshold: 10, cost_price: 2.50, selling_price: null, can_sell_individually: false, can_add_extra: true, extra_cost: 0.50, is_active: true },
   { id: "2", name_en: "Olive Oil", name_ar: "زيت زيتون", name_ur: "زیتون کا تیل", type: "liquid" as const, base_unit: "liters", current_quantity: 5, alert_threshold: 3, cost_price: 15.00, selling_price: null, can_sell_individually: false, can_add_extra: false, extra_cost: null, is_active: true },
@@ -126,139 +126,100 @@ export default function IngredientsEdit() {
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-4">
+    <div className="space-y-3 pb-20">
+      <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/ingredients")}>
           <BackIcon className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold text-foreground">{t("ingredients.editIngredient")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("ingredients.editIngredient")}</h1>
       </div>
 
       {/* Basic Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("branches.basicInfo")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <MultiLanguageInput
-            label={t("ingredients.ingredientName")}
-            values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
-            onChange={handleNameChange}
-            required
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t("ingredients.type")}</Label>
+      <FormSectionCard title={t("branches.basicInfo")} icon={FileText}>
+        <FormRow columns={2}>
+          <FormField label={t("ingredients.ingredientName")} required>
+            <CompactMultiLanguageInput
+              label=""
+              values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
+              onChange={handleNameChange}
+            />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={t("ingredients.type")}>
               <Select value={formData.type} onValueChange={(value: "liquid" | "solid") => setFormData((prev) => ({ ...prev, type: value }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="solid">{t("ingredients.solid")}</SelectItem>
                   <SelectItem value="liquid">{t("ingredients.liquid")}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("ingredients.baseUnit")}</Label>
+            </FormField>
+            <FormField label={t("ingredients.baseUnit")}>
               <Select value={formData.base_unit} onValueChange={(value) => setFormData((prev) => ({ ...prev, base_unit: value }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {unitOptions.map((unit) => (
                     <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
           </div>
-        </CardContent>
-      </Card>
+        </FormRow>
+      </FormSectionCard>
 
       {/* Stock & Pricing */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("ingredients.currentStock")} & {t("common.price")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quantity">{t("ingredients.currentStock")}</Label>
-              <Input id="quantity" type="number" min="0" value={formData.current_quantity} onChange={(e) => setFormData((prev) => ({ ...prev, current_quantity: parseFloat(e.target.value) || 0 }))} />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="threshold">{t("ingredients.alertThreshold")}</Label>
-                <TooltipInfo content={t("tooltips.alertThreshold")} />
-              </div>
-              <Input id="threshold" type="number" min="0" value={formData.alert_threshold} onChange={(e) => setFormData((prev) => ({ ...prev, alert_threshold: parseFloat(e.target.value) || 0 }))} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="costPrice">{t("ingredients.costPerUnit")}</Label>
-              <Input id="costPrice" type="number" min="0" step="0.01" value={formData.cost_price} onChange={(e) => setFormData((prev) => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sellingPrice">{t("ingredients.sellingPrice")}</Label>
-              <Input id="sellingPrice" type="number" min="0" step="0.01" value={formData.selling_price ?? ""} onChange={(e) => setFormData((prev) => ({ ...prev, selling_price: e.target.value ? parseFloat(e.target.value) : null }))} placeholder="Optional" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <FormSectionCard title={`${t("ingredients.currentStock")} & ${t("common.price")}`} icon={Package}>
+        <FormRow columns={4}>
+          <FormField label={t("ingredients.currentStock")}>
+            <Input type="number" min="0" value={formData.current_quantity} onChange={(e) => setFormData((prev) => ({ ...prev, current_quantity: parseFloat(e.target.value) || 0 }))} className="h-9" />
+          </FormField>
+          <FormField label={t("ingredients.alertThreshold")} tooltip={t("tooltips.alertThreshold")}>
+            <Input type="number" min="0" value={formData.alert_threshold} onChange={(e) => setFormData((prev) => ({ ...prev, alert_threshold: parseFloat(e.target.value) || 0 }))} className="h-9" />
+          </FormField>
+          <FormField label={t("ingredients.costPerUnit")}>
+            <Input type="number" min="0" step="0.01" value={formData.cost_price} onChange={(e) => setFormData((prev) => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))} className="h-9" />
+          </FormField>
+          <FormField label={t("ingredients.sellingPrice")}>
+            <Input type="number" min="0" step="0.01" value={formData.selling_price ?? ""} onChange={(e) => setFormData((prev) => ({ ...prev, selling_price: e.target.value ? parseFloat(e.target.value) : null }))} placeholder="Optional" className="h-9" />
+          </FormField>
+        </FormRow>
+      </FormSectionCard>
 
       {/* Extra Options */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("ingredients.canAddAsExtra")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <FormSectionCard title={t("ingredients.canAddAsExtra")} icon={Settings}>
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="canSell">{t("ingredients.canSellIndividually")}</Label>
-            <Switch id="canSell" checked={formData.can_sell_individually} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, can_sell_individually: checked }))} />
+            <Label className="text-sm font-normal">{t("ingredients.canSellIndividually")}</Label>
+            <Switch checked={formData.can_sell_individually} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, can_sell_individually: checked }))} />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="canAddExtra">{t("ingredients.canAddAsExtra")}</Label>
-              <TooltipInfo content={t("tooltips.canAddExtra")} />
-            </div>
-            <Switch id="canAddExtra" checked={formData.can_add_extra} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, can_add_extra: checked, extra_cost: checked ? prev.extra_cost : null }))} />
+          <div className="flex items-center justify-between border-t pt-3">
+            <Label className="text-sm font-normal">{t("ingredients.canAddAsExtra")}</Label>
+            <Switch checked={formData.can_add_extra} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, can_add_extra: checked, extra_cost: checked ? prev.extra_cost : null }))} />
           </div>
 
           {formData.can_add_extra && (
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="extraCost">{t("ingredients.extraCost")}</Label>
-                <TooltipInfo content={t("tooltips.extraCost")} />
-              </div>
-              <Input id="extraCost" type="number" min="0" step="0.01" value={formData.extra_cost ?? ""} onChange={(e) => setFormData((prev) => ({ ...prev, extra_cost: e.target.value ? parseFloat(e.target.value) : null }))} />
-            </div>
+            <FormField label={t("ingredients.extraCost")} tooltip={t("tooltips.extraCost")}>
+              <Input type="number" min="0" step="0.01" value={formData.extra_cost ?? ""} onChange={(e) => setFormData((prev) => ({ ...prev, extra_cost: e.target.value ? parseFloat(e.target.value) : null }))} className="max-w-[150px] h-9" />
+            </FormField>
           )}
-        </CardContent>
-      </Card>
 
-      {/* Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t("common.status")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="status">{t("common.status")}</Label>
+          <div className="flex items-center justify-between border-t pt-3">
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("common.status")}</span>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
-              <Switch id="status" checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
+              <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormSectionCard>
 
       {/* Sticky Footer */}
-      <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-4 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
-        <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" onClick={() => navigate("/ingredients")} disabled={isSaving}><X className="h-4 w-4 me-2" />{t("common.cancel")}</Button>
-          <Button onClick={handleSave} disabled={isSaving}><Save className="h-4 w-4 me-2" />{t("common.save")}</Button>
+      <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
+        <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/ingredients")} disabled={isSaving}><X className="h-4 w-4 me-1" />{t("common.cancel")}</Button>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}><Save className="h-4 w-4 me-1" />{t("common.save")}</Button>
         </div>
       </div>
 
