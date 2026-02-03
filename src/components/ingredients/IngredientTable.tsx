@@ -9,8 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge, YesNoBadge, TypeBadge } from "@/components/shared/StatusBadge";
+import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Edit, AlertTriangle } from "lucide-react";
+import { Edit, AlertTriangle, Eye } from "lucide-react";
 
 export interface Ingredient {
   id: string;
@@ -33,12 +34,14 @@ interface IngredientTableProps {
   ingredients: Ingredient[];
   onEdit: (ingredient: Ingredient) => void;
   onToggleStatus: (ingredient: Ingredient) => void;
+  onView?: (ingredient: Ingredient) => void;
 }
 
 export function IngredientTable({
   ingredients,
   onEdit,
   onToggleStatus,
+  onView,
 }: IngredientTableProps) {
   const { t, currentLanguage } = useLanguage();
 
@@ -64,12 +67,26 @@ export function IngredientTable({
             <TableHead className="font-semibold">{t("common.name")}</TableHead>
             <TableHead className="font-semibold">{t("ingredients.type")}</TableHead>
             <TableHead className="font-semibold">{t("ingredients.baseUnit")}</TableHead>
-            <TableHead className="font-semibold">{t("ingredients.currentStock")}</TableHead>
-            <TableHead className="font-semibold">{t("ingredients.alertThreshold")}</TableHead>
+            <TableHead className="font-semibold">
+              <div className="flex items-center gap-1">
+                {t("ingredients.currentStock")}
+              </div>
+            </TableHead>
+            <TableHead className="font-semibold">
+              <div className="flex items-center gap-1">
+                {t("ingredients.alertThreshold")}
+                <TooltipInfo content={t("tooltips.alertThreshold")} />
+              </div>
+            </TableHead>
             <TableHead className="font-semibold">{t("ingredients.costPerUnit")}</TableHead>
             <TableHead className="font-semibold">{t("ingredients.sellingPrice")}</TableHead>
             <TableHead className="font-semibold">{t("ingredients.canSellIndividually")}</TableHead>
-            <TableHead className="font-semibold">{t("ingredients.canAddAsExtra")}</TableHead>
+            <TableHead className="font-semibold">
+              <div className="flex items-center gap-1">
+                {t("ingredients.canAddAsExtra")}
+                <TooltipInfo content={t("tooltips.canAddExtra")} />
+              </div>
+            </TableHead>
             <TableHead className="font-semibold">{t("common.status")}</TableHead>
             <TableHead className="font-semibold text-end">{t("common.actions")}</TableHead>
           </TableRow>
@@ -115,7 +132,16 @@ export function IngredientTable({
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end gap-1">
+                  {onView && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onView(ingredient)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

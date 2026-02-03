@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { useLanguage, type Language } from "@/hooks/useLanguage";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Eye } from "lucide-react";
 
 export interface SalesChannel {
   id: string;
@@ -27,6 +27,7 @@ interface SalesChannelTableProps {
   onEdit: (channel: SalesChannel) => void;
   onDelete: (channel: SalesChannel) => void;
   onToggleStatus: (channel: SalesChannel) => void;
+  onView?: (channel: SalesChannel) => void;
 }
 
 export function SalesChannelTable({
@@ -34,6 +35,7 @@ export function SalesChannelTable({
   onEdit,
   onDelete,
   onToggleStatus,
+  onView,
 }: SalesChannelTableProps) {
   const { t, currentLanguage } = useLanguage();
 
@@ -78,6 +80,15 @@ export function SalesChannelTable({
               </TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-2">
+                  {onView && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onView(channel)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

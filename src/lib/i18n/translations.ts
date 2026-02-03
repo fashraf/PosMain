@@ -45,6 +45,16 @@ export const translations = {
       selectIngredient: "Select Ingredient",
       addRow: "Add Row",
       remove: "Remove",
+      view: "View",
+      close: "Close",
+      confirmChanges: "Confirm Changes",
+      reviewChanges: "Review your changes before saving.",
+      oldValue: "Old Value",
+      newValue: "New Value",
+      noChanges: "No changes detected.",
+      confirmAndSave: "Confirm & Save",
+      field: "Field",
+      back: "Back",
     },
     // Auth
     auth: {
@@ -75,6 +85,36 @@ export const translations = {
     // Settings
     settings: {
       languageDescription: "Select your preferred language. The interface will update automatically.",
+    },
+    // Branches
+    branches: {
+      title: "Branches",
+      addBranch: "Add Branch",
+      editBranch: "Edit Branch",
+      branchName: "Branch Name",
+      branchCode: "Branch Code",
+      basicInfo: "Basic Information",
+      currencySettings: "Currency Settings",
+      taxSettings: "Tax & VAT Settings",
+      currency: "Currency",
+      currencyTooltip: "Currency is used for prices, invoices, and receipts for this branch.",
+      vatEnabled: "VAT Enabled",
+      vatPercentage: "VAT Percentage",
+      additionalTaxes: "Additional Taxes",
+      taxName: "Tax Name",
+      taxPercentage: "Tax Percentage",
+      taxTooltip: "Taxes are applied during billing and shown on receipts.",
+      addTax: "Add Tax",
+      noBranches: "No branches found. Add your first branch to get started.",
+    },
+    // Tooltips
+    tooltips: {
+      canAddExtra: "When enabled, customers can add extra portions of this ingredient to their order.",
+      extraCost: "The additional charge when a customer adds extra of this ingredient.",
+      alertThreshold: "You'll receive a notification when stock falls below this level.",
+      channelPricing: "Set different prices for different sales channels (e.g., Zomato, Swiggy).",
+      vatField: "Taxes are applied during billing and shown on receipts.",
+      currency: "Currency is used for prices, invoices, and receipts for this branch.",
     },
     // Sales Channels
     salesChannels: {
@@ -221,6 +261,16 @@ export const translations = {
       selectIngredient: "اختر المكون",
       addRow: "إضافة صف",
       remove: "إزالة",
+      view: "عرض",
+      close: "إغلاق",
+      confirmChanges: "تأكيد التغييرات",
+      reviewChanges: "راجع تغييراتك قبل الحفظ.",
+      oldValue: "القيمة القديمة",
+      newValue: "القيمة الجديدة",
+      noChanges: "لم يتم الكشف عن أي تغييرات.",
+      confirmAndSave: "تأكيد وحفظ",
+      field: "الحقل",
+      back: "رجوع",
     },
     // Auth
     auth: {
@@ -251,6 +301,36 @@ export const translations = {
     // Settings
     settings: {
       languageDescription: "اختر لغتك المفضلة. سيتم تحديث الواجهة تلقائياً.",
+    },
+    // Branches
+    branches: {
+      title: "الفروع",
+      addBranch: "إضافة فرع",
+      editBranch: "تعديل الفرع",
+      branchName: "اسم الفرع",
+      branchCode: "كود الفرع",
+      basicInfo: "المعلومات الأساسية",
+      currencySettings: "إعدادات العملة",
+      taxSettings: "إعدادات الضريبة وضريبة القيمة المضافة",
+      currency: "العملة",
+      currencyTooltip: "تُستخدم العملة للأسعار والفواتير والإيصالات لهذا الفرع.",
+      vatEnabled: "ضريبة القيمة المضافة مفعلة",
+      vatPercentage: "نسبة ضريبة القيمة المضافة",
+      additionalTaxes: "ضرائب إضافية",
+      taxName: "اسم الضريبة",
+      taxPercentage: "نسبة الضريبة",
+      taxTooltip: "يتم تطبيق الضرائب أثناء الفوترة وتظهر على الإيصالات.",
+      addTax: "إضافة ضريبة",
+      noBranches: "لا توجد فروع. أضف فرعك الأول للبدء.",
+    },
+    // Tooltips
+    tooltips: {
+      canAddExtra: "عند التفعيل، يمكن للعملاء إضافة كميات إضافية من هذا المكون إلى طلبهم.",
+      extraCost: "الرسوم الإضافية عندما يضيف العميل المزيد من هذا المكون.",
+      alertThreshold: "ستتلقى إشعارًا عندما ينخفض المخزون عن هذا المستوى.",
+      channelPricing: "تعيين أسعار مختلفة لقنوات البيع المختلفة (مثل زوماتو، سويجي).",
+      vatField: "يتم تطبيق الضرائب أثناء الفوترة وتظهر على الإيصالات.",
+      currency: "تُستخدم العملة للأسعار والفواتير والإيصالات لهذا الفرع.",
     },
     // Sales Channels
     salesChannels: {
@@ -397,6 +477,16 @@ export const translations = {
       selectIngredient: "جزو منتخب کریں",
       addRow: "قطار شامل کریں",
       remove: "ہٹائیں",
+      view: "دیکھیں",
+      close: "بند کریں",
+      confirmChanges: "تبدیلیوں کی تصدیق کریں",
+      reviewChanges: "محفوظ کرنے سے پہلے اپنی تبدیلیوں کا جائزہ لیں۔",
+      oldValue: "پرانی قدر",
+      newValue: "نئی قدر",
+      noChanges: "کوئی تبدیلیاں نہیں ملیں۔",
+      confirmAndSave: "تصدیق کریں اور محفوظ کریں",
+      field: "فیلڈ",
+      back: "واپس",
     },
     // Auth
     auth: {
@@ -427,6 +517,36 @@ export const translations = {
     // Settings
     settings: {
       languageDescription: "اپنی پسندیدہ زبان منتخب کریں۔ انٹرفیس خود بخود اپڈیٹ ہو جائے گا۔",
+    },
+    // Branches
+    branches: {
+      title: "شاخیں",
+      addBranch: "شاخ شامل کریں",
+      editBranch: "شاخ میں ترمیم کریں",
+      branchName: "شاخ کا نام",
+      branchCode: "شاخ کا کوڈ",
+      basicInfo: "بنیادی معلومات",
+      currencySettings: "کرنسی کی ترتیبات",
+      taxSettings: "ٹیکس اور VAT کی ترتیبات",
+      currency: "کرنسی",
+      currencyTooltip: "کرنسی اس شاخ کی قیمتوں، انوائسز اور رسیدوں کے لیے استعمال ہوتی ہے۔",
+      vatEnabled: "VAT فعال",
+      vatPercentage: "VAT فیصد",
+      additionalTaxes: "اضافی ٹیکس",
+      taxName: "ٹیکس کا نام",
+      taxPercentage: "ٹیکس فیصد",
+      taxTooltip: "ٹیکس بلنگ کے دوران لاگو ہوتے ہیں اور رسیدوں پر دکھائے جاتے ہیں۔",
+      addTax: "ٹیکس شامل کریں",
+      noBranches: "کوئی شاخیں نہیں ملیں۔ شروع کرنے کے لیے اپنی پہلی شاخ شامل کریں۔",
+    },
+    // Tooltips
+    tooltips: {
+      canAddExtra: "فعال ہونے پر، گاہک اپنے آرڈر میں اس جزو کے اضافی حصے شامل کر سکتے ہیں۔",
+      extraCost: "جب گاہک اس جزو کا اضافی حصہ شامل کرتا ہے تو اضافی چارج۔",
+      alertThreshold: "جب اسٹاک اس سطح سے نیچے گرے گا تو آپ کو اطلاع ملے گی۔",
+      channelPricing: "مختلف سیلز چینلز کے لیے مختلف قیمتیں مقرر کریں (مثلاً زوماٹو، سویگی)۔",
+      vatField: "ٹیکس بلنگ کے دوران لاگو ہوتے ہیں اور رسیدوں پر دکھائے جاتے ہیں۔",
+      currency: "کرنسی اس شاخ کی قیمتوں، انوائسز اور رسیدوں کے لیے استعمال ہوتی ہے۔",
     },
     // Sales Channels
     salesChannels: {
