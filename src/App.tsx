@@ -18,6 +18,7 @@ import Categories from "@/pages/Categories";
 import CategoriesAdd from "@/pages/CategoriesAdd";
 import CategoriesEdit from "@/pages/CategoriesEdit";
 import ItemIngredientMapping from "@/pages/ItemIngredientMapping";
+import ItemIngredientMappingEdit from "@/pages/ItemIngredientMappingEdit";
 import ItemPricing from "@/pages/ItemPricing";
 import Branches from "@/pages/Branches";
 import BranchesAdd from "@/pages/BranchesAdd";
@@ -59,7 +60,8 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/categories/add" element={<CategoriesAdd />} />
             <Route path="/categories/:id/edit" element={<CategoriesEdit />} />
-            <Route path="/item-ingredients" element={<ItemIngredientMapping />} />
+            <Route path="/item-ingredient-mapping" element={<ItemIngredientMapping />} />
+            <Route path="/item-ingredient-mapping/:id/edit" element={<ItemIngredientMappingEdit />} />
             <Route path="/item-pricing" element={<ItemPricing />} />
             <Route path="/branches" element={<Branches />} />
             <Route path="/branches/add" element={<BranchesAdd />} />

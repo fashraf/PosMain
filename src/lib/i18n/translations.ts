@@ -420,7 +420,7 @@ export const translations = {
       caloriesTooltip: "Optional calorie value for health-conscious menus.",
       preparationAndNutrition: "Preparation & Nutrition",
     },
-    // Item Ingredients Mapping
+    // Item Ingredients Mapping (Legacy - keeping for nav)
     itemIngredients: {
       title: "Item-Ingredient Mapping",
       selectItem: "Select an Item",
@@ -432,6 +432,72 @@ export const translations = {
       extraQuantityLimit: "Extra Quantity Limit",
       extraCost: "Extra Cost",
       addIngredient: "Add Ingredient",
+    },
+    // Item-Ingredient Mapping Module
+    itemMapping: {
+      title: "Item-Ingredient Mapping",
+      editMapping: "Edit Mapping",
+      ingredients: "Ingredients",
+      subItems: "Sub-Items",
+      ingredientCount: "Ingredients",
+      subItemCount: "Sub-Items",
+      combo: "Combo",
+      // Summary Grid
+      summaryGrid: "Mapping Summary",
+      noItems: "No items found",
+      noItemsDescription: "Add items to configure ingredient mappings.",
+      noMappings: "No mappings configured",
+      expandToView: "Click to expand",
+      aggregatedIngredients: "Aggregated Ingredients",
+      aggregatedTotal: "Aggregated Total",
+      fromItems: "From Items",
+      // Filters
+      filterAll: "All Items",
+      combosOnly: "Combos Only",
+      // Edit Page
+      itemDetails: "Item Details",
+      ingredientMappings: "Ingredient Mappings",
+      comboSubItems: "Combo Sub-Items",
+      addIngredient: "Add Ingredient",
+      addSubItem: "Add Sub-Item",
+      quantity: "Quantity",
+      canRemove: "Can Remove",
+      canAddExtra: "Can Add Extra",
+      extraCost: "Extra Cost",
+      ingredientCostTotal: "Ingredient Cost Total",
+      subItemsTotal: "Sub-Items Total",
+      totalCost: "Total Cost",
+      unitPrice: "Unit Price",
+      subtotal: "Subtotal",
+      // Sortable lists
+      remove: "Remove",
+      extra: "Extra",
+      noIngredientsMapped: "No ingredients mapped. Click 'Add Ingredient' to start.",
+      noSubItemsMapped: "No sub-items added. Click 'Add Sub-Item' to start.",
+      // Search Picker
+      searchIngredients: "Search ingredients...",
+      searchItems: "Search items...",
+      alreadyMapped: "Already mapped",
+      selectToAdd: "Select to add",
+      // Validation & Warnings
+      duplicateWarning: "Ingredient Already Mapped",
+      duplicateDescription: "is already mapped to this item",
+      goToExisting: "Go to Existing",
+      currentQuantity: "Current quantity",
+      quantityRequired: "Quantity is required",
+      minTwoSubItems: "Combo must have at least 2 sub-items",
+      itemNotFound: "Item not found",
+      // Changes
+      addedIngredient: "Added Ingredient",
+      removedIngredient: "Removed Ingredient",
+      addedSubItem: "Added Sub-Item",
+      removedSubItem: "Removed Sub-Item",
+      confirmChanges: "Confirm Mapping Changes",
+      savedSuccessfully: "Mappings saved successfully",
+      // Drag & Drop
+      dragToReorder: "Drag to reorder priority",
+      dragToReorderHint: "Drag items to reorder priority. Changes are saved when you click Save.",
+      priorityTooltip: "Priority determines order in POS customization screen",
     },
     // Item Pricing
     itemPricing: {
