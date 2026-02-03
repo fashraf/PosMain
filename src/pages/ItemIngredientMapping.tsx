@@ -116,15 +116,6 @@ export default function ItemIngredientMapping() {
     return matchesSearch && matchesFilter;
   });
 
-  const handleReorder = (reorderedItems: ItemWithMappings[]) => {
-    // Update only the reordered items while preserving others
-    setItems((prev) => {
-      const updatedIds = new Set(reorderedItems.map((i) => i.id));
-      const unchangedItems = prev.filter((i) => !updatedIds.has(i.id));
-      return [...reorderedItems, ...unchangedItems].sort((a, b) => a.sort_order - b.sort_order);
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -187,12 +178,7 @@ export default function ItemIngredientMapping() {
               />
             </div>
           ) : (
-            <>
-              <MappingSummaryTable items={filteredItems} onReorder={handleReorder} />
-              <div className="px-4 py-3 border-t bg-muted/30 text-xs text-muted-foreground">
-                {t("itemMapping.dragToReorderHint")}
-              </div>
-            </>
+            <MappingSummaryTable items={filteredItems} />
           )}
         </CardContent>
       </Card>

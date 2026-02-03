@@ -10,26 +10,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, GripVertical, Edit, Package } from "lucide-react";
+import { ChevronDown, ChevronRight, Edit, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { MappingExpandedRow } from "./MappingExpandedRow";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
 export interface ItemWithMappings {
@@ -71,10 +54,9 @@ export interface SubItemMapping {
 
 interface MappingSummaryTableProps {
   items: ItemWithMappings[];
-  onReorder: (items: ItemWithMappings[]) => void;
 }
 
-interface SortableRowProps {
+interface ItemRowProps {
   item: ItemWithMappings;
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -83,50 +65,24 @@ interface SortableRowProps {
   t: (key: string) => string;
 }
 
-function SortableRow({
+function ItemRow({
   item,
   isExpanded,
   onToggleExpand,
   onEdit,
   getLocalizedName,
   t,
-}: SortableRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
+}: ItemRowProps) {
   const canShowMapping = item.item_type === "edible";
 
   return (
     <>
       <TableRow
-        ref={setNodeRef}
-        style={style}
         className={cn(
           "group",
-          isDragging && "opacity-50 bg-muted",
           isExpanded && "bg-muted/30"
         )}
       >
-        <TableCell className="w-10">
-          <button
-            className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-        </TableCell>
         <TableCell>
           <button
             onClick={onToggleExpand}
@@ -180,7 +136,7 @@ function SortableRow({
       </TableRow>
       {isExpanded && canShowMapping && (
         <TableRow className="bg-muted/20 hover:bg-muted/20">
-          <TableCell colSpan={6} className="p-0">
+          <TableCell colSpan={5} className="p-0">
             <MappingExpandedRow item={item} />
           </TableCell>
         </TableRow>
@@ -189,17 +145,10 @@ function SortableRow({
   );
 }
 
-export function MappingSummaryTable({ items, onReorder }: MappingSummaryTableProps) {
+export function MappingSummaryTable({ items }: MappingSummaryTableProps) {
   const { t, currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   const getLocalizedName = (item: { name_en: string; name_ar: string; name_ur: string }) => {
     const key = `name_${currentLanguage}` as keyof typeof item;
@@ -218,48 +167,30 @@ export function MappingSummaryTable({ items, onReorder }: MappingSummaryTablePro
     });
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
-      const newItems = arrayMove(items, oldIndex, newIndex).map((item, index) => ({
-        ...item,
-        sort_order: index + 1,
-      }));
-      onReorder(newItems);
-    }
-  };
-
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="w-10"></TableHead>
-            <TableHead>{t("common.name")}</TableHead>
-            <TableHead>{t("common.type")}</TableHead>
-            <TableHead className="text-center">{t("itemMapping.ingredientCount")}</TableHead>
-            <TableHead className="text-center">{t("itemMapping.subItemCount")}</TableHead>
-            <TableHead className="w-16">{t("common.actions")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-            {items.map((item) => (
-              <SortableRow
-                key={item.id}
-                item={item}
-                isExpanded={expandedIds.has(item.id)}
-                onToggleExpand={() => toggleExpand(item.id)}
-                onEdit={() => navigate(`/item-ingredient-mapping/${item.id}/edit`)}
-                getLocalizedName={getLocalizedName}
-                t={t}
-              />
-            ))}
-          </SortableContext>
-        </TableBody>
-      </Table>
-    </DndContext>
+    <Table>
+      <TableHeader>
+        <TableRow className="bg-muted/50">
+          <TableHead>{t("common.name")}</TableHead>
+          <TableHead>{t("common.type")}</TableHead>
+          <TableHead className="text-center">{t("itemMapping.ingredientCount")}</TableHead>
+          <TableHead className="text-center">{t("itemMapping.items")}</TableHead>
+          <TableHead className="w-16">{t("common.actions")}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <ItemRow
+            key={item.id}
+            item={item}
+            isExpanded={expandedIds.has(item.id)}
+            onToggleExpand={() => toggleExpand(item.id)}
+            onEdit={() => navigate(`/item-ingredient-mapping/${item.id}/edit`)}
+            getLocalizedName={getLocalizedName}
+            t={t}
+          />
+        ))}
+      </TableBody>
+    </Table>
   );
 }
