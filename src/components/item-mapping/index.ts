@@ -9,6 +9,16 @@ export { IngredientCard } from "./IngredientCard";
 export { ItemCard } from "./ItemCard";
 export { DuplicateSaveWarningModal } from "./DuplicateSaveWarningModal";
 
+// High-Density Components
+export { QuantityControl } from "./QuantityControl";
+export { IngredientTable } from "./IngredientTable";
+export { ItemTable } from "./ItemTable";
+export { LiveCostSummary } from "./LiveCostSummary";
+export { RemoveConfirmModal } from "./RemoveConfirmModal";
+export { AddIngredientModal } from "./AddIngredientModal";
+export { AddItemModal } from "./AddItemModal";
+export { SaveSummaryModal } from "./SaveSummaryModal";
+
 export type { ItemWithMappings, IngredientMapping, SubItemMapping } from "./MappingSummaryTable";
 export type { IngredientMappingItem } from "./IngredientMappingList";
 export type { SubItemMappingItem } from "./SubItemMappingList";

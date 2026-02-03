@@ -141,4 +141,57 @@
   .field-value {
     @apply text-sm text-foreground mt-0.5;
   }
+
+  /* High-Density UI System */
+  .density-ui * {
+    margin: 0;
+  }
+  
+  .density-ui {
+    --row-height: 32px;
+    --padding-sm: 4px;
+    --padding-md: 6px;
+    --padding-lg: 8px;
+  }
+
+  /* Density Table */
+  .density-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  .density-table th,
+  .density-table td {
+    height: 32px;
+    padding: 4px 6px;
+    border: 1px solid hsl(var(--border));
+    font-size: 13px;
+  }
+  
+  .density-table th {
+    background: hsl(var(--muted));
+    font-weight: 500;
+    text-align: left;
+  }
+  
+  .density-table tr:nth-child(even) td {
+    background: hsl(var(--muted));
+  }
+  
+  .density-table tr:nth-child(odd) td {
+    background: hsl(var(--background));
+  }
+  
+  .density-table .text-right {
+    text-align: right;
+  }
+  
+  .density-table .text-center {
+    text-align: center;
+  }
+
+  /* Density row hover */
+  .density-table tbody tr:hover td {
+    background: hsl(var(--accent));
+  }
 }
