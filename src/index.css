@@ -125,3 +125,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Form divider line */
+  .form-divider {
+    @apply border-t border-border my-3;
+  }
+
+  /* Compact label style */
+  .field-label {
+    @apply text-xs text-muted-foreground font-medium uppercase tracking-wide;
+  }
+
+  /* Field value style */
+  .field-value {
+    @apply text-sm text-foreground mt-0.5;
+  }
+}

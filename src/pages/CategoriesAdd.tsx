@@ -2,15 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { FormSectionCard } from "@/components/shared/FormSectionCard";
+import { FormField } from "@/components/shared/FormField";
+import { FormRow } from "@/components/shared/FormRow";
 import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
 import { CheckboxGroup } from "@/components/shared/CheckboxGroup";
 import { ConfirmChangesModal, type Change } from "@/components/shared/ConfirmChangesModal";
-import { ArrowLeft, ArrowRight, Save, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, X, FileText, Clock, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function CategoriesAdd() {
@@ -105,71 +107,57 @@ export default function CategoriesAdd() {
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-3 pb-20">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/categories")}>
           <BackIcon className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-foreground">{t("categories.addCategory")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("categories.addCategory")}</h1>
       </div>
 
       {/* Basic Info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">{t("branches.basicInfo")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <FormSectionCard title={t("branches.basicInfo")} icon={FileText}>
+        <FormRow columns={2}>
+          <FormField label={t("categories.categoryName")} required>
             <CompactMultiLanguageInput
-              label={t("categories.categoryName")}
+              label=""
               values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
               onChange={handleNameChange}
-              required
             />
-            <div className="space-y-1.5">
-              <Label htmlFor="sortOrder" className="text-sm">{t("categories.sortOrder")}</Label>
-              <Input
-                id="sortOrder"
-                type="number"
-                min="0"
-                value={formData.sort_order}
-                onChange={(e) => setFormData((prev) => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
-                className="max-w-[120px]"
-              />
-            </div>
-          </div>
+          </FormField>
+          <FormField label={t("categories.sortOrder")}>
+            <Input
+              type="number"
+              min="0"
+              value={formData.sort_order}
+              onChange={(e) => setFormData((prev) => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+              className="max-w-[100px] h-9"
+            />
+          </FormField>
+        </FormRow>
 
-          <div className="flex items-center justify-between pt-2">
-            <Label htmlFor="status" className="text-sm">{t("common.status")}</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
-              <Switch id="status" checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
-            </div>
+        <div className="flex items-center justify-between pt-3 mt-3 border-t">
+          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("common.status")}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
+            <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormSectionCard>
 
       {/* Time Availability */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">{t("categories.timeAvailability")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CheckboxGroup
-            label={t("categories.availableFor")}
-            options={timeSlotOptions}
-            value={formData.time_slots}
-            onChange={(slots) => setFormData((prev) => ({ ...prev, time_slots: slots }))}
-          />
-        </CardContent>
-      </Card>
+      <FormSectionCard title={t("categories.timeAvailability")} icon={Clock}>
+        <CheckboxGroup
+          label={t("categories.availableFor")}
+          options={timeSlotOptions}
+          value={formData.time_slots}
+          onChange={(slots) => setFormData((prev) => ({ ...prev, time_slots: slots }))}
+        />
+      </FormSectionCard>
 
       {/* Menu Availability */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">{t("categories.menuAvailability")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <FormSectionCard title={t("categories.menuAvailability")} icon={Menu}>
+        <div className="space-y-3">
           <CheckboxGroup
             label={t("categories.availableForOrderTypes")}
             options={orderTypeOptions}
@@ -177,15 +165,17 @@ export default function CategoriesAdd() {
             onChange={(types) => setFormData((prev) => ({ ...prev, order_types: types }))}
           />
 
-          <CheckboxGroup
-            label={t("categories.availableForAggregators")}
-            options={aggregatorOptions}
-            value={formData.aggregators}
-            onChange={(aggs) => setFormData((prev) => ({ ...prev, aggregators: aggs }))}
-            columns={3}
-          />
-        </CardContent>
-      </Card>
+          <div className="border-t pt-3">
+            <CheckboxGroup
+              label={t("categories.availableForAggregators")}
+              options={aggregatorOptions}
+              value={formData.aggregators}
+              onChange={(aggs) => setFormData((prev) => ({ ...prev, aggregators: aggs }))}
+              columns={3}
+            />
+          </div>
+        </div>
+      </FormSectionCard>
 
       {/* Sticky Footer */}
       <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>

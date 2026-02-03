@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,13 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FormSectionCard } from "@/components/shared/FormSectionCard";
+import { FormField } from "@/components/shared/FormField";
+import { FormRow } from "@/components/shared/FormRow";
 import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
 import { CheckboxGroup } from "@/components/shared/CheckboxGroup";
 import { CompactRadioGroup } from "@/components/shared/CompactRadioGroup";
 import { CollapsibleSection } from "@/components/shared/CollapsibleSection";
-import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { ConfirmChangesModal, type Change } from "@/components/shared/ConfirmChangesModal";
-import { ArrowLeft, ArrowRight, Save, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, X, Plus, Trash2, Building2, ShoppingBag, Wallet, Receipt, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const currencies = [
@@ -35,7 +36,6 @@ interface AdditionalTax {
   percentage: number;
 }
 
-// Mock data
 const mockBranches = [
   { 
     id: "1", 
@@ -267,232 +267,193 @@ export default function BranchesEdit() {
   ];
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-3 pb-20">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/branches")}>
           <BackIcon className="h-5 w-5" />
         </Button>
-        <h1 className="text-2xl font-bold text-foreground">{t("branches.editBranch")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("branches.editBranch")}</h1>
       </div>
 
       {/* Basic Info */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">{t("branches.basicInfo")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <FormSectionCard title={t("branches.basicInfo")} icon={Building2}>
+        <FormRow columns={2}>
+          <FormField label={t("branches.branchName")} required>
             <CompactMultiLanguageInput
-              label={t("branches.branchName")}
+              label=""
               values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
               onChange={handleNameChange}
-              required
             />
-            <div className="space-y-1.5">
-              <Label htmlFor="code" className="text-sm">{t("branches.branchCode")}</Label>
-              <Input
-                id="code"
-                value={formData.code}
-                onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase().replace(/\s+/g, "_") }))}
-                required
-              />
-            </div>
-          </div>
+          </FormField>
+          <FormField label={t("branches.branchCode")} required>
+            <Input
+              value={formData.code}
+              onChange={(e) => setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase().replace(/\s+/g, "_") }))}
+              className="h-9"
+            />
+          </FormField>
+        </FormRow>
 
-          <div className="flex items-center justify-between pt-2">
-            <Label htmlFor="status" className="text-sm">{t("common.status")}</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
-              <Switch id="status" checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
-            </div>
+        <div className="flex items-center justify-between pt-3 mt-3 border-t">
+          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("common.status")}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{formData.is_active ? t("common.active") : t("common.inactive")}</span>
+            <Switch checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </FormSectionCard>
 
       {/* Order Types */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">{t("branches.orderTypes")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <CheckboxGroup
-            options={orderTypeOptions}
-            value={formData.order_types}
-            onChange={handleOrderTypesChange}
-          />
+      <FormSectionCard title={t("branches.orderTypes")} icon={ShoppingBag}>
+        <CheckboxGroup
+          options={orderTypeOptions}
+          value={formData.order_types}
+          onChange={handleOrderTypesChange}
+        />
 
-          {formData.order_types.includes("delivery") && (
-            <CollapsibleSection title={t("branches.deliveryOptions")} defaultOpen={true}>
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="internal_delivery"
-                    checked={formData.delivery_internal}
-                    onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, delivery_internal: checked }))}
-                  />
-                  <Label htmlFor="internal_delivery" className="text-sm font-normal">{t("branches.internalDelivery")}</Label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="aggregator_delivery"
-                    checked={formData.delivery_aggregator}
-                    onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, delivery_aggregator: checked, aggregators: checked ? prev.aggregators : [] }))}
-                  />
-                  <Label htmlFor="aggregator_delivery" className="text-sm font-normal">{t("branches.aggregatorDelivery")}</Label>
-                </div>
-
-                {formData.delivery_aggregator && (
-                  <div className="ps-6">
-                    <CheckboxGroup
-                      options={aggregatorOptions}
-                      value={formData.aggregators}
-                      onChange={(aggs) => setFormData((prev) => ({ ...prev, aggregators: aggs }))}
-                      columns={3}
-                    />
-                  </div>
-                )}
+        {formData.order_types.includes("delivery") && (
+          <CollapsibleSection title={t("branches.deliveryOptions")} defaultOpen={true}>
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.delivery_internal}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, delivery_internal: checked }))}
+                />
+                <Label className="text-sm font-normal">{t("branches.internalDelivery")}</Label>
               </div>
-            </CollapsibleSection>
-          )}
-        </CardContent>
-      </Card>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={formData.delivery_aggregator}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, delivery_aggregator: checked, aggregators: checked ? prev.aggregators : [] }))}
+                />
+                <Label className="text-sm font-normal">{t("branches.aggregatorDelivery")}</Label>
+              </div>
+
+              {formData.delivery_aggregator && (
+                <div className="ps-6 pt-1">
+                  <CheckboxGroup
+                    options={aggregatorOptions}
+                    value={formData.aggregators}
+                    onChange={(aggs) => setFormData((prev) => ({ ...prev, aggregators: aggs }))}
+                    columns={3}
+                  />
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        )}
+      </FormSectionCard>
 
       {/* Currency & Pricing */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            {t("branches.currencyAndPricing")}
-            <TooltipInfo content={t("branches.pricingModeTooltip")} />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-sm">{t("branches.currency")}</Label>
-              <Select value={formData.currency_code} onValueChange={(value) => setFormData((prev) => ({ ...prev, currency_code: value }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencies.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code}>
-                      <span className="flex items-center gap-2">
-                        <span className="text-lg">{currency.symbol}</span>
-                        <span>{currency.name}</span>
-                        <span className="text-muted-foreground">({currency.code})</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <CompactRadioGroup
-              label={t("branches.pricingMode")}
-              options={pricingModeOptions}
-              value={formData.pricing_mode}
-              onChange={(value) => setFormData((prev) => ({ ...prev, pricing_mode: value as "inclusive" | "exclusive" }))}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tax & VAT Settings */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            {t("branches.taxSettings")}
-            <TooltipInfo content={t("tooltips.vatField")} />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch id="vatEnabled" checked={formData.vat_enabled} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, vat_enabled: checked }))} />
-              <Label htmlFor="vatEnabled" className="text-sm font-normal">{t("branches.vatEnabled")}</Label>
-            </div>
-
-            {formData.vat_enabled && (
-              <div className="flex items-center gap-2">
-                <Label htmlFor="vatPercentage" className="text-sm text-muted-foreground">{t("branches.vatPercentage")}:</Label>
-                <div className="relative w-24">
-                  <Input
-                    id="vatPercentage"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={formData.vat_percentage}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, vat_percentage: parseFloat(e.target.value) || 0 }))}
-                    className="pe-7 h-8"
-                  />
-                  <span className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Additional Taxes */}
-          <div className="pt-3 border-t">
-            <div className="flex items-center justify-between mb-3">
-              <Label className="text-sm">{t("branches.additionalTaxes")}</Label>
-              <Button variant="outline" size="sm" onClick={addTax} className="h-7 text-xs">
-                <Plus className="h-3 w-3 me-1" />
-                {t("branches.addTax")}
-              </Button>
-            </div>
-
-            {formData.additional_taxes.length > 0 && (
-              <div className="space-y-2">
-                {formData.additional_taxes.map((tax) => (
-                  <div key={tax.id} className="flex items-center gap-2">
-                    <Input
-                      placeholder={t("branches.taxName")}
-                      value={tax.name}
-                      onChange={(e) => updateTax(tax.id, "name", e.target.value)}
-                      className="flex-1 h-8"
-                    />
-                    <div className="relative w-20">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={tax.percentage}
-                        onChange={(e) => updateTax(tax.id, "percentage", parseFloat(e.target.value) || 0)}
-                        className="pe-6 h-8"
-                      />
-                      <span className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeTax(tax.id)} className="h-8 w-8">
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  </div>
+      <FormSectionCard title={t("branches.currencyAndPricing")} icon={Wallet}>
+        <FormRow columns={2}>
+          <FormField label={t("branches.currency")}>
+            <Select value={formData.currency_code} onValueChange={(value) => setFormData((prev) => ({ ...prev, currency_code: value }))}>
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map((currency) => (
+                  <SelectItem key={currency.code} value={currency.code}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg">{currency.symbol}</span>
+                      <span>{currency.name}</span>
+                      <span className="text-muted-foreground">({currency.code})</span>
+                    </span>
+                  </SelectItem>
                 ))}
-              </div>
-            )}
+              </SelectContent>
+            </Select>
+          </FormField>
+
+          <CompactRadioGroup
+            label={t("branches.pricingMode")}
+            options={pricingModeOptions}
+            value={formData.pricing_mode}
+            onChange={(value) => setFormData((prev) => ({ ...prev, pricing_mode: value as "inclusive" | "exclusive" }))}
+          />
+        </FormRow>
+      </FormSectionCard>
+
+      {/* Tax Settings */}
+      <FormSectionCard title={t("branches.taxSettings")} icon={Receipt}>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch checked={formData.vat_enabled} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, vat_enabled: checked }))} />
+            <Label className="text-sm font-normal">{t("branches.vatEnabled")}</Label>
           </div>
-        </CardContent>
-      </Card>
+
+          {formData.vat_enabled && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{t("branches.vatPercentage")}:</span>
+              <div className="relative w-20">
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.vat_percentage}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, vat_percentage: parseFloat(e.target.value) || 0 }))}
+                  className="pe-6 h-8"
+                />
+                <span className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-3 mt-3 border-t">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{t("branches.additionalTaxes")}</span>
+            <Button variant="outline" size="sm" onClick={addTax} className="h-7 text-xs">
+              <Plus className="h-3 w-3 me-1" />
+              {t("branches.addTax")}
+            </Button>
+          </div>
+
+          {formData.additional_taxes.length > 0 && (
+            <div className="space-y-2">
+              {formData.additional_taxes.map((tax) => (
+                <div key={tax.id} className="flex items-center gap-2">
+                  <Input
+                    placeholder={t("branches.taxName")}
+                    value={tax.name}
+                    onChange={(e) => updateTax(tax.id, "name", e.target.value)}
+                    className="flex-1 h-8"
+                  />
+                  <div className="relative w-20">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={tax.percentage}
+                      onChange={(e) => updateTax(tax.id, "percentage", parseFloat(e.target.value) || 0)}
+                      className="pe-6 h-8"
+                    />
+                    <span className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeTax(tax.id)} className="h-8 w-8 text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </FormSectionCard>
 
       {/* Rounding Rules */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            {t("branches.roundingRules")}
-            <TooltipInfo content={t("branches.roundingTooltip")} />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CompactRadioGroup
-            options={roundingOptions}
-            value={formData.rounding_rule}
-            onChange={(value) => setFormData((prev) => ({ ...prev, rounding_rule: value as any }))}
-            orientation="horizontal"
-          />
-        </CardContent>
-      </Card>
+      <FormSectionCard title={t("branches.roundingRules")} icon={Scale}>
+        <CompactRadioGroup
+          label=""
+          options={roundingOptions}
+          value={formData.rounding_rule}
+          onChange={(value) => setFormData((prev) => ({ ...prev, rounding_rule: value as "none" | "0.05" | "0.10" | "1.00" }))}
+          layout="horizontal"
+        />
+      </FormSectionCard>
 
       {/* Sticky Footer */}
       <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
