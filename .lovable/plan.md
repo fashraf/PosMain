@@ -1,353 +1,266 @@
 
-# Phase 1 Admin Pages Implementation Plan
+# POS Admin UX Enhancement Plan
 
 ## Overview
-Building the content for 6 admin pages: Sales Channels, Ingredients, Items, Item-Ingredient Mapping, Item Pricing, and Settings (Language Section). All pages will use the existing design system, i18n infrastructure, and UI components. The design will be modernized to match the reference image with a light purple/lavender accent sidebar feel and clean minimal cards.
+This plan transforms the current modal-based Add/Edit workflow into a dedicated page-based approach, adds View Details modals, implements a reusable Confirm Changes modal, and introduces tooltips throughout the UI. Additionally, a new Branches module with Currency and VAT settings will be created.
 
 ---
 
-## Design System Updates
+## Design Updates
 
-### Color Refinements (Based on Reference Image)
-- Light lavender accent for active menu items: `#f3f0ff`
-- Softer purple for highlights: `#9b87f5`
-- Clean white cards with subtle shadows
-- Light gray table headers
-- Status badges with color-coded indicators (green for active, gray for inactive)
+### Color Refinements (Match Reference Image)
+- Sidebar background: `#F3F0FF` (light lavender)
+- Sidebar link text: `#6B7280`
+- Active link: `#8B5CF6` with white/light background
+- Main content background: `#F9FAFB` (very light gray)
+- Card borders: `#E5E7EB`
+- Primary action button: `#8B5CF6`
+
+---
+
+## Architecture Changes
+
+### UX Pattern Shift
+| Current | New |
+|---------|-----|
+| Add/Edit via Dialog modals | Dedicated Add/Edit pages |
+| Immediate save on submit | Confirm Changes modal before save |
+| No view-only option | View Details modal (read-only) |
+| No tooltips | Tooltips on key fields |
+
+### New Route Structure
+```text
+/sales-channels              - List page
+/sales-channels/add          - Add page
+/sales-channels/:id/edit     - Edit page
+
+/ingredients                 - List page
+/ingredients/add             - Add page
+/ingredients/:id/edit        - Edit page
+
+/items                       - List page
+/items/add                   - Add page
+/items/:id/edit              - Edit page
+
+/item-pricing                - Matrix page (unchanged, but with save confirmation)
+
+/branches                    - List page (NEW)
+/branches/add                - Add page (NEW)
+/branches/:id/edit           - Edit page (NEW)
+```
 
 ---
 
 ## New i18n Keys Required
 
-Add translations for all three languages (EN, AR, UR):
-
 ```text
-salesChannels.code, salesChannels.editChannel, salesChannels.deleteChannel, salesChannels.confirmDelete, salesChannels.noChannels
-ingredients.type, ingredients.liquid, ingredients.solid, ingredients.baseUnit, ingredients.sellingPrice, ingredients.editIngredient, ingredients.noIngredients
-items.isCombo, items.editItem, items.noItems, items.uploadImage
-itemPricing.saveAll, itemPricing.noItems
-settings.languageDescription
-common.activate, common.deactivate, common.type, common.code
+common.view, common.confirmChanges, common.oldValue, common.newValue, common.noChanges, common.confirmAndSave, common.field, common.back
+
+branches.title, branches.addBranch, branches.editBranch, branches.branchName, branches.branchCode, branches.basicInfo, branches.currencySettings, branches.taxSettings, branches.currency, branches.currencyTooltip, branches.vatEnabled, branches.vatPercentage, branches.additionalTaxes, branches.taxName, branches.taxPercentage, branches.taxTooltip, branches.addTax, branches.noBranches
+
+currencies.sar, currencies.inr, currencies.usd, currencies.symbol, currencies.isoCode
+
+tooltips.canAddExtra, tooltips.extraCost, tooltips.alertThreshold, tooltips.channelPricing, tooltips.vatField, tooltips.currency
 ```
-
----
-
-## Database Schema Required
-
-### Tables to Create
-
-1. **sales_channels**
-   - id (uuid, PK)
-   - name_en (text)
-   - name_ar (text)
-   - name_ur (text)
-   - code (text, unique)
-   - icon (text, nullable)
-   - is_active (boolean, default true)
-   - created_at, updated_at (timestamps)
-
-2. **ingredients**
-   - id (uuid, PK)
-   - name_en, name_ar, name_ur (text)
-   - type (enum: liquid, solid)
-   - base_unit (text - kg, g, pieces, liters, ml)
-   - current_quantity (decimal)
-   - alert_threshold (decimal)
-   - cost_price (decimal)
-   - selling_price (decimal, nullable)
-   - can_sell_individually (boolean)
-   - can_add_extra (boolean)
-   - extra_cost (decimal, nullable)
-   - is_active (boolean)
-   - branch_id (uuid, FK to branches, nullable for HQ items)
-   - created_at, updated_at
-
-3. **items**
-   - id (uuid, PK)
-   - name_en, name_ar, name_ur (text)
-   - description_en, description_ar, description_ur (text, nullable)
-   - item_type (enum: edible, non_edible)
-   - base_cost (decimal)
-   - is_combo (boolean)
-   - image_url (text, nullable)
-   - is_active (boolean)
-   - branch_id (uuid, FK, nullable)
-   - created_at, updated_at
-
-4. **item_ingredients**
-   - id (uuid, PK)
-   - item_id (uuid, FK)
-   - ingredient_id (uuid, FK)
-   - quantity_used (decimal)
-   - can_remove (boolean)
-   - can_add_extra (boolean)
-   - extra_quantity_limit (decimal, nullable)
-   - extra_cost (decimal, nullable)
-   - created_at
-
-5. **item_channel_pricing**
-   - id (uuid, PK)
-   - item_id (uuid, FK)
-   - channel_id (uuid, FK)
-   - price (decimal)
-   - branch_id (uuid, FK, nullable)
-   - created_at, updated_at
-
----
-
-## Page Implementations
-
-### 1. Sales Channels Page (`src/pages/SalesChannels.tsx`)
-
-**Components:**
-- Page header with "Add Channel" button
-- Data table with columns: Name, Code, Status, Actions
-- Status toggle switch inline
-- Edit/Delete action buttons
-- Modal dialog for Add/Edit
-
-**Features:**
-- Table displays all sales channels
-- Inline status toggle (Active/Inactive)
-- "Add Channel" opens modal with form:
-  - Name (multi-language tabs: EN/AR/UR)
-  - Code (auto-generated or manual)
-  - Icon selector (optional)
-  - Status toggle
-- Edit action opens same modal pre-filled
-- Delete with confirmation dialog
-- Toast notifications for success/error
-- Empty state when no channels exist
-
-**File Structure:**
-```text
-src/pages/SalesChannels.tsx (main page)
-src/components/sales-channels/SalesChannelTable.tsx
-src/components/sales-channels/SalesChannelDialog.tsx
-```
-
----
-
-### 2. Ingredients Management Page (`src/pages/Ingredients.tsx`)
-
-**Components:**
-- Page header with "Add Ingredient" button
-- Filterable/searchable data table
-- Pagination component
-- Add/Edit modal dialog
-
-**Table Columns:**
-- Name (translated based on current language)
-- Type (Liquid/Solid badge)
-- Base Unit
-- Current Quantity
-- Alert Threshold
-- Cost Price
-- Selling Price
-- Can Sell Individually (Yes/No badge)
-- Can Add Extra (Yes/No badge)
-- Status (Active/Inactive toggle)
-- Actions (Edit)
-
-**Add/Edit Form Fields:**
-- Name tabs (EN/AR/UR)
-- Type dropdown (Liquid/Solid)
-- Unit dropdown (kg, g, pieces, liters, ml)
-- Quantity input
-- Alert threshold input
-- Cost price input
-- Selling price input
-- Toggle: Can be sold individually
-- Toggle: Can add extra
-- Extra cost input (visible only when "Can add extra" is true)
-- Status toggle
-
-**File Structure:**
-```text
-src/pages/Ingredients.tsx
-src/components/ingredients/IngredientTable.tsx
-src/components/ingredients/IngredientDialog.tsx
-src/components/ingredients/IngredientFilters.tsx
-```
-
----
-
-### 3. Items Management Page (`src/pages/Items.tsx`)
-
-**Components:**
-- Page header with "Add Item" button
-- View toggle (Grid/List)
-- Data table or grid cards
-- Add/Edit modal
-
-**Table/Grid Columns:**
-- Image thumbnail
-- Name (translated)
-- Item Type (Edible/Non-Edible badge)
-- Base Cost
-- Is Combo (Yes/No badge)
-- Status
-- Actions
-
-**Add/Edit Form Fields:**
-- Name tabs (EN/AR/UR)
-- Description tabs (optional)
-- Item Type dropdown
-- Base cost input
-- Is Combo toggle
-- Image upload placeholder (with preview area)
-- Status toggle
-
-**Note:** No ingredient mapping in this page (separate page for that)
-
-**File Structure:**
-```text
-src/pages/Items.tsx
-src/components/items/ItemTable.tsx
-src/components/items/ItemGrid.tsx
-src/components/items/ItemDialog.tsx
-```
-
----
-
-### 4. Item-Ingredient Mapping Page (`src/pages/ItemIngredientMapping.tsx`)
-
-**New Route:** `/items/:itemId/ingredients` or a standalone page with item selector
-
-**Components:**
-- Item selector dropdown (search/filter enabled)
-- Selected item card showing item details
-- Ingredient mapping list
-- Add ingredient row button
-
-**For Each Ingredient Mapping Row:**
-- Ingredient selector dropdown
-- Quantity used input
-- Can be removed toggle
-- Can add extra toggle
-- Extra quantity limit input (visible when can add extra = true)
-- Extra cost input (visible when can add extra = true)
-- Remove row button
-
-**Features:**
-- Dynamic row adding/removing
-- Validation before save
-- Toast notifications
-- Empty state when no item selected or no mappings
-
-**File Structure:**
-```text
-src/pages/ItemIngredientMapping.tsx (or extend Items.tsx with tab)
-src/components/item-mapping/ItemSelector.tsx
-src/components/item-mapping/IngredientMappingRow.tsx
-src/components/item-mapping/IngredientMappingList.tsx
-```
-
----
-
-### 5. Item Pricing per Sales Channel (`src/pages/ItemPricing.tsx`)
-
-**Components:**
-- Price matrix grid/table
-- Horizontal scroll for many channels
-- Save all button
-
-**Grid Structure:**
-- First column: Item name (with image thumbnail)
-- Subsequent columns: One per active sales channel
-- Each cell: Editable price input
-- Visual indicator when price differs from base cost
-
-**Features:**
-- Auto-loads all items and active channels
-- Inline editing of prices
-- Batch save functionality
-- Visual highlight for modified cells
-- Empty state messaging
-
-**File Structure:**
-```text
-src/pages/ItemPricing.tsx
-src/components/pricing/PricingMatrix.tsx
-src/components/pricing/PricingCell.tsx
-```
-
----
-
-### 6. Settings Page - Language Section (`src/pages/Settings.tsx`)
-
-**Already Exists - Minor Enhancements:**
-- Keep existing language selector cards
-- Add current language highlight with check icon (already implemented)
-- Ensure proper RTL support (already working)
-- Use existing `changeLanguage` hook
-
-**No changes needed** - the existing implementation is already correct.
 
 ---
 
 ## Shared Components to Create
 
-### MultiLanguageInput Component
-```text
-src/components/shared/MultiLanguageInput.tsx
-```
-A tabbed input component for EN/AR/UR text entry used across all forms.
+### 1. ConfirmChangesModal
+**Location:** `src/components/shared/ConfirmChangesModal.tsx`
 
-### StatusBadge Component
-```text
-src/components/shared/StatusBadge.tsx
-```
-Reusable badge showing Active (green) / Inactive (gray) status.
+**Purpose:** Reusable modal shown before saving any Add/Edit form
 
-### DataTable Component
-```text
-src/components/shared/DataTable.tsx
-```
-Generic table wrapper with consistent styling, pagination, and empty state.
+**Props:**
+- `open: boolean`
+- `onOpenChange: (open: boolean) => void`
+- `onConfirm: () => void`
+- `changes: Array<{ field: string, oldValue: string | null, newValue: string }>`
+- `title?: string`
 
-### EmptyState Component
-```text
-src/components/shared/EmptyState.tsx
-```
-Consistent empty state with icon and message.
+**Features:**
+- Table showing: Field | Old Value | New Value
+- Highlights changed fields
+- Empty state if no changes
+- "Confirm and Save" and "Cancel" buttons
+- Fully i18n compatible
+
+### 2. ViewDetailsModal
+**Location:** `src/components/shared/ViewDetailsModal.tsx`
+
+**Purpose:** Reusable read-only modal for viewing entity details
+
+**Props:**
+- `open: boolean`
+- `onOpenChange: (open: boolean) => void`
+- `title: string`
+- `sections: Array<{ title: string, fields: Array<{ label: string, value: React.ReactNode, icon?: LucideIcon }> }>`
+
+**Features:**
+- Grouped sections with titles
+- Each field: icon (optional) + label + value
+- Close button only (no edit controls)
+- RTL compatible
+
+### 3. TooltipInfo
+**Location:** `src/components/shared/TooltipInfo.tsx`
+
+**Purpose:** Small info icon with tooltip for explaining fields
+
+**Props:**
+- `content: string`
+- `side?: "top" | "bottom" | "left" | "right"`
+
+**Features:**
+- Uses Radix Tooltip
+- Info icon (circle-i)
+- Subtle styling
+- RTL compatible positioning
+
+### 4. PageFormLayout
+**Location:** `src/components/shared/PageFormLayout.tsx`
+
+**Purpose:** Consistent layout wrapper for Add/Edit pages
+
+**Props:**
+- `title: string`
+- `children: React.ReactNode`
+- `onCancel: () => void`
+- `onSave: () => void`
+- `isSaving?: boolean`
+
+**Features:**
+- Page header with back button
+- Card-based content sections
+- Sticky footer with Cancel/Save buttons
+- Save button opens confirm modal (handled by parent)
 
 ---
 
-## Technical Notes
+## Page Implementations
 
-### Data Fetching Pattern
-- Use React Query (`@tanstack/react-query`) for data fetching
-- Create hooks for each entity: `useSalesChannels`, `useIngredients`, `useItems`, etc.
-- Implement optimistic updates for toggle actions
+### 1. Sales Channels
 
-### Form Handling
-- Use `react-hook-form` with `zod` validation
-- All forms are controlled components
-- Modal dialogs handle create/edit modes
+#### List Page Updates (`src/pages/SalesChannels.tsx`)
+- Remove `SalesChannelDialog` import
+- Add "View" button per row (opens ViewDetailsModal)
+- "Add New" button navigates to `/sales-channels/add`
+- "Edit" button navigates to `/sales-channels/:id/edit`
+- Compact table styling
 
-### RTL Support
-- All components use `isRTL` from `useLanguage` hook
-- Flex containers use `flex-row-reverse` when RTL
-- Tables handle RTL automatically via CSS
+#### Add Page (`src/pages/SalesChannelsAdd.tsx`)
+- Card-based form sections
+- Section 1: Channel Name (multilingual)
+- Section 2: Code and Icon
+- Section 3: Status toggle
+- Sticky footer with Cancel/Save
+- Save opens ConfirmChangesModal
 
-### Mock Data Strategy
-- Start with mock data arrays in each page
-- Structure matches database schema exactly
-- Easy swap to real API calls later
+#### Edit Page (`src/pages/SalesChannelsEdit.tsx`)
+- Same form as Add page
+- Pre-populated with existing data
+- Tracks changes for ConfirmChangesModal
 
 ---
 
-## Implementation Order
+### 2. Ingredients
 
-1. **Translations** - Add all new i18n keys first
-2. **Shared Components** - MultiLanguageInput, StatusBadge, EmptyState
-3. **Sales Channels** - Table, Dialog, CRUD operations
-4. **Ingredients** - Table with filters, Dialog, pagination
-5. **Items** - Table/Grid view, Dialog
-6. **Item-Ingredient Mapping** - Selector, dynamic rows
-7. **Item Pricing Matrix** - Grid with editable cells
-8. **Database Migrations** - Create all tables with RLS policies
+#### List Page Updates (`src/pages/Ingredients.tsx`)
+- Remove `IngredientDialog` import
+- Add "View" button per row
+- Add tooltips for: Alert Threshold, Can Add Extra, Extra Cost
+- "Add New" navigates to `/ingredients/add`
+- "Edit" navigates to `/ingredients/:id/edit`
+
+#### Add Page (`src/pages/IngredientsAdd.tsx`)
+- Section 1: Basic Info (Name multilingual, Type, Unit)
+- Section 2: Stock & Pricing (Quantity, Alert Threshold with tooltip, Cost, Selling Price)
+- Section 3: Extra Options (Can Sell Individually, Can Add Extra with tooltip, Extra Cost with tooltip)
+- Section 4: Status
+- Sticky footer
+
+#### Edit Page (`src/pages/IngredientsEdit.tsx`)
+- Same structure as Add
+- Pre-filled data, change tracking
+
+---
+
+### 3. Items
+
+#### List Page Updates (`src/pages/Items.tsx`)
+- Remove `ItemDialog` import
+- Add "View" button per row
+- "Add New" navigates to `/items/add`
+- "Edit" navigates to `/items/:id/edit`
+
+#### Add Page (`src/pages/ItemsAdd.tsx`)
+- Section 1: Basic Info (Name multilingual, Description multilingual)
+- Section 2: Classification (Item Type dropdown, Is Combo toggle)
+- Section 3: Pricing (Base Cost)
+- Section 4: Image (Upload placeholder with preview)
+- Section 5: Status
+
+#### Edit Page (`src/pages/ItemsEdit.tsx`)
+- Same structure, pre-filled
+
+---
+
+### 4. Item Pricing
+
+#### Updates (`src/pages/ItemPricing.tsx`)
+- Add tooltips for price cells that differ from base cost
+- Save All button opens ConfirmChangesModal showing all modified prices
+- No navigation changes (stays as matrix page)
+
+---
+
+### 5. Branches (NEW)
+
+#### List Page (`src/pages/Branches.tsx`)
+- Table columns: Name, Code, Currency, VAT Enabled, Status, Actions
+- View/Edit/Add buttons
+- Add "Branches" to sidebar navigation
+
+#### Add Page (`src/pages/BranchesAdd.tsx`)
+**Section 1: Basic Information**
+- Branch Name (multilingual input)
+- Branch Code
+- Status toggle
+
+**Section 2: Currency Settings**
+- Currency selector dropdown with:
+  - Saudi Riyal (SAR) - ﷼
+  - Indian Rupee (INR) - ₹
+  - US Dollar (USD) - $
+- Display: Symbol + ISO Code
+- Tooltip: "Currency is used for prices, invoices, and receipts for this branch."
+
+**Section 3: Tax and VAT Settings**
+- Enable VAT toggle
+- VAT Percentage input (visible when enabled)
+- Additional Taxes section:
+  - Dynamic rows: Tax Name + Tax Percentage + Remove button
+  - "Add Tax" button
+- Tooltip: "Taxes are applied during billing and shown on receipts."
+
+#### Edit Page (`src/pages/BranchesEdit.tsx`)
+- Same structure as Add
+- Pre-filled data
+
+---
+
+## Table Component Updates
+
+### Row Actions Pattern
+Each table will have consistent action buttons:
+```text
+[Eye Icon] View    - Opens ViewDetailsModal
+[Pencil Icon] Edit - Navigates to /entity/:id/edit
+[Toggle] Status    - Inline toggle (unchanged)
+```
+
+No delete buttons on list pages (soft delete via status).
 
 ---
 
@@ -355,26 +268,111 @@ Consistent empty state with icon and message.
 
 ### New Files to Create
 ```text
-src/components/shared/MultiLanguageInput.tsx
-src/components/shared/StatusBadge.tsx
-src/components/shared/EmptyState.tsx
-src/components/shared/DataTablePagination.tsx
-src/components/sales-channels/SalesChannelTable.tsx
-src/components/sales-channels/SalesChannelDialog.tsx
-src/components/ingredients/IngredientTable.tsx
-src/components/ingredients/IngredientDialog.tsx
-src/components/items/ItemTable.tsx
-src/components/items/ItemDialog.tsx
-src/components/item-mapping/IngredientMappingList.tsx
-src/components/pricing/PricingMatrix.tsx
+src/components/shared/ConfirmChangesModal.tsx
+src/components/shared/ViewDetailsModal.tsx
+src/components/shared/TooltipInfo.tsx
+src/components/shared/PageFormLayout.tsx
+
+src/pages/SalesChannelsAdd.tsx
+src/pages/SalesChannelsEdit.tsx
+
+src/pages/IngredientsAdd.tsx
+src/pages/IngredientsEdit.tsx
+
+src/pages/ItemsAdd.tsx
+src/pages/ItemsEdit.tsx
+
+src/pages/Branches.tsx
+src/pages/BranchesAdd.tsx
+src/pages/BranchesEdit.tsx
+
+src/components/branches/BranchTable.tsx
+src/components/branches/BranchViewModal.tsx
+src/components/branches/CurrencySelector.tsx
+src/components/branches/TaxSettings.tsx
 ```
 
 ### Files to Modify
 ```text
-src/lib/i18n/translations.ts (add new keys)
-src/pages/SalesChannels.tsx (full implementation)
-src/pages/Ingredients.tsx (full implementation)
-src/pages/Items.tsx (full implementation)
-src/pages/ItemPricing.tsx (full implementation)
-src/App.tsx (add new route for item-ingredient mapping if separate page)
+src/index.css                    - Update color tokens for lavender theme
+src/lib/i18n/translations.ts     - Add all new i18n keys
+src/App.tsx                      - Add new routes
+src/components/AppSidebar.tsx    - Add Branches nav item
+src/pages/SalesChannels.tsx      - Switch to page-based workflow
+src/pages/Ingredients.tsx        - Switch to page-based workflow
+src/pages/Items.tsx              - Switch to page-based workflow
+src/pages/ItemPricing.tsx        - Add confirm modal on save
+src/components/sales-channels/SalesChannelTable.tsx - Add View action
+src/components/ingredients/IngredientTable.tsx      - Add View action, tooltips
+src/components/items/ItemTable.tsx                  - Add View action
 ```
+
+### Files to Delete (replaced by page-based approach)
+```text
+src/components/sales-channels/SalesChannelDialog.tsx
+src/components/ingredients/IngredientDialog.tsx
+src/components/items/ItemDialog.tsx
+```
+
+---
+
+## Implementation Order
+
+1. **Color/Theme Updates** - Update CSS variables in `src/index.css`
+2. **i18n Keys** - Add all new translation keys
+3. **Shared Components** - ConfirmChangesModal, ViewDetailsModal, TooltipInfo, PageFormLayout
+4. **Sales Channels** - Update list page, create Add/Edit pages
+5. **Ingredients** - Update list page, create Add/Edit pages, add tooltips
+6. **Items** - Update list page, create Add/Edit pages
+7. **Item Pricing** - Add confirm modal
+8. **Branches** - Create full module (list, add, edit, components)
+9. **Routing** - Update App.tsx with all new routes
+10. **Sidebar** - Add Branches navigation item
+
+---
+
+## Technical Notes
+
+### Change Tracking for Confirm Modal
+Each Add/Edit page will:
+1. Store initial form values on mount
+2. Compare current values on save click
+3. Generate changes array: `{ field, oldValue, newValue }`
+4. Pass to ConfirmChangesModal
+
+### Currency Data Structure
+```typescript
+const currencies = [
+  { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "USD", symbol: "$", name: "US Dollar" },
+];
+```
+
+### RTL Considerations
+- All tooltips use `side` prop for proper positioning
+- PageFormLayout footer uses `flex-row-reverse` when RTL
+- Navigation uses `useNavigate(-1)` for back button
+
+---
+
+## Database Schema for Branches
+
+```sql
+CREATE TABLE branches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name_en TEXT NOT NULL,
+  name_ar TEXT NOT NULL,
+  name_ur TEXT NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  currency_code TEXT NOT NULL DEFAULT 'SAR',
+  vat_enabled BOOLEAN DEFAULT false,
+  vat_percentage DECIMAL(5,2) DEFAULT 0,
+  additional_taxes JSONB DEFAULT '[]',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+This schema will be created via database migration after plan approval.
