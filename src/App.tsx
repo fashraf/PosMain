@@ -24,6 +24,17 @@ import BranchesAdd from "@/pages/BranchesAdd";
 import BranchesEdit from "@/pages/BranchesEdit";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
+// Inventory Module
+import ItemMaster from "@/pages/inventory/ItemMaster";
+import ItemMasterAdd from "@/pages/inventory/ItemMasterAdd";
+import ItemMasterEdit from "@/pages/inventory/ItemMasterEdit";
+import IngredientMaster from "@/pages/inventory/IngredientMaster";
+import IngredientMasterAdd from "@/pages/inventory/IngredientMasterAdd";
+import StockIssue from "@/pages/inventory/StockIssue";
+import StockTransfer from "@/pages/inventory/StockTransfer";
+import StockAdjustment from "@/pages/inventory/StockAdjustment";
+import BatchExpiry from "@/pages/inventory/BatchExpiry";
+import ReportsAlerts from "@/pages/inventory/ReportsAlerts";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +65,17 @@ const App = () => (
             <Route path="/branches/add" element={<BranchesAdd />} />
             <Route path="/branches/:id/edit" element={<BranchesEdit />} />
             <Route path="/settings" element={<Settings />} />
+            {/* Inventory Module Routes */}
+            <Route path="/inventory/items" element={<ItemMaster />} />
+            <Route path="/inventory/items/add" element={<ItemMasterAdd />} />
+            <Route path="/inventory/items/:id/edit" element={<ItemMasterEdit />} />
+            <Route path="/inventory/ingredients" element={<IngredientMaster />} />
+            <Route path="/inventory/ingredients/add" element={<IngredientMasterAdd />} />
+            <Route path="/inventory/operations/issue" element={<StockIssue />} />
+            <Route path="/inventory/operations/transfer" element={<StockTransfer />} />
+            <Route path="/inventory/operations/adjustment" element={<StockAdjustment />} />
+            <Route path="/inventory/batch-expiry" element={<BatchExpiry />} />
+            <Route path="/inventory/reports" element={<ReportsAlerts />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   Store, 
@@ -7,9 +8,16 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Link2,
   Building2,
   Tag,
+  Package,
+  ClipboardList,
+  ArrowRightLeft,
+  Sliders,
+  Calendar,
+  BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -21,17 +29,40 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarHeader,
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-const navItems = [
+const mainNavItems = [
   { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
   { titleKey: "nav.salesChannels", url: "/sales-channels", icon: Store },
-  { titleKey: "nav.ingredients", url: "/ingredients", icon: Carrot },
+];
+
+const inventorySubItems = [
+  { titleKey: "nav.itemMaster", url: "/inventory/items", icon: Package },
+  { titleKey: "nav.ingredientMaster", url: "/inventory/ingredients", icon: Carrot },
+  { 
+    titleKey: "nav.stockOperations", 
+    url: "/inventory/operations",
+    icon: ArrowRightLeft,
+    subItems: [
+      { titleKey: "nav.stockIssue", url: "/inventory/operations/issue" },
+      { titleKey: "nav.stockTransfer", url: "/inventory/operations/transfer" },
+      { titleKey: "nav.stockAdjustment", url: "/inventory/operations/adjustment" },
+    ]
+  },
+  { titleKey: "nav.batchExpiry", url: "/inventory/batch-expiry", icon: Calendar },
+  { titleKey: "nav.reportsAlerts", url: "/inventory/reports", icon: BarChart3 },
+];
+
+const otherNavItems = [
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
   { titleKey: "nav.categories", url: "/categories", icon: Tag },
   { titleKey: "nav.itemIngredients", url: "/item-ingredients", icon: Link2 },
@@ -44,6 +75,8 @@ export function AppSidebar() {
   const { t, isRTL } = useLanguage();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [inventoryOpen, setInventoryOpen] = useState(true);
+  const [operationsOpen, setOperationsOpen] = useState(false);
 
   return (
     <Sidebar
@@ -71,12 +104,111 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {/* Main nav items */}
+              {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild tooltip={t(item.titleKey)}>
                     <NavLink 
                       to={item.url} 
                       end={item.url === "/"}
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {!isCollapsed && <span>{t(item.titleKey)}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
+              {/* Inventory Menu - Collapsible */}
+              <Collapsible
+                open={inventoryOpen && !isCollapsed}
+                onOpenChange={setInventoryOpen}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={t("nav.inventory")}
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
+                    >
+                      <Package className="h-5 w-5 shrink-0" />
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1 text-left">{t("nav.inventory")}</span>
+                          <ChevronDown className={cn(
+                            "h-4 w-4 transition-transform",
+                            inventoryOpen && "rotate-180"
+                          )} />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {inventorySubItems.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.url}>
+                          {subItem.subItems ? (
+                            <Collapsible
+                              open={operationsOpen}
+                              onOpenChange={setOperationsOpen}
+                            >
+                              <CollapsibleTrigger asChild>
+                                <SidebarMenuSubButton
+                                  className="flex items-center justify-between w-full"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <subItem.icon className="h-4 w-4" />
+                                    {t(subItem.titleKey)}
+                                  </span>
+                                  <ChevronDown className={cn(
+                                    "h-3 w-3 transition-transform",
+                                    operationsOpen && "rotate-180"
+                                  )} />
+                                </SidebarMenuSubButton>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="ps-6 space-y-1 mt-1">
+                                  {subItem.subItems.map((nestedItem) => (
+                                    <SidebarMenuSubButton asChild key={nestedItem.url}>
+                                      <NavLink
+                                        to={nestedItem.url}
+                                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                                      >
+                                        {t(nestedItem.titleKey)}
+                                      </NavLink>
+                                    </SidebarMenuSubButton>
+                                  ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          ) : (
+                            <SidebarMenuSubButton asChild>
+                              <NavLink
+                                to={subItem.url}
+                                className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                                activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                              >
+                                <subItem.icon className="h-4 w-4" />
+                                {t(subItem.titleKey)}
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          )}
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Other nav items */}
+              {otherNavItems.map((item) => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton asChild tooltip={t(item.titleKey)}>
+                    <NavLink 
+                      to={item.url} 
                       className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
