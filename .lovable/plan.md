@@ -1,296 +1,378 @@
 
-
-# Convert Selection List to Searchable Dropdown
+# Items Table Redesign + Replacement Modal + Enhanced Save Summary
 
 ## Overview
-Replace the visible list with radio buttons in both `AddIngredientModal` and `AddItemModal` with a clean searchable dropdown (combobox) using Popover + Command components.
+Redesign the Items table to match the reference image with:
+1. Add "Combo Price" column (showing 0 for now, editable later)
+2. Remove "PCS" suffix from quantity controls
+3. Replacement column: clickable button showing count (e.g., "3"), with X and eye (view) icons for each replacement
+4. Replacement modal to add items under a parent item
+5. Save Summary modal at 75% width with complete breakdown including replacements
 
 ---
 
-## Current State (What User Sees)
+## 1. Updated ItemTable Layout (Based on Reference Image)
+
+### New Column Structure
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│ 🔍 Search items for replacement...                              │
-└─────────────────────────────────────────────────────────────────┘
-│ ○ Spicy Burger - SAR 9.50                     ← ALWAYS VISIBLE  │
-│ ● Cheese Burger - SAR 9.00                                      │
-│ ○ Veggie Burger - SAR 8.50              [Already Added]         │
-└─────────────────────────────────────────────────────────────────┘
++─────────────────────────────────────────────────────────────────────────────────────────+
+| ITEMS                                                                               [+] |
++═════════════════════════════════════════════════════════════════════════════════════════+
+| Name           │ Replacement │     Quantity      │ Combo Price │    Actual Cost    │   |
+|════════════════╪═════════════╪═══════════════════╪═════════════╪═══════════════════╪═══|
+| Margherita     │    [+]      │  [−]  2  [+]      │      0      │ SAR 12.99 × 2     │ × |
+| Pizza          │             │                   │             │ SAR 25.98         │   |
+|────────────────┼─────────────┼───────────────────┼─────────────┼───────────────────┼───|
+| Chicken Burger │    [+]      │  [−]  4  [+]      │      0      │ SAR 8.99 × 4      │ × |
+|                │             │                   │             │ SAR 35.96         │   |
+|────────────────┼─────────────┼───────────────────┼─────────────┼───────────────────┼───|
+| Soft Drink     │    [+]      │  [−]  6  [+]      │      0      │ SAR 2.50 × 6      │ × |
+|  → Cola (Def)  │   👁 ×      │                   │     +0      │                   │   |
+|  → Sprite      │   👁 ×      │                   │   +SAR 1.00 │                   │   |
+|  → Fanta       │   👁 ×      │                   │   +SAR 1.00 │                   │   |
+|                │   3         │                   │             │ SAR 15.00         │   |
+|────────────────┼─────────────┼───────────────────┼─────────────┼───────────────────┼───|
+| French Fries   │    [+]      │  [−]  1  [+]      │      0      │ SAR 3.99 × 1      │ × |
+|                │             │                   │             │ SAR 3.99          │   |
++════════════════╪═════════════╪═══════════════════╪═════════════╪═══════════════════╪═══+
+|    ITEMS TOTAL │             │    ITEMS TOTAL    │   SAR 0.    │        SAR 80.93  │   |
++─────────────────────────────────────────────────────────────────────────────────────────+
 ```
 
-## New State (Dropdown)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ Select ingredient...                                  ▼         │
-└─────────────────────────────────────────────────────────────────┘
-          ↓ Click to expand
-┌─────────────────────────────────────────────────────────────────┐
-│ 🔍 Search...                                                     │
-├─────────────────────────────────────────────────────────────────┤
-│ Spicy Burger - SAR 9.50                                         │
-│ Cheese Burger - SAR 9.00                                        │
-│ ✓ Veggie Burger - SAR 8.50              [Already Added]         │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Column Widths
+| Column | Width | Alignment |
+|--------|-------|-----------|
+| Name | 25% | Left |
+| Replacement | 12% | Center |
+| Quantity | 20% | Center |
+| Combo Price | 15% | Center |
+| Actual Cost | 23% | Right |
+| Remove (×) | 5% | Center |
 
 ---
 
-## Visual Design
+## 2. Data Structure Updates
 
-### Trigger Button (closed state)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ Select ingredient...                                  ▼         │
-└─────────────────────────────────────────────────────────────────┘
-  Height: 36px (h-9)
-  Border: 1px #E5E7EB
-  Background: white
-  Text: #6B7280 placeholder or selected name
-  Icon: ChevronDown, 16px, opacity-50
-  Focus ring: #8B5CF6
-```
+### Extended SubItemMappingItem Interface
+```typescript
+interface ReplacementItem {
+  id: string;
+  item_id: string;
+  item_name: string;
+  extra_cost: number;
+  is_default: boolean;
+}
 
-### Trigger Button (after selection)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ ✓ Cheese - SAR 12.00/KG                               ▼         │
-└─────────────────────────────────────────────────────────────────┘
-  Check icon: green #22C55E
-  Text: black, name + cost visible
-```
-
-### Dropdown Panel (opened)
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│ 🔍 Search...                                                     │
-├─────────────────────────────────────────────────────────────────┤
-│   Tomato (KG) - SAR 5.00/KG                                     │
-│ ✓ Cheese (KG) - SAR 12.00/KG                  ← selected        │
-│   Mushrooms (KG) - SAR 8.00/KG                                  │
-│   Chicken (KG) - SAR 12.00/KG                                   │
-│   ─────────────────────────────────────────────                 │
-│   Olive Oil (L) - SAR 5.00/L              [Already Added]       │
-└─────────────────────────────────────────────────────────────────┘
-  Width: match trigger width (w-full)
-  Max height: 200px, scroll for more
-  Background: white, solid (no transparency)
-  Border: 1px #E5E7EB
-  Shadow: 0 4px 12px rgba(0,0,0,0.1)
-  z-index: 50
-  Each row: 36px height
-  Search input: h-9, border-bottom
-  Disabled items: opacity-50, grouped at bottom
+interface SubItemMappingItem {
+  id: string;
+  sub_item_id: string;
+  sub_item_name: string;
+  quantity: number;
+  unit_price: number;
+  sort_order: number;
+  combo_price: number;           // NEW: Combo price for this item
+  replacements: ReplacementItem[]; // NEW: Array of replacement options
+}
 ```
 
 ---
 
-## Implementation Details
+## 3. ItemTable Component Updates
 
-### Pattern: Popover + Command (Combobox)
-Use the standard shadcn/ui combobox pattern:
+### Changes Required
+1. Add "Combo Price" column header and cells
+2. Remove "PCS" from QuantityControl (pass `unit={undefined}`)
+3. Rename "Price" column to "Actual Cost"
+4. Replacement column shows:
+   - `[+]` button when no replacements
+   - Count badge (e.g., "3") when replacements exist
+   - Clicking opens ReplacementModal
+5. Render replacement sub-rows indented under parent
+6. Each replacement row has:
+   - Eye icon (view/edit)
+   - X icon (remove)
+   - "(Def)" label if is_default
+   - +SAR X.XX for extra cost
+7. Footer shows "ITEMS TOTAL" on both left and center columns
+
+### Table Header (new)
 ```jsx
-<Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
-  <PopoverTrigger asChild>
-    <Button variant="outline" role="combobox" aria-expanded={dropdownOpen}>
-      {selectedItem ? selectedItem.name : "Select..."}
-      <ChevronDown className="ml-auto h-4 w-4" />
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent className="w-full p-0">
-    <Command>
-      <CommandInput placeholder="Search..." />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup>
-          {items.map(item => (
-            <CommandItem
-              key={item.id}
-              value={item.name}
-              onSelect={() => {
-                setSelectedItem(item);
-                setDropdownOpen(false);
-              }}
-            >
-              <Check className={cn("mr-2 h-4 w-4", selected ? "opacity-100" : "opacity-0")} />
-              {item.name}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  </PopoverContent>
-</Popover>
+<thead>
+  <tr>
+    <th className="w-[25%]">{t("common.name")}</th>
+    <th className="w-[12%] text-center">{t("itemMapping.replacement")}</th>
+    <th className="w-[20%] text-center">{t("itemMapping.quantity")}</th>
+    <th className="w-[15%] text-center">{t("itemMapping.comboPrice")}</th>
+    <th className="w-[23%] text-right">{t("itemMapping.actualCost")}</th>
+    <th className="w-[5%]"></th>
+  </tr>
+</thead>
 ```
 
 ---
 
-## Files to Modify
+## 4. Replacement Sub-Rows Rendering
 
-### 1. AddIngredientModal.tsx
-**Changes:**
-- Remove: visible list with radio buttons
-- Add: Popover + Command combobox
-- Keep: Preview section, Configure section, Footer
-- Add: `dropdownOpen` state
-
-### 2. AddItemModal.tsx
-**Changes:**
-- Same pattern as AddIngredientModal
-- Remove: visible list with radio buttons
-- Add: Popover + Command combobox
-
----
-
-## Detailed UI for AddIngredientModal
-
-### Before (current)
+### Visual Structure
 ```text
-+─────────────────────────────────────────────────+
-│ Add Ingredient                                  │
-+─────────────────────────────────────────────────+
-│ Step 1: Select Ingredient                       │
-│ ┌───────────────────────────────────────────┐   │
-│ │ 🔍 Search ingredients...                   │   │
-│ └───────────────────────────────────────────┘   │
-│ ┌───────────────────────────────────────────┐   │
-│ │ ○ Tomato (KG) - SAR 5.00/KG               │   │
-│ │ ● Cheese (KG) - SAR 12.00/KG              │   │  ← VISIBLE LIST
-│ │ ○ Olive Oil (L) - SAR 5.00/L [Already]    │   │
-│ └───────────────────────────────────────────┘   │
+Parent Row:
+| Soft Drink     │    [+]      │  [−]  6  [+]      │      0      │ SAR 2.50 × 6     │ × |
+|                │             │                   │             │ SAR 15.00        │   |
+
+Replacement Rows (indented, no quantity/remove on parent):
+|  → Cola (Def)  │   👁  ×     │                   │     +0      │                  │   |
+|  → Sprite      │   👁  ×     │                   │   +SAR 1.00 │                  │   |
+|  → Fanta       │   👁  ×     │                   │   +SAR 1.00 │                  │   |
+
+Badge Row (replacement count):
+|                │    3        │                   │             │                  │   |
 ```
 
-### After (dropdown)
+### Replacement Row Rules
+- Indented 16px with "→" prefix
+- "(Def)" suffix for is_default = true
+- Eye icon: opens edit modal
+- X icon: removes this replacement (with confirmation)
+- Combo Price shows "+0" or "+SAR X.XX"
+- No Quantity or Actual Cost columns for replacement rows
+- After all replacements, show count badge in Replacement column
+
+---
+
+## 5. ReplacementModal Component (New)
+
+### Modal Specifications
 ```text
-+─────────────────────────────────────────────────+
-│ Add Ingredient                                  │
-+─────────────────────────────────────────────────+
-│ Step 1: Select Ingredient                       │
-│ ┌───────────────────────────────────────────┐   │
-│ │ Select ingredient...                    ▼ │   │  ← COLLAPSED DROPDOWN
-│ └───────────────────────────────────────────┘   │
-│                                                 │
-│ (click to expand dropdown with search)          │
++────────────────────────────────────────────────────────────────────────+
+│ Replacements for "Soft Drink"                                      ×  │
++════════════════════════════════════════════════════════════════════════+
+│                                                                        │
+│ Add Replacement                                                        │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ Select item...                                               ▼    │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                                        │
+│ [Selected: Sprite]                                                     │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ Extra Cost    SAR [ 1.00      ]                                    │ │
+│ │ Set as Default  [ ]                                                │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                       [Add Replacement]│
+│                                                                        │
+│────────────────────────────────────────────────────────────────────────│
+│                                                                        │
+│ Current Replacements (3)                                               │
+│ ┌────────────────────────────────────────────────────────────────────┐ │
+│ │ ★ Cola           (Default)                          +0       👁  × │ │
+│ │   Sprite                                      +SAR 1.00       👁  × │ │
+│ │   Fanta                                       +SAR 1.00       👁  × │ │
+│ └────────────────────────────────────────────────────────────────────┘ │
+│                                                                        │
++════════════════════════════════════════════════════════════════════════+
+│                                                             [Done]     │
++────────────────────────────────────────────────────────────────────────+
 ```
 
----
+### Modal Width: 540px (matches other modals)
 
-## Key Specifications
+### Features
+1. Searchable dropdown to select replacement item
+2. Extra Cost input (SAR prefix, defaults to 0)
+3. "Set as Default" checkbox
+4. Add Replacement button (appends to list)
+5. Current Replacements list:
+   - ★ marker for default
+   - Extra cost display
+   - Eye icon (edit) and X icon (remove)
+6. Done button closes modal
 
-### Dropdown Trigger
-- Height: 36px (`h-9`)
-- Border: `border border-input`
-- Radius: `rounded-md` (6px)
-- Font: 13px (`text-[13px]`)
-- Placeholder: "Select ingredient..." / "Select item..."
-- Selected state: Shows "✓ [Name] - SAR [Price]"
-
-### Dropdown Content
-- Width: Full width of trigger
-- Background: `bg-popover` (white)
-- Border: `border border-border`
-- Shadow: `shadow-md`
-- Max height: 200px with scroll
-- Search input at top with border-bottom
-- Items: 32-36px height each
-- Selected item: Check icon visible
-- Disabled items: `opacity-50`, `pointer-events-none`
-- "Already Added" badge on disabled items
-
-### Focus & Accessibility
-- Focus ring: `focus:ring-2 focus:ring-[#8B5CF6]`
-- Keyboard navigation: Arrow keys, Enter to select, Escape to close
-- ARIA: `role="combobox"`, `aria-expanded`
-
----
-
-## Implementation Steps
-
-1. **Add state for dropdown open/close**
+### Props
 ```typescript
-const [dropdownOpen, setDropdownOpen] = useState(false);
+interface ReplacementModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  parentItemName: string;
+  parentItemId: string;
+  replacements: ReplacementItem[];
+  onReplacementsChange: (replacements: ReplacementItem[]) => void;
+  availableItems: AvailableItem[];
+  currentLanguage: string;
+}
 ```
-
-2. **Replace list section with Popover + Command**
-```typescript
-<Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
-  <PopoverTrigger asChild>
-    <Button variant="outline" className="w-full justify-between h-9 text-[13px]">
-      {selectedIngredient 
-        ? `${getLocalizedName(selectedIngredient)} - SAR ${selectedIngredient.cost_per_unit.toFixed(2)}/${selectedIngredient.unit}`
-        : t("itemMapping.selectIngredient")}
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-    <Command>
-      <CommandInput placeholder={t("itemMapping.searchIngredients")} />
-      <CommandList className="max-h-[200px]">
-        <CommandEmpty>{t("common.noData")}</CommandEmpty>
-        <CommandGroup>
-          {filteredIngredients.map((ing) => {
-            const isAlreadyMapped = mappedIds.includes(ing.id);
-            const isSelected = selectedIngredient?.id === ing.id;
-            return (
-              <CommandItem
-                key={ing.id}
-                value={getLocalizedName(ing)}
-                disabled={isAlreadyMapped}
-                onSelect={() => {
-                  setSelectedIngredient(ing);
-                  setDropdownOpen(false);
-                }}
-                className="text-[13px]"
-              >
-                <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
-                <span>{getLocalizedName(ing)} ({ing.unit})</span>
-                <span className="ml-auto text-muted-foreground">
-                  SAR {ing.cost_per_unit.toFixed(2)}/{ing.unit}
-                </span>
-                {isAlreadyMapped && (
-                  <span className="ml-2 text-[11px] bg-muted px-1.5 py-0.5 rounded">
-                    {t("itemMapping.alreadyMapped")}
-                  </span>
-                )}
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  </PopoverContent>
-</Popover>
-```
-
-3. **Remove the old visible list and search input**
-
-4. **Keep the rest of the modal unchanged**
-- Preview section (Step 2)
-- Configure section (Step 3)
-- Footer with Cancel/Confirm
 
 ---
 
-## Density Compliance
+## 6. QuantityControl Update
+
+### Remove PCS Suffix
+Current:
+```jsx
+<QuantityControl
+  value={mapping.quantity}
+  onChange={(qty) => onQuantityChange(mapping.id, qty)}
+  min={1}
+  step={1}
+  unit="PCS"  // REMOVE THIS
+/>
+```
+
+New:
+```jsx
+<QuantityControl
+  value={mapping.quantity}
+  onChange={(qty) => onQuantityChange(mapping.id, qty)}
+  min={1}
+  step={1}
+  // No unit prop - removes PCS suffix
+/>
+```
+
+---
+
+## 7. Enhanced SaveSummaryModal (75% Width)
+
+### Updated Modal Size
+```jsx
+<DialogContent className="sm:max-w-[75vw] p-0 gap-0">
+```
+
+### New Layout (Three Sections)
+```text
++─────────────────────────────────────────────────────────────────────────────────────────+
+│ Confirm Save                                                                        ×   │
++═════════════════════════════════════════════════════════════════════════════════════════+
+│                                                                                         │
+│ ┌─────────────────────────────────────────────────────────────────────────────────────┐ │
+│ │                              SUMMARY                                                │ │
+│ ├─────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ Ingredients        │ 3 pcs           │                      │ SAR 3.05             │ │
+│ │ Items              │ 4 lines         │ 8 replacements       │ SAR 80.93            │ │
+│ ├─────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ Base Cost          │                 │                      │ SAR 83.98            │ │
+│ │ Combo Price        │                 │                      │ SAR 45.99            │ │
+│ │ Selling Price      │                 │                      │ SAR 50.59            │ │
+│ │ Profit             │                 │                      │ SAR -33.39 🔴        │ │
+│ └─────────────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                         │
+│ ┌────────────────────────────────────┐ ┌────────────────────────────────────┐          │
+│ │ INGREDIENTS (3)                    │ │ ITEMS (4)                          │          │
+│ ├────────────────────────────────────┤ ├────────────────────────────────────┤          │
+│ │ Tomato          0.2 KG   SAR 1.00  │ │ Margherita Pizza   ×2   SAR 25.98 │          │
+│ │ Cheese          0.15 KG  SAR 1.80  │ │ Chicken Burger     ×4   SAR 35.96 │          │
+│ │ Olive Oil       0.05 L   SAR 0.25  │ │ Soft Drink         ×6   SAR 15.00 │          │
+│ │                                    │ │   → Cola (Def) +0                  │          │
+│ │                                    │ │   → Sprite +1.00                   │          │
+│ │                                    │ │   → Fanta +1.00                    │          │
+│ │                                    │ │ French Fries       ×1   SAR 3.99  │          │
+│ └────────────────────────────────────┘ └────────────────────────────────────┘          │
+│                                                                                         │
++═════════════════════════════════════════════════════════════════════════════════════════+
+│                                                        [Cancel]    [Confirm Save]       │
++─────────────────────────────────────────────────────────────────────────────────────────+
+```
+
+### Three-Column Detail View
+1. **Summary Section** (top) - Financial overview
+2. **Ingredients Section** (bottom-left) - All ingredient details
+3. **Items Section** (bottom-right) - All items with their replacements
+
+### Props Update
+```typescript
+interface SaveSummaryModalProps {
+  // ... existing props ...
+  ingredientMappings: IngredientMappingItem[];  // NEW: Full data for details
+  itemMappings: SubItemMappingItem[];           // NEW: Full data with replacements
+  totalReplacements: number;                     // NEW: Count of all replacements
+}
+```
+
+---
+
+## 8. Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/item-mapping/ReplacementModal.tsx` | Modal for managing item replacements |
+
+---
+
+## 9. Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/item-mapping/ItemTable.tsx` | Add Combo Price column, remove PCS, add replacement display with sub-rows |
+| `src/components/item-mapping/SubItemMappingList.tsx` | Update interface with `combo_price` and `replacements` fields |
+| `src/components/item-mapping/SaveSummaryModal.tsx` | Expand to 75% width, add detailed breakdown sections |
+| `src/components/item-mapping/index.ts` | Export ReplacementModal |
+| `src/pages/ItemIngredientMappingEdit.tsx` | Add replacement state management, update initial data |
+| `src/lib/i18n/translations.ts` | Add new translation keys |
+
+---
+
+## 10. New Translation Keys
+
+```typescript
+// itemMapping section additions
+actualCost: "Actual Cost",
+replacements: "Replacements",
+replacementsFor: "Replacements for \"{{item}}\"",
+currentReplacements: "Current Replacements",
+setAsDefault: "Set as Default",
+default: "Default",
+done: "Done",
+viewReplacement: "View",
+editReplacement: "Edit",
+noReplacements: "No replacements added",
+addFirstReplacement: "Click '+' to add replacement options",
+replacementCount: "{{count}} replacements",
+```
+
+---
+
+## 11. Implementation Flow
+
+### Phase 1: Data Structure
+1. Update `SubItemMappingItem` interface with `combo_price` and `replacements`
+2. Update initial mock data with sample replacements
+
+### Phase 2: ReplacementModal
+1. Create new modal component
+2. Implement searchable dropdown (reuse Popover+Command pattern)
+3. Add extra cost input and default checkbox
+4. Implement current replacements list with edit/remove
+
+### Phase 3: ItemTable Redesign
+1. Add Combo Price column
+2. Remove "PCS" from QuantityControl
+3. Rename Price to Actual Cost
+4. Implement replacement button with count badge
+5. Add replacement sub-rows rendering
+6. Add eye/X icons for each replacement
+
+### Phase 4: SaveSummaryModal Enhancement
+1. Change width to 75vw
+2. Add detailed ingredients section
+3. Add detailed items section with replacements
+4. Update summary to show replacement count
+
+### Phase 5: State Management
+1. Add replacement modal state to edit page
+2. Wire up replacement CRUD handlers
+3. Update cost calculations to include replacements
+
+---
+
+## 12. Density Compliance
 
 | Rule | Compliance |
 |------|------------|
-| Dropdown trigger h-9 (36px) | ✓ |
-| Row height 32-36px | ✓ |
-| Text 13px | ✓ |
-| Border #E5E7EB | ✓ |
-| Primary focus #8B5CF6 | ✓ |
-| No shadows on inner elements | ✓ (only on popover) |
-| Max border-radius 6px | ✓ |
-| Background solid white | ✓ (no transparency) |
-
----
-
-## Summary of Changes
-
-| File | Action |
-|------|--------|
-| `AddIngredientModal.tsx` | Replace visible list with Popover+Command dropdown |
-| `AddItemModal.tsx` | Replace visible list with Popover+Command dropdown |
-
-No new files needed - using existing UI components (Popover, Command).
-
+| Row height 32px | ✓ All rows |
+| Text 13px | ✓ All text |
+| No PCS suffix | ✓ Removed |
+| Combo Price column | ✓ Added |
+| Actual Cost column | ✓ Renamed |
+| Replacement count badge | ✓ Clickable |
+| Sub-row indentation 16px | ✓ Arrow prefix |
+| Eye + X icons 16px | ✓ strokeWidth 1.5 |
+| Modal 75% width | ✓ SaveSummary only |
+| Full detail breakdown | ✓ Both sections |
