@@ -438,7 +438,7 @@ export const translations = {
       title: "Item-Ingredient Mapping",
       editMapping: "Edit Mapping",
       ingredients: "Ingredients",
-      subItems: "Sub-Items",
+      items: "Items",
       ingredientCount: "Ingredients",
       subItemCount: "Sub-Items",
       combo: "Combo",
@@ -459,21 +459,30 @@ export const translations = {
       ingredientMappings: "Ingredient Mappings",
       comboSubItems: "Combo Sub-Items",
       addIngredient: "Add Ingredient",
-      addSubItem: "Add Sub-Item",
+      addItem: "Add Item",
       quantity: "Quantity",
       canRemove: "Can Remove",
       canAddExtra: "Can Add Extra",
       extraCost: "Extra Cost",
       ingredientCostTotal: "Ingredient Cost Total",
       subItemsTotal: "Sub-Items Total",
+      itemsTotal: "Items Total",
       totalCost: "Total Cost",
       unitPrice: "Unit Price",
       subtotal: "Subtotal",
-      // Sortable lists
+      // Card Labels
+      customerCanRemove: "Customer can remove",
+      customerCanAddExtra: "Customer can add extra",
+      // Quantity Controls
+      increment: "Increase quantity",
+      decrement: "Decrease quantity",
+      // Empty States
       remove: "Remove",
       extra: "Extra",
       noIngredientsMapped: "No ingredients mapped. Click 'Add Ingredient' to start.",
-      noSubItemsMapped: "No sub-items added. Click 'Add Sub-Item' to start.",
+      noSubItemsMapped: "No sub-items added. Click 'Add Item' to start.",
+      noItemsMapped: "No items added. Click 'Add Item' to start.",
+      notComboItem: "Only combo items can have sub-items.",
       // Search Picker
       searchIngredients: "Search ingredients...",
       searchItems: "Search items...",
@@ -487,17 +496,35 @@ export const translations = {
       quantityRequired: "Quantity is required",
       minTwoSubItems: "Combo must have at least 2 sub-items",
       itemNotFound: "Item not found",
+      // Duplicate Save Warning
+      duplicatesDetected: "Duplicates Detected",
+      duplicateWarningMessage: "You have added the same Ingredient/Item more than once. Please confirm before saving.",
+      duplicatesFound: "Duplicates found:",
+      addedTimes: "added {{count}} times",
+      goBack: "Go Back",
+      confirmAndSave: "Confirm & Save",
       // Changes
       addedIngredient: "Added Ingredient",
       removedIngredient: "Removed Ingredient",
+      addedItem: "Added Item",
+      removedItem: "Removed Item",
       addedSubItem: "Added Sub-Item",
       removedSubItem: "Removed Sub-Item",
       confirmChanges: "Confirm Mapping Changes",
       savedSuccessfully: "Mappings saved successfully",
-      // Drag & Drop
+      // Drag & Drop (kept for reference)
       dragToReorder: "Drag to reorder priority",
       dragToReorderHint: "Drag items to reorder priority. Changes are saved when you click Save.",
       priorityTooltip: "Priority determines order in POS customization screen",
+    },
+    // Confirmation Modals
+    confirmAction: {
+      title: "Confirm Action",
+      confirm: "Confirm",
+      addIngredientMessage: "Are you sure you want to add \"{{name}}\"?",
+      removeIngredientMessage: "Are you sure you want to remove \"{{name}}\"?",
+      addItemMessage: "Are you sure you want to add \"{{name}}\"?",
+      removeItemMessage: "Are you sure you want to remove \"{{name}}\"?",
     },
     // Item Pricing
     itemPricing: {

@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, Salad, Save } from "lucide-react";
+import { ArrowLeft, Package, Salad, Save, ShoppingBag } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  IngredientMappingList,
-  SubItemMappingList,
   IngredientSearchPicker,
   SubItemSearchPicker,
   DuplicateMappingWarning,
+  IngredientCard,
+  ItemCard,
+  DuplicateSaveWarningModal,
   type IngredientMappingItem,
   type SubItemMappingItem,
   type AvailableIngredient,
@@ -22,6 +23,7 @@ import {
   ConfirmChangesModal,
   type Change,
 } from "@/components/shared/ConfirmChangesModal";
+import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
 
 // Mock data
 const mockItems: Record<string, {
@@ -99,12 +101,20 @@ export default function ItemIngredientMappingEdit() {
     id ? initialSubItemMappings[id] || [] : []
   );
 
+  // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showDuplicateSaveWarning, setShowDuplicateSaveWarning] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<{
     ingredientName: string;
     quantity: number;
     unit: string;
   } | null>(null);
+
+  // Confirmation modal states
+  const [pendingAddIngredient, setPendingAddIngredient] = useState<AvailableIngredient | null>(null);
+  const [pendingAddItem, setPendingAddItem] = useState<AvailableItem | null>(null);
+  const [pendingRemoveIngredient, setPendingRemoveIngredient] = useState<string | null>(null);
+  const [pendingRemoveItem, setPendingRemoveItem] = useState<string | null>(null);
 
   const getLocalizedName = (obj: { name_en: string; name_ar: string; name_ur: string }) => {
     const key = `name_${currentLanguage}` as keyof typeof obj;
@@ -114,7 +124,8 @@ export default function ItemIngredientMappingEdit() {
   const mappedIngredientIds = ingredientMappings.map((m) => m.ingredient_id);
   const mappedSubItemIds = subItemMappings.map((m) => m.sub_item_id);
 
-  const handleAddIngredient = (ingredient: AvailableIngredient) => {
+  // Add Ingredient Flow
+  const handleSelectIngredient = (ingredient: AvailableIngredient) => {
     if (mappedIngredientIds.includes(ingredient.id)) {
       const existing = ingredientMappings.find((m) => m.ingredient_id === ingredient.id);
       if (existing) {
@@ -126,13 +137,18 @@ export default function ItemIngredientMappingEdit() {
       }
       return;
     }
+    setPendingAddIngredient(ingredient);
+  };
 
+  const confirmAddIngredient = () => {
+    if (!pendingAddIngredient) return;
+    
     const newMapping: IngredientMappingItem = {
       id: `m${Date.now()}`,
-      ingredient_id: ingredient.id,
-      ingredient_name: getLocalizedName(ingredient),
-      quantity: 0,
-      unit: ingredient.unit,
+      ingredient_id: pendingAddIngredient.id,
+      ingredient_name: getLocalizedName(pendingAddIngredient),
+      quantity: 1,
+      unit: pendingAddIngredient.unit,
       can_remove: false,
       can_add_extra: false,
       extra_cost: null,
@@ -140,39 +156,133 @@ export default function ItemIngredientMappingEdit() {
     };
 
     setIngredientMappings([...ingredientMappings, newMapping]);
+    setPendingAddIngredient(null);
   };
 
-  const handleAddSubItem = (subItem: AvailableItem) => {
+  // Add Item Flow
+  const handleSelectItem = (subItem: AvailableItem) => {
     if (mappedSubItemIds.includes(subItem.id)) {
       return;
     }
+    setPendingAddItem(subItem);
+  };
 
+  const confirmAddItem = () => {
+    if (!pendingAddItem) return;
+    
     const newMapping: SubItemMappingItem = {
       id: `s${Date.now()}`,
-      sub_item_id: subItem.id,
-      sub_item_name: getLocalizedName(subItem),
+      sub_item_id: pendingAddItem.id,
+      sub_item_name: getLocalizedName(pendingAddItem),
       quantity: 1,
-      unit_price: subItem.base_cost,
+      unit_price: pendingAddItem.base_cost,
       sort_order: subItemMappings.length + 1,
     };
 
     setSubItemMappings([...subItemMappings, newMapping]);
+    setPendingAddItem(null);
   };
 
-  const handleRemoveIngredient = (mappingId: string) => {
+  // Remove Ingredient Flow
+  const handleRequestRemoveIngredient = (mappingId: string) => {
+    setPendingRemoveIngredient(mappingId);
+  };
+
+  const confirmRemoveIngredient = () => {
+    if (!pendingRemoveIngredient) return;
+    
     setIngredientMappings(
       ingredientMappings
-        .filter((m) => m.id !== mappingId)
+        .filter((m) => m.id !== pendingRemoveIngredient)
         .map((m, index) => ({ ...m, sort_order: index + 1 }))
+    );
+    setPendingRemoveIngredient(null);
+  };
+
+  // Remove Item Flow
+  const handleRequestRemoveItem = (mappingId: string) => {
+    setPendingRemoveItem(mappingId);
+  };
+
+  const confirmRemoveItem = () => {
+    if (!pendingRemoveItem) return;
+    
+    setSubItemMappings(
+      subItemMappings
+        .filter((m) => m.id !== pendingRemoveItem)
+        .map((m, index) => ({ ...m, sort_order: index + 1 }))
+    );
+    setPendingRemoveItem(null);
+  };
+
+  // Update handlers
+  const handleIngredientQuantityChange = (mappingId: string, quantity: number) => {
+    setIngredientMappings(
+      ingredientMappings.map((m) => (m.id === mappingId ? { ...m, quantity } : m))
     );
   };
 
-  const handleRemoveSubItem = (mappingId: string) => {
-    setSubItemMappings(
-      subItemMappings
-        .filter((m) => m.id !== mappingId)
-        .map((m, index) => ({ ...m, sort_order: index + 1 }))
+  const handleIngredientCanRemoveChange = (mappingId: string, value: boolean) => {
+    setIngredientMappings(
+      ingredientMappings.map((m) => (m.id === mappingId ? { ...m, can_remove: value } : m))
     );
+  };
+
+  const handleIngredientCanExtraChange = (mappingId: string, value: boolean) => {
+    setIngredientMappings(
+      ingredientMappings.map((m) => (m.id === mappingId ? { ...m, can_add_extra: value, extra_cost: value ? m.extra_cost || 0 : null } : m))
+    );
+  };
+
+  const handleIngredientExtraCostChange = (mappingId: string, cost: number | null) => {
+    setIngredientMappings(
+      ingredientMappings.map((m) => (m.id === mappingId ? { ...m, extra_cost: cost } : m))
+    );
+  };
+
+  const handleItemQuantityChange = (mappingId: string, quantity: number) => {
+    setSubItemMappings(
+      subItemMappings.map((m) => (m.id === mappingId ? { ...m, quantity } : m))
+    );
+  };
+
+  // Detect duplicates
+  const findDuplicates = () => {
+    const duplicates: { name: string; count: number; type: "ingredient" | "item" }[] = [];
+    
+    // Check ingredient duplicates
+    const ingredientCounts = new Map<string, { name: string; count: number }>();
+    ingredientMappings.forEach((m) => {
+      const existing = ingredientCounts.get(m.ingredient_id);
+      if (existing) {
+        existing.count++;
+      } else {
+        ingredientCounts.set(m.ingredient_id, { name: m.ingredient_name, count: 1 });
+      }
+    });
+    ingredientCounts.forEach(({ name, count }) => {
+      if (count > 1) {
+        duplicates.push({ name, count, type: "ingredient" });
+      }
+    });
+
+    // Check item duplicates
+    const itemCounts = new Map<string, { name: string; count: number }>();
+    subItemMappings.forEach((m) => {
+      const existing = itemCounts.get(m.sub_item_id);
+      if (existing) {
+        existing.count++;
+      } else {
+        itemCounts.set(m.sub_item_id, { name: m.sub_item_name, count: 1 });
+      }
+    });
+    itemCounts.forEach(({ name, count }) => {
+      if (count > 1) {
+        duplicates.push({ name, count, type: "item" });
+      }
+    });
+
+    return duplicates;
   };
 
   // Calculate changes for confirmation modal
@@ -237,7 +347,7 @@ export default function ItemIngredientMappingEdit() {
         const original = initialSubItems.find((m) => m.id === mapping.id);
         if (!original) {
           changeList.push({
-            field: t("itemMapping.addedSubItem"),
+            field: t("itemMapping.addedItem"),
             oldValue: null,
             newValue: `${mapping.sub_item_name} ×${mapping.quantity}`,
           });
@@ -253,7 +363,7 @@ export default function ItemIngredientMappingEdit() {
       initialSubItems.forEach((original) => {
         if (!subItemMappings.find((m) => m.id === original.id)) {
           changeList.push({
-            field: t("itemMapping.removedSubItem"),
+            field: t("itemMapping.removedItem"),
             oldValue: `${original.sub_item_name} ×${original.quantity}`,
             newValue: "-",
           });
@@ -265,7 +375,12 @@ export default function ItemIngredientMappingEdit() {
   }, [ingredientMappings, subItemMappings, initialIngredients, initialSubItems, item, t]);
 
   const handleSave = () => {
-    setShowConfirmModal(true);
+    const duplicates = findDuplicates();
+    if (duplicates.length > 0) {
+      setShowDuplicateSaveWarning(true);
+    } else {
+      setShowConfirmModal(true);
+    }
   };
 
   const handleConfirmSave = () => {
@@ -275,6 +390,7 @@ export default function ItemIngredientMappingEdit() {
       description: t("itemMapping.savedSuccessfully"),
     });
     setShowConfirmModal(false);
+    setShowDuplicateSaveWarning(false);
     navigate("/item-ingredient-mapping");
   };
 
@@ -287,6 +403,16 @@ export default function ItemIngredientMappingEdit() {
     (sum, m) => sum + m.quantity * m.unit_price,
     0
   );
+
+  // Get names for confirmation modals
+  const pendingAddIngredientName = pendingAddIngredient ? getLocalizedName(pendingAddIngredient) : "";
+  const pendingAddItemName = pendingAddItem ? getLocalizedName(pendingAddItem) : "";
+  const pendingRemoveIngredientName = pendingRemoveIngredient 
+    ? ingredientMappings.find((m) => m.id === pendingRemoveIngredient)?.ingredient_name || ""
+    : "";
+  const pendingRemoveItemName = pendingRemoveItem
+    ? subItemMappings.find((m) => m.id === pendingRemoveItem)?.sub_item_name || ""
+    : "";
 
   if (!item) {
     return (
@@ -360,72 +486,147 @@ export default function ItemIngredientMappingEdit() {
         </CardContent>
       </Card>
 
-      {/* Ingredient Mappings */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between py-4">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Salad className="h-5 w-5" />
-            {t("itemMapping.ingredientMappings")}
-          </CardTitle>
-          <IngredientSearchPicker
-            ingredients={mockAvailableIngredients}
-            mappedIds={mappedIngredientIds}
-            onSelect={handleAddIngredient}
-          />
-        </CardHeader>
-        <CardContent>
-          <IngredientMappingList
-            mappings={ingredientMappings}
-            onChange={setIngredientMappings}
-            onRemove={handleRemoveIngredient}
-          />
-          {ingredientMappings.length > 0 && (
-            <div className="flex justify-end mt-4 pt-4 border-t">
-              <div className="text-sm">
-                <span className="text-muted-foreground">{t("itemMapping.ingredientCostTotal")}:</span>
-                <span className="font-semibold ms-2">${totalIngredientCost.toFixed(2)}</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Sub-Items (Combo Only) */}
-      {item.is_combo && (
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left Column: Ingredients */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between py-4">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              {t("itemMapping.comboSubItems")}
+              <Salad className="h-5 w-5" />
+              {t("itemMapping.ingredients")}
             </CardTitle>
-            <SubItemSearchPicker
-              items={mockAvailableItems}
-              mappedIds={mappedSubItemIds}
-              currentItemId={id || ""}
-              onSelect={handleAddSubItem}
+            <IngredientSearchPicker
+              ingredients={mockAvailableIngredients}
+              mappedIds={mappedIngredientIds}
+              onSelect={handleSelectIngredient}
             />
           </CardHeader>
-          <CardContent>
-            <SubItemMappingList
-              mappings={subItemMappings}
-              onChange={setSubItemMappings}
-              onRemove={handleRemoveSubItem}
-            />
-            {subItemMappings.length > 0 && (
-              <div className="flex justify-end mt-4 pt-4 border-t">
+          <CardContent className="space-y-3">
+            {ingredientMappings.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed">
+                {t("itemMapping.noIngredientsMapped")}
+              </div>
+            ) : (
+              ingredientMappings.map((mapping) => (
+                <IngredientCard
+                  key={mapping.id}
+                  mapping={mapping}
+                  onQuantityChange={(qty) => handleIngredientQuantityChange(mapping.id, qty)}
+                  onRemove={() => handleRequestRemoveIngredient(mapping.id)}
+                  onToggleCanRemove={(val) => handleIngredientCanRemoveChange(mapping.id, val)}
+                  onToggleCanExtra={(val) => handleIngredientCanExtraChange(mapping.id, val)}
+                  onExtraCostChange={(cost) => handleIngredientExtraCostChange(mapping.id, cost)}
+                />
+              ))
+            )}
+            {ingredientMappings.length > 0 && (
+              <div className="flex justify-end pt-3 border-t">
                 <div className="text-sm">
-                  <span className="text-muted-foreground">{t("itemMapping.totalCost")}:</span>
-                  <span className="font-semibold ms-2">
-                    ${(totalIngredientCost + totalSubItemCost).toFixed(2)}
-                  </span>
+                  <span className="text-muted-foreground">{t("itemMapping.ingredientCostTotal")}:</span>
+                  <span className="font-semibold ms-2">${totalIngredientCost.toFixed(2)}</span>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Right Column: Items (Combo Only) */}
+        <Card className={!item.is_combo ? "opacity-50" : ""}>
+          <CardHeader className="flex flex-row items-center justify-between py-4">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5" />
+              {t("itemMapping.items")}
+            </CardTitle>
+            {item.is_combo && (
+              <SubItemSearchPicker
+                items={mockAvailableItems}
+                mappedIds={mappedSubItemIds}
+                currentItemId={id || ""}
+                onSelect={handleSelectItem}
+              />
+            )}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!item.is_combo ? (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed">
+                {t("itemMapping.notComboItem")}
+              </div>
+            ) : subItemMappings.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed">
+                {t("itemMapping.noItemsMapped")}
+              </div>
+            ) : (
+              subItemMappings.map((mapping) => (
+                <ItemCard
+                  key={mapping.id}
+                  mapping={mapping}
+                  onQuantityChange={(qty) => handleItemQuantityChange(mapping.id, qty)}
+                  onRemove={() => handleRequestRemoveItem(mapping.id)}
+                />
+              ))
+            )}
+            {item.is_combo && subItemMappings.length > 0 && (
+              <div className="flex justify-end pt-3 border-t">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">{t("itemMapping.itemsTotal")}:</span>
+                  <span className="font-semibold ms-2">${totalSubItemCost.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Footer with totals */}
+      {item.is_combo && (
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex justify-end">
+              <div className="text-sm">
+                <span className="text-muted-foreground">{t("itemMapping.totalCost")}:</span>
+                <span className="font-bold text-lg ms-2">
+                  ${(totalIngredientCost + totalSubItemCost).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Modals */}
+      {/* Confirmation Modals */}
+      <ConfirmActionModal
+        open={!!pendingAddIngredient}
+        onOpenChange={() => setPendingAddIngredient(null)}
+        onConfirm={confirmAddIngredient}
+        message={t("confirmAction.addIngredientMessage", { name: pendingAddIngredientName })}
+      />
+
+      <ConfirmActionModal
+        open={!!pendingAddItem}
+        onOpenChange={() => setPendingAddItem(null)}
+        onConfirm={confirmAddItem}
+        message={t("confirmAction.addItemMessage", { name: pendingAddItemName })}
+      />
+
+      <ConfirmActionModal
+        open={!!pendingRemoveIngredient}
+        onOpenChange={() => setPendingRemoveIngredient(null)}
+        onConfirm={confirmRemoveIngredient}
+        message={t("confirmAction.removeIngredientMessage", { name: pendingRemoveIngredientName })}
+        confirmLabel={t("common.remove")}
+        variant="destructive"
+      />
+
+      <ConfirmActionModal
+        open={!!pendingRemoveItem}
+        onOpenChange={() => setPendingRemoveItem(null)}
+        onConfirm={confirmRemoveItem}
+        message={t("confirmAction.removeItemMessage", { name: pendingRemoveItemName })}
+        confirmLabel={t("common.remove")}
+        variant="destructive"
+      />
+
+      {/* Save Confirmation */}
       <ConfirmChangesModal
         open={showConfirmModal}
         onOpenChange={setShowConfirmModal}
@@ -434,6 +635,15 @@ export default function ItemIngredientMappingEdit() {
         title={t("itemMapping.confirmChanges")}
       />
 
+      {/* Duplicate Warning */}
+      <DuplicateSaveWarningModal
+        open={showDuplicateSaveWarning}
+        onOpenChange={setShowDuplicateSaveWarning}
+        onConfirm={handleConfirmSave}
+        duplicates={findDuplicates()}
+      />
+
+      {/* Existing mapping warning */}
       {duplicateWarning && (
         <DuplicateMappingWarning
           open={!!duplicateWarning}
@@ -441,10 +651,7 @@ export default function ItemIngredientMappingEdit() {
           ingredientName={duplicateWarning.ingredientName}
           currentQuantity={duplicateWarning.quantity}
           unit={duplicateWarning.unit}
-          onGoToExisting={() => {
-            setDuplicateWarning(null);
-            // Scroll to the existing mapping
-          }}
+          onGoToExisting={() => setDuplicateWarning(null)}
         />
       )}
     </div>
