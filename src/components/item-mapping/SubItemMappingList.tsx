@@ -21,6 +21,14 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
+export interface ReplacementItem {
+  id: string;
+  item_id: string;
+  item_name: string;
+  extra_cost: number;
+  is_default: boolean;
+}
+
 export interface SubItemMappingItem {
   id: string;
   sub_item_id: string;
@@ -28,6 +36,8 @@ export interface SubItemMappingItem {
   quantity: number;
   unit_price: number;
   sort_order: number;
+  combo_price?: number;
+  replacements?: ReplacementItem[];
 }
 
 interface SubItemMappingListProps {

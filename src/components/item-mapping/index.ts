@@ -18,9 +18,10 @@ export { RemoveConfirmModal } from "./RemoveConfirmModal";
 export { AddIngredientModal } from "./AddIngredientModal";
 export { AddItemModal } from "./AddItemModal";
 export { SaveSummaryModal } from "./SaveSummaryModal";
+export { ReplacementModal } from "./ReplacementModal";
 
 export type { ItemWithMappings, IngredientMapping, SubItemMapping } from "./MappingSummaryTable";
 export type { IngredientMappingItem } from "./IngredientMappingList";
-export type { SubItemMappingItem } from "./SubItemMappingList";
+export type { SubItemMappingItem, ReplacementItem } from "./SubItemMappingList";
 export type { AvailableIngredient } from "./IngredientSearchPicker";
 export type { AvailableItem } from "./SubItemSearchPicker";
