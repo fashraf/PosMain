@@ -3,8 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminLayout } from "@/components/AdminLayout";
 import Dashboard from "@/pages/Dashboard";
+import Login from "@/pages/Login";
 import SalesChannels from "@/pages/SalesChannels";
 import SalesChannelsAdd from "@/pages/SalesChannelsAdd";
 import SalesChannelsEdit from "@/pages/SalesChannelsEdit";
@@ -41,49 +44,64 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AdminLayout>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/sales-channels" element={<SalesChannels />} />
-            <Route path="/sales-channels/add" element={<SalesChannelsAdd />} />
-            <Route path="/sales-channels/:id/edit" element={<SalesChannelsEdit />} />
-            <Route path="/ingredients" element={<Ingredients />} />
-            <Route path="/ingredients/add" element={<IngredientsAdd />} />
-            <Route path="/ingredients/:id/edit" element={<IngredientsEdit />} />
-            <Route path="/items" element={<Items />} />
-            <Route path="/items/add" element={<ItemsAdd />} />
-            <Route path="/items/:id/edit" element={<ItemsEdit />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/categories/add" element={<CategoriesAdd />} />
-            <Route path="/categories/:id/edit" element={<CategoriesEdit />} />
-            <Route path="/item-ingredient-mapping" element={<ItemIngredientMapping />} />
-            <Route path="/item-ingredient-mapping/:id/edit" element={<ItemIngredientMappingEdit />} />
-            <Route path="/item-pricing" element={<ItemPricing />} />
-            <Route path="/branches" element={<Branches />} />
-            <Route path="/branches/add" element={<BranchesAdd />} />
-            <Route path="/branches/:id/edit" element={<BranchesEdit />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* Inventory Module Routes */}
-            <Route path="/inventory/items" element={<ItemMaster />} />
-            <Route path="/inventory/items/add" element={<ItemMasterAdd />} />
-            <Route path="/inventory/items/:id/edit" element={<ItemMasterEdit />} />
-            <Route path="/inventory/ingredients" element={<IngredientMaster />} />
-            <Route path="/inventory/ingredients/add" element={<IngredientMasterAdd />} />
-            <Route path="/inventory/operations/issue" element={<StockIssue />} />
-            <Route path="/inventory/operations/transfer" element={<StockTransfer />} />
-            <Route path="/inventory/operations/adjustment" element={<StockAdjustment />} />
-            <Route path="/inventory/batch-expiry" element={<BatchExpiry />} />
-            <Route path="/inventory/reports" element={<ReportsAlerts />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            {/* Public route */}
+            <Route path="/login" element={<Login />} />
+            
+            {/* Protected routes with AdminLayout */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/sales-channels" element={<SalesChannels />} />
+                      <Route path="/sales-channels/add" element={<SalesChannelsAdd />} />
+                      <Route path="/sales-channels/:id/edit" element={<SalesChannelsEdit />} />
+                      <Route path="/ingredients" element={<Ingredients />} />
+                      <Route path="/ingredients/add" element={<IngredientsAdd />} />
+                      <Route path="/ingredients/:id/edit" element={<IngredientsEdit />} />
+                      <Route path="/items" element={<Items />} />
+                      <Route path="/items/add" element={<ItemsAdd />} />
+                      <Route path="/items/:id/edit" element={<ItemsEdit />} />
+                      <Route path="/categories" element={<Categories />} />
+                      <Route path="/categories/add" element={<CategoriesAdd />} />
+                      <Route path="/categories/:id/edit" element={<CategoriesEdit />} />
+                      <Route path="/item-ingredient-mapping" element={<ItemIngredientMapping />} />
+                      <Route path="/item-ingredient-mapping/:id/edit" element={<ItemIngredientMappingEdit />} />
+                      <Route path="/item-pricing" element={<ItemPricing />} />
+                      <Route path="/branches" element={<Branches />} />
+                      <Route path="/branches/add" element={<BranchesAdd />} />
+                      <Route path="/branches/:id/edit" element={<BranchesEdit />} />
+                      <Route path="/settings" element={<Settings />} />
+                      {/* Inventory Module Routes */}
+                      <Route path="/inventory/items" element={<ItemMaster />} />
+                      <Route path="/inventory/items/add" element={<ItemMasterAdd />} />
+                      <Route path="/inventory/items/:id/edit" element={<ItemMasterEdit />} />
+                      <Route path="/inventory/ingredients" element={<IngredientMaster />} />
+                      <Route path="/inventory/ingredients/add" element={<IngredientMasterAdd />} />
+                      <Route path="/inventory/operations/issue" element={<StockIssue />} />
+                      <Route path="/inventory/operations/transfer" element={<StockTransfer />} />
+                      <Route path="/inventory/operations/adjustment" element={<StockAdjustment />} />
+                      <Route path="/inventory/batch-expiry" element={<BatchExpiry />} />
+                      <Route path="/inventory/reports" element={<ReportsAlerts />} />
+                      {/* Catch-all for 404 */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
-        </AdminLayout>
-      </BrowserRouter>
-    </TooltipProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
