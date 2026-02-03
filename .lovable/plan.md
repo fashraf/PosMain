@@ -1,215 +1,240 @@
 
 
-# ReplacementModal UI Redesign - Match AddItemModal Layout
+# Login Page Implementation Plan
 
 ## Overview
-Redesign the ReplacementModal to use the same clean 2x2 grid form layout as AddItemModal, while keeping the current replacements list section below.
+Create a beautiful login page matching the reference design with a split-screen layout (decorative left panel + login form right), using hardcoded credentials for a simple authentication flow that redirects to the Dashboard.
 
 ---
 
-## Current State vs. Target
+## Visual Design (Based on Reference Image)
 
-### Current Layout (Vertical sections)
+### Layout Structure
 ```text
-┌─────────────────────────────────────────────────────────┐
-│ Replacements for "Soft Drink"                       ×   │
-├─────────────────────────────────────────────────────────┤
-│ Add Replacement                                         │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ Select item...                                   ▼  │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-│ [Config card appears on selection with stacked fields]  │
-│                                                         │
-│ ─────────────────────────────────────────────────────── │
-│ Current Replacements (3)                                │
-│ ...                                                     │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│                                                                            │
+│  ┌─────────────────────────────┐  ┌─────────────────────────────────────┐ │
+│  │                              │  │                                     │ │
+│  │   [Abstract gradient art]    │  │         ☰ POS Admin                │ │
+│  │   Pink/Purple/Blue waves     │  │                                     │ │
+│  │                              │  │         Welcome Back                │ │
+│  │                              │  │   Enter your email and password     │ │
+│  │                              │  │   to access your account            │ │
+│  │                              │  │                                     │ │
+│  │                              │  │   Email                             │ │
+│  │   "A WISE QUOTE"             │  │   ┌───────────────────────────────┐ │ │
+│  │                              │  │   │ Enter your email              │ │ │
+│  │   Get Everything             │  │   └───────────────────────────────┘ │ │
+│  │   You Want                   │  │                                     │ │
+│  │                              │  │   Password                          │ │
+│  │   Motivational subtext       │  │   ┌────────────────────────────┐👁│ │ │
+│  │                              │  │   │ Enter your password         │ │ │ │
+│  │                              │  │   └─────────────────────────────────┘ │ │
+│  │                              │  │                                     │ │
+│  │                              │  │   ☐ Remember me    Forgot Password │ │
+│  │                              │  │                                     │ │
+│  │                              │  │   ┌───────────────────────────────┐ │ │
+│  │                              │  │   │           Sign In             │ │ │
+│  │                              │  │   └───────────────────────────────┘ │ │
+│  │                              │  │                                     │ │
+│  └─────────────────────────────┘  └─────────────────────────────────────┘ │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Target Layout (2x2 Grid - same as AddItemModal)
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Replacements for "Soft Drink"                       ×   │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ Select Item *                    Item Price             │
-│ ┌───────────────────────┐       ┌───────────────────┐  │
-│ │ Sprite             ▼  │       │ SAR 2.50          │  │
-│ └───────────────────────┘       └───────────────────┘  │
-│                                   (read-only)           │
-│                                                         │
-│ Extra Cost                       Set as Default         │
-│ ┌───────────────────────┐       ┌───────────────────┐  │
-│ │ SAR 1.00              │       │ ☐ Default         │  │
-│ └───────────────────────┘       └───────────────────┘  │
-│   (optional)                                            │
-│                                                         │
-│ → Sprite (+SAR 1.00)                   [Add Replacement]│
-│                                                         │
-│ ─────────────────────────────────────────────────────── │
-│                                                         │
-│ Current Replacements (3)                                │
-│ ┌─────────────────────────────────────────────────────┐ │
-│ │ ★ Cola         (Default)                  +0  👁 ×  │ │
-│ │   Sprite                            +SAR 1.00  👁 ×  │ │
-│ │   Fanta                             +SAR 1.00  👁 ×  │ │
-│ └─────────────────────────────────────────────────────┘ │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│                                              [Done]     │
-└─────────────────────────────────────────────────────────┘
-```
+### Color Palette
+| Element | Color |
+|---------|-------|
+| Background (outer) | Dark (#0D0D0D / near black) |
+| Left panel gradient | Pink → Purple → Blue gradient waves |
+| Right panel bg | White (#FFFFFF) |
+| Input border | #E5E7EB |
+| Input focus ring | #8B5CF6 (primary purple) |
+| Sign In button | Dark (#1F2937 / near black) |
+| Text primary | #1F2937 |
+| Text secondary | #6B7280 |
 
 ---
 
-## Key Changes
+## Technical Implementation
 
-### 1. Replace Vertical Form with 2x2 Grid
-- **Row 1**: Select Item (dropdown) | Item Price (read-only)
-- **Row 2**: Extra Cost (input) | Set as Default (checkbox aligned)
-- Remove the conditional config card that only appears on selection
-- Show all 4 fields always (Item Price shows "—" when nothing selected)
+### 1. New Files to Create
 
-### 2. Form Field Structure
-| Field | Position | Type | Notes |
-|-------|----------|------|-------|
-| Select Item | Row 1, Col 1 | Dropdown | Required (*), filters duplicates |
-| Item Price | Row 1, Col 2 | Read-only input | Auto-fills on selection |
-| Extra Cost | Row 2, Col 1 | Number input | SAR prefix, default 0 |
-| Set as Default | Row 2, Col 2 | Checkbox | Aligned to input height |
+| File | Purpose |
+|------|---------|
+| `src/pages/Login.tsx` | Main login page component |
+| `src/hooks/useAuth.tsx` | Simple auth context for session management |
+| `src/components/ProtectedRoute.tsx` | HOC to protect routes requiring auth |
 
-### 3. Live Preview Line
-- Show below the 2x2 grid when item is selected
-- Format: `→ [Item Name] (+SAR X.XX)`
-- Green (`#22C55E`) when cost > 0, muted otherwise
-- Right-aligned "Add Replacement" button on same line
-
-### 4. Keep Current Replacements Section
-- Separator line after the form area
-- "Current Replacements (n)" heading
-- Existing replacement list with Star, Eye, X icons
-- Empty state when no replacements
-
----
-
-## Visual Specifications
-
-### 2x2 Grid Layout
-```css
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px 16px; /* gap-4 */
-}
-```
-
-### Field Styling (matching AddItemModal)
-- Labels: 13px, font-medium
-- Input height: 36px (h-9)
-- Read-only: bg-muted, cursor-not-allowed
-- Extra cost green tint: bg-[#F0FDF4] border-[#BBF7D0] when > 0
-- Required asterisk: text-destructive
-
-### Checkbox Alignment
-```tsx
-<div className="space-y-1.5">
-  <label className="text-[13px] font-medium">
-    {t("itemMapping.setAsDefault")}
-  </label>
-  <div className="flex items-center gap-2 h-9">
-    <Checkbox id="default" ... />
-    <label htmlFor="default">{t("itemMapping.default")}</label>
-  </div>
-</div>
-```
-
----
-
-## Implementation Details
-
-### Modified JSX Structure
-```tsx
-<div className="px-5 py-5">
-  {/* 2x2 Grid Form - Always visible */}
-  <div className="grid grid-cols-2 gap-4">
-    {/* Row 1: Select Item */}
-    <div className="space-y-1.5">
-      <label>Select Item *</label>
-      <Popover>...</Popover>
-    </div>
-    
-    {/* Row 1: Item Price (read-only) */}
-    <div className="space-y-1.5">
-      <label>Item Price</label>
-      <Input readOnly value={selectedItem?.base_cost} />
-    </div>
-    
-    {/* Row 2: Extra Cost */}
-    <div className="space-y-1.5">
-      <label>Extra Cost (optional)</label>
-      <Input type="number" value={extraCost} ... />
-    </div>
-    
-    {/* Row 2: Set as Default */}
-    <div className="space-y-1.5">
-      <label>Set as Default</label>
-      <div className="flex items-center gap-2 h-9">
-        <Checkbox checked={isDefault} ... />
-        <label>Default</label>
-      </div>
-    </div>
-  </div>
-
-  {/* Live Preview + Add Button (when item selected) */}
-  {selectedItem && (
-    <div className="flex items-center justify-between mt-4">
-      <div className={cn("flex items-center gap-2 text-[13px]", ...)}>
-        <ArrowRight size={14} />
-        <span>{selectedItem.name}</span>
-        <span>(+SAR {extraCost})</span>
-      </div>
-      <Button onClick={handleAddReplacement}>
-        {t("itemMapping.addReplacement")}
-      </Button>
-    </div>
-  )}
-
-  {/* Separator */}
-  <div className="border-t border-border mt-5 pt-4" />
-
-  {/* Current Replacements List */}
-  <div className="space-y-3">
-    <div className="text-[13px] font-medium">
-      Current Replacements ({replacements.length})
-    </div>
-    {/* ... existing list rendering ... */}
-  </div>
-</div>
-```
-
----
-
-## File to Modify
+### 2. Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/item-mapping/ReplacementModal.tsx` | Replace vertical layout with 2x2 grid, add Item Price field, keep replacements list |
+| `src/App.tsx` | Add AuthProvider, Login route, protect other routes |
+| `src/lib/i18n/translations.ts` | Add login-related translation keys |
 
 ---
 
-## Density Compliance
+## Component Details
 
-| Rule | Target | Compliance |
-|------|--------|------------|
-| Grid layout | 2 columns | ✓ |
-| Label size | 13px | ✓ |
-| Input height | 36px (h-9) | ✓ |
-| Grid gap | 16px | ✓ |
-| Read-only bg | bg-muted | ✓ |
-| Green tint (cost > 0) | #F0FDF4 | ✓ |
-| Required asterisk | text-destructive | ✓ |
-| Checkbox aligned to h-9 | ✓ |
-| Live preview below grid | ✓ |
-| Replacements list preserved | ✓ |
+### Login.tsx Structure
+```tsx
+// Split screen layout - 50/50
+// Left: Decorative gradient panel with overlay text
+// Right: Login form centered
+
+// Form fields:
+// - Email input (type="email")
+// - Password input (type="password" with toggle visibility)
+// - Remember me checkbox
+// - Forgot password link (disabled/placeholder)
+// - Sign In button
+
+// Validation:
+// - Check credentials against hardcoded values
+// - Show error toast on failure
+// - Redirect to "/" on success
+```
+
+### Credentials (Hardcoded)
+```typescript
+const VALID_EMAIL = "fhd.ashraf@gmail.com";
+const VALID_PASSWORD = "Nikenike@90";
+```
+
+### useAuth.tsx Hook
+```typescript
+interface AuthContextType {
+  isAuthenticated: boolean;
+  user: { email: string } | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+}
+
+// Uses localStorage to persist session
+// Key: "pos_admin_auth"
+```
+
+### ProtectedRoute Component
+```tsx
+// Wraps routes that require authentication
+// If not authenticated → redirect to /login
+// If authenticated → render children
+```
+
+---
+
+## Routing Changes
+
+### Updated Route Structure
+```tsx
+<Routes>
+  {/* Public route */}
+  <Route path="/login" element={<Login />} />
+  
+  {/* Protected routes (wrapped in AdminLayout) */}
+  <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+  <Route path="/sales-channels" element={<ProtectedRoute><SalesChannels /></ProtectedRoute>} />
+  // ... all other routes wrapped in ProtectedRoute
+</Routes>
+```
+
+### App.tsx Modifications
+- Wrap app in `AuthProvider`
+- Add `/login` route outside AdminLayout
+- Move AdminLayout inside protected routes
+- Conditionally render layout based on route
+
+---
+
+## Login Form Visual Specifications
+
+### Input Styling
+- Height: 44px (h-11)
+- Border: 1px #E5E7EB
+- Border radius: 8px
+- Padding: 0 14px
+- Font: 14px
+- Focus: 2px ring #8B5CF6
+
+### Sign In Button
+- Full width
+- Height: 44px
+- Background: #1F2937 (dark)
+- Text: White, 14px, font-medium
+- Border radius: 8px
+- Hover: slightly lighter
+
+### Password Toggle
+- Eye/EyeOff icon (18px)
+- Position: right side of input
+- Color: #6B7280
+
+### Left Panel (Decorative)
+- CSS gradient background (no actual image)
+- Gradient: linear from pink → purple → blue
+- Overlay text: "A WISE QUOTE" label, "Get Everything You Want" heading
+- Subtitle: motivational text
+- Rounded corners: 12px
+
+---
+
+## Translation Keys to Add
+
+```typescript
+auth: {
+  welcomeBack: "Welcome Back",
+  enterCredentials: "Enter your email and password to access your account",
+  email: "Email",
+  emailPlaceholder: "Enter your email",
+  password: "Password",
+  passwordPlaceholder: "Enter your password",
+  rememberMe: "Remember me",
+  forgotPassword: "Forgot Password",
+  signIn: "Sign In",
+  invalidCredentials: "Invalid email or password",
+  signInSuccess: "Welcome back!",
+  wiseQuote: "A WISE QUOTE",
+  getEverything: "Get Everything You Want",
+  motivationalText: "You can get everything you want if you work hard, trust the process, and stick to the plan.",
+}
+```
+
+---
+
+## Security Note
+
+This implementation uses hardcoded credentials for simplicity as requested. For production use, this should be replaced with proper Supabase authentication with:
+- Secure password hashing
+- Email verification
+- Session tokens
+- Rate limiting
+
+---
+
+## Flow Summary
+
+```text
+1. User visits any route
+2. ProtectedRoute checks localStorage for auth
+3. If not authenticated → redirect to /login
+4. User enters email + password
+5. On submit → validate against hardcoded credentials
+6. If valid → save to localStorage, redirect to /
+7. If invalid → show error toast
+8. User lands on Dashboard with full AdminLayout
+9. Logout clears localStorage and redirects to /login
+```
+
+---
+
+## Files Summary
+
+| Action | File |
+|--------|------|
+| CREATE | `src/pages/Login.tsx` |
+| CREATE | `src/hooks/useAuth.tsx` |
+| CREATE | `src/components/ProtectedRoute.tsx` |
+| MODIFY | `src/App.tsx` |
+| MODIFY | `src/lib/i18n/translations.ts` |
 
