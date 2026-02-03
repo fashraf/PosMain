@@ -1,433 +1,354 @@
 
 
-# Enhanced Branch & Item Configuration - UI Prototype Plan
+# Compact Enterprise UX Enhancement Plan
 
 ## Overview
-This plan enhances the Branch Add/Edit pages with new configuration sections (Order Types, Pricing Mode, Rounding Rules) and extends Items with Categories, Preparation Time, Allergens, and Calories. The focus is on a compact, enterprise-grade UX with proper alignment and minimal spacing.
+This plan transforms the current form layouts to match the clean, compact reference design with icons in section headers, neat divider lines, muted labels above values, and tight spacing. The goal is an enterprise-grade SaaS look.
 
 ---
 
-## UX Issues to Address (Current Problems)
+## Design Analysis (Reference Image)
 
-### Current Layout Issues
-- Cards take up too much vertical space
-- MultiLanguageInput tabs are full-width (wasteful)
-- Too much padding/spacing between elements
-- Fields not aligned in grid layouts
-- Single card per section creates excessive scrolling
-
-### Compact UX Improvements
-- Use 2-column grid layouts within cards
-- Smaller card padding (`p-4` instead of `p-6`)
-- Inline checkbox groups instead of large toggle rows
-- Combine related sections into single cards where logical
-- Horizontal groupings for related fields
+### Key Visual Elements
+- **Section Headers**: Icon + bold title + optional 3-dot menu
+- **Data Rows**: Small muted labels above values (e.g., "Worker Status" label, "● Invited" value)
+- **Multi-Column Layout**: 3-4 columns of data within a single row
+- **Divider Lines**: Thin `border-t` separators between logical groups
+- **Card Styling**: Clean white cards with subtle borders, minimal padding
+- **Status Indicators**: Colored dots with text (● Active, ● Invited)
+- **Compact Spacing**: Tight gaps between elements
 
 ---
 
-## New i18n Keys Required
+## Components to Create/Update
 
-```text
-branches.orderTypes, branches.orderTypesDescription
-branches.dineIn, branches.takeaway, branches.delivery
-branches.internalDelivery, branches.aggregatorDelivery
-branches.aggregators, branches.uberEats, branches.talabat, branches.jahez, branches.zomato, branches.swiggy
-branches.pricingMode, branches.pricingModeTooltip
-branches.inclusivePricing, branches.exclusivePricing
-branches.inclusiveDescription, branches.exclusiveDescription
-branches.roundingRules, branches.roundingTooltip
-branches.noRounding, branches.roundTo005, branches.roundTo010, branches.roundToWhole
+### 1. FormSectionCard Component (NEW)
+A reusable card component for form sections with icon support.
 
-categories.title, categories.addCategory, categories.editCategory
-categories.categoryName, categories.timeAvailability, categories.menuAvailability
-categories.breakfast, categories.lunch, categories.dinner
-categories.availableFor, categories.noCategories
+**Location:** `src/components/shared/FormSectionCard.tsx`
 
-items.preparationTime, items.preparationTimeMinutes, items.preparationTimeTooltip
-items.allergens, items.allergensTooltip
-items.nuts, items.dairy, items.gluten, items.eggs, items.soy, items.shellfish, items.wheat
-items.calories, items.caloriesTooltip
-items.categories, items.assignCategories
+**Props:**
+- `title: string`
+- `icon?: LucideIcon`
+- `children: ReactNode`
+- `className?: string`
+
+**Features:**
+- Icon displayed before title
+- Smaller header padding (`p-4` instead of `p-6`)
+- Clean border styling
+
+### 2. FormField Component (NEW)
+A compact label-above-value display pattern.
+
+**Location:** `src/components/shared/FormField.tsx`
+
+**Props:**
+- `label: string`
+- `children: ReactNode`
+- `className?: string`
+- `tooltip?: string`
+
+**Features:**
+- Small muted label (11px)
+- Value/input below
+- Optional tooltip icon
+
+### 3. FormRow Component (NEW)
+A horizontal row of form fields with dividers.
+
+**Location:** `src/components/shared/FormRow.tsx`
+
+**Props:**
+- `columns?: 2 | 3 | 4`
+- `children: ReactNode`
+- `divider?: boolean`
+
+**Features:**
+- Grid layout with equal columns
+- Optional bottom divider line
+
+---
+
+## Card Component Updates
+
+### Current Card Header Padding
+```css
+/* Before */
+.p-6 (24px)
+
+/* After */
+.p-4 (16px)
+```
+
+### Current Card Content Padding
+```css
+/* Before */
+.p-6 .pt-0
+
+/* After */
+.p-4 .pt-0
 ```
 
 ---
 
-## 1. Branch Add/Edit Page Redesign
+## Page Layout Updates
 
-### New Layout Structure (Compact Cards)
-
-```text
-+--------------------------------------------------+
-| ← Edit Branch                                    |
-+==================================================+
-
-+------------------------+-------------------------+
-|  BASIC INFORMATION                               |
-+------------------------+-------------------------+
-| Branch Name [EN|AR|UR]        | Branch Code      |
-| [compact tabs input]          | [MAIN_01]        |
-+-------------------------------------------------+
-| ○ Active    ○ Inactive                          |
-+-------------------------------------------------+
-
-+--------------------------------------------------+
-|  ORDER TYPES                                     |
-+--------------------------------------------------+
-| ☑ Dine-In   ☑ Takeaway   ☐ Delivery             |
-|                                                  |
-| └─ Delivery Options (if Delivery checked):      |
-|    ☑ Internal Delivery                          |
-|    ☑ Aggregator Delivery                        |
-|         ☑ Uber Eats  ☑ Talabat  ☐ Jahez         |
-|         ☐ Zomato     ☐ Swiggy                   |
-+--------------------------------------------------+
-
-+--------------------------------------------------+
-|  CURRENCY & PRICING                              |
-+--------------------------------------------------+
-| Currency        | Pricing Mode                   |
-| [﷼ SAR ▼]       | ○ Inclusive (VAT in price)    |
-|                 | ○ Exclusive (VAT added)        |
-+-------------------------------------------------+
-
-+--------------------------------------------------+
-|  TAX SETTINGS                                    |
-+--------------------------------------------------+
-| ☑ Enable VAT          VAT %: [15.00] %          |
-+-------------------------------------------------+
-| Additional Taxes:                   [+ Add Tax]  |
-| ┌────────────────────┬──────────┬───┐           |
-| │ Service Tax        │ 5.00 %   │ ✕ │           |
-| │ Municipal Tax      │ 2.50 %   │ ✕ │           |
-| └────────────────────┴──────────┴───┘           |
-+--------------------------------------------------+
-
-+--------------------------------------------------+
-|  ROUNDING RULES                                  |
-+--------------------------------------------------+
-| Round final bill to:                             |
-| ○ No rounding                                   |
-| ○ Nearest 0.05                                  |
-| ○ Nearest 0.10                                  |
-| ○ Nearest whole number                          |
-+--------------------------------------------------+
-
-+==================================================+
-|              [ Cancel ]  [ Save ]                |
-+==================================================+
-```
-
-### Technical Implementation
-
-**Order Types Section:**
-- Checkbox group for main order types (Dine-In, Takeaway, Delivery)
-- Collapsible/conditional delivery options when Delivery is selected
-- Nested checkboxes for aggregator platforms
-
-**Pricing Mode:**
-- Radio group with description text
-- Visual example of how pricing works
-
-**Rounding Rules:**
-- Radio group with clear descriptions
-- Tooltip explaining "applies to final bill only"
-
----
-
-## 2. Item Categories Module (NEW)
-
-### Categories List Page (`/categories`)
-- Table: Name, Time Slots, Order Types, Status, Actions
-
-### Category Add/Edit Page
+### ItemsEdit.tsx / ItemsAdd.tsx Redesign
 
 ```text
 +--------------------------------------------------+
-|  BASIC INFORMATION                               |
+| 🍽️ Basic Information                              |
 +--------------------------------------------------+
-| Category Name [EN|AR|UR]     | Status            |
-| [compact input]              | ○ Active ○ Inactive|
-+--------------------------------------------------+
-
-+--------------------------------------------------+
-|  TIME AVAILABILITY                               |
-+--------------------------------------------------+
-| Available during:                                |
-| ☑ Breakfast (6:00 - 11:00)                      |
-| ☑ Lunch (11:00 - 16:00)                         |
-| ☐ Dinner (16:00 - 23:00)                        |
+| Item Name               | Item Type              |
+| [EN|AR|UR] Pizza...     | [Edible ▼]             |
+|─────────────────────────────────────────────────|
+| Description                                       |
+| [EN|AR|UR] Classic pizza with...                 |
+|─────────────────────────────────────────────────|
+| Base Cost         | Is Combo     | Status        |
+| [$12.99]          | ○ Yes        | ● Active      |
 +--------------------------------------------------+
 
 +--------------------------------------------------+
-|  MENU AVAILABILITY                               |
+| 🏷️ Categories                                     |
 +--------------------------------------------------+
-| Available for order types:                       |
-| ☑ Dine-In   ☑ Takeaway   ☑ Internal Delivery    |
-|                                                  |
-| Available for aggregators:                       |
-| ☑ Uber Eats  ☐ Talabat  ☑ Jahez                 |
+| ☑ Breakfast  ☑ Lunch  ☐ Dinner  ☐ Snacks        |
++--------------------------------------------------+
+
++--------------------------------------------------+
+| ⏱️ Preparation & Nutrition                        |
++--------------------------------------------------+
+| Prep Time          | Calories                    |
+| [15] min           | [450] kcal                  |
+|─────────────────────────────────────────────────|
+| Allergens                                         |
+| ☐ Nuts ☑ Dairy ☑ Gluten ☐ Eggs ☐ Soy ☐ Wheat   |
 +--------------------------------------------------+
 ```
 
----
-
-## 3. Item Add/Edit Page Redesign
-
-### Enhanced Layout
+### BranchesAdd.tsx / BranchesEdit.tsx Redesign
 
 ```text
 +--------------------------------------------------+
-| ← Add Item                                       |
-+==================================================+
-
-+------------------------+-------------------------+
-|  BASIC INFORMATION                               |
-+------------------------+-------------------------+
-| Item Name [EN|AR|UR]         | Item Type         |
-| [compact tabs]               | [Edible ▼]        |
-+------------------------+-------------------------+
-| Description            | Base Cost    | Combo    |
-| [textarea]             | [12.99]      | ☑ Yes    |
-+-------------------------------------------------+
-
+| 🏢 Basic Information                              |
 +--------------------------------------------------+
-|  CATEGORIES                                      |
-+--------------------------------------------------+
-| Assign to categories:                            |
-| ☑ Breakfast  ☑ Lunch  ☐ Dinner  ☐ Snacks       |
+| Branch Name              | Branch Code           |
+| [EN|AR|UR] Main Branch   | [MAIN_01]             |
+|─────────────────────────────────────────────────|
+| Status                                            |
+| ● Active                                         |
 +--------------------------------------------------+
 
 +--------------------------------------------------+
-|  PREPARATION & NUTRITION                         |
+| 📦 Order Types                                    |
 +--------------------------------------------------+
-| Prep Time (min)  | Calories                      |
-| [15]             | [450] kcal                    |
-+-------------------------------------------------+
-| Allergens:                                       |
-| ☐ Nuts  ☑ Dairy  ☑ Gluten  ☐ Eggs  ☐ Soy       |
-| ☐ Shellfish  ☐ Wheat                            |
+| ☑ Dine-In  ☑ Takeaway  ☐ Delivery               |
+| ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ |
+| └ Delivery Options:                              |
+|   ☑ Internal   ☐ Aggregator                      |
 +--------------------------------------------------+
 
 +--------------------------------------------------+
-|  IMAGE                                           |
+| 💰 Currency & Pricing                             |
 +--------------------------------------------------+
-| [  Upload Image  ] (placeholder)                 |
+| Currency              | Pricing Mode             |
+| [﷼ SAR ▼]             | ○ Inclusive ○ Exclusive  |
 +--------------------------------------------------+
 
 +--------------------------------------------------+
-|  STATUS                                          |
+| 🧾 Tax Settings                                   |
 +--------------------------------------------------+
-| ○ Active    ○ Inactive                          |
+| ☑ Enable VAT          | VAT %: [15.00]%         |
+|─────────────────────────────────────────────────|
+| Additional Taxes:                                |
+| ┌──────────────────┬────────┬───┐               |
+| │ Service Tax      │ 5.00%  │ ✕ │               |
+| └──────────────────┴────────┴───┘               |
 +--------------------------------------------------+
 ```
 
 ---
 
-## 4. Database Schema Updates
+## CSS/Styling Updates
 
-### New/Modified Tables
+### New Utility Classes (in index.css)
+```css
+/* Form divider line */
+.form-divider {
+  @apply border-t border-border my-3;
+}
 
-```sql
--- Branches table updates
-ALTER TABLE branches ADD COLUMN order_types JSONB DEFAULT '{"dine_in": true, "takeaway": true, "delivery": false}';
-ALTER TABLE branches ADD COLUMN delivery_options JSONB DEFAULT '{"internal": false, "aggregators": []}';
-ALTER TABLE branches ADD COLUMN pricing_mode TEXT DEFAULT 'exclusive' CHECK (pricing_mode IN ('inclusive', 'exclusive'));
-ALTER TABLE branches ADD COLUMN rounding_rule TEXT DEFAULT 'none' CHECK (rounding_rule IN ('none', '0.05', '0.10', '1.00'));
+/* Compact label style */
+.field-label {
+  @apply text-xs text-muted-foreground font-medium uppercase tracking-wide;
+}
 
--- Item Categories table
-CREATE TABLE item_categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name_en TEXT NOT NULL,
-  name_ar TEXT NOT NULL,
-  name_ur TEXT NOT NULL,
-  time_slots JSONB DEFAULT '[]', -- ["breakfast", "lunch", "dinner"]
-  order_types JSONB DEFAULT '[]', -- ["dine_in", "takeaway", "delivery"]
-  aggregators JSONB DEFAULT '[]', -- ["uber_eats", "talabat", etc.]
-  sort_order INTEGER DEFAULT 0,
-  is_active BOOLEAN DEFAULT true,
-  branch_id UUID REFERENCES branches(id),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
+/* Field value style */
+.field-value {
+  @apply text-sm text-foreground mt-0.5;
+}
+```
 
--- Item-Category mapping
-CREATE TABLE item_category_mappings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  item_id UUID REFERENCES items(id) ON DELETE CASCADE,
-  category_id UUID REFERENCES item_categories(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(item_id, category_id)
-);
+### Card Refinements
+- Reduce CardHeader padding: `p-4` instead of `p-6`
+- Reduce CardContent padding: `p-4 pt-0` instead of `p-6 pt-0`
+- Add subtle hover effect on cards: `hover:shadow-md transition-shadow`
 
--- Items table updates
-ALTER TABLE items ADD COLUMN preparation_time_minutes INTEGER DEFAULT 15;
-ALTER TABLE items ADD COLUMN allergens JSONB DEFAULT '[]';
-ALTER TABLE items ADD COLUMN calories INTEGER;
+---
+
+## Spacing Standards (Compact)
+
+| Element | Current | Proposed |
+|---------|---------|----------|
+| Card padding | 24px | 16px |
+| Section gap | 16-24px | 12px |
+| Field row gap | 12-16px | 8px |
+| Label to input | 8px | 4px |
+| Card margin | 16px | 12px |
+
+---
+
+## Files to Modify
+
+### New Files
+```text
+src/components/shared/FormSectionCard.tsx
+src/components/shared/FormField.tsx
+src/components/shared/FormRow.tsx
+```
+
+### Modified Files
+```text
+src/index.css                              - Add utility classes
+src/components/shared/PageFormLayout.tsx   - Reduce spacing, add icons
+src/pages/ItemsAdd.tsx                     - Apply compact design
+src/pages/ItemsEdit.tsx                    - Apply compact design
+src/pages/BranchesAdd.tsx                  - Apply compact design
+src/pages/BranchesEdit.tsx                 - Apply compact design
+src/pages/SalesChannelsAdd.tsx             - Apply compact design
+src/pages/SalesChannelsEdit.tsx            - Apply compact design
+src/pages/IngredientsAdd.tsx               - Apply compact design
+src/pages/IngredientsEdit.tsx              - Apply compact design
+src/pages/CategoriesAdd.tsx                - Apply compact design
+src/pages/CategoriesEdit.tsx               - Apply compact design
 ```
 
 ---
 
-## 5. New Components to Create
+## Component Specifications
 
-### Compact UI Components
-
-**1. CheckboxGroup Component**
-```text
-src/components/shared/CheckboxGroup.tsx
-```
-- Horizontal checkbox layout
-- Label + tooltip support
-- Compact spacing
-
-**2. RadioGroup Component (enhanced)**
-```text
-src/components/shared/CompactRadioGroup.tsx
-```
-- Horizontal or vertical layout
-- Description text support
-- Visual selection indicator
-
-**3. CollapsibleSection Component**
-```text
-src/components/shared/CollapsibleSection.tsx
-```
-- For nested options (delivery → aggregators)
-- Smooth expand/collapse animation
-
-**4. AllergenPicker Component**
-```text
-src/components/shared/AllergenPicker.tsx
-```
-- Predefined allergen checkboxes
-- Icon badges for each allergen
-
-**5. CompactMultiLanguageInput Component**
-```text
-src/components/shared/CompactMultiLanguageInput.tsx
-```
-- Smaller tab buttons
-- Reduced vertical spacing
-- Inline with other fields in grid
-
----
-
-## 6. File Changes Summary
-
-### New Files to Create
-```text
-src/components/shared/CheckboxGroup.tsx
-src/components/shared/CompactRadioGroup.tsx
-src/components/shared/CollapsibleSection.tsx
-src/components/shared/AllergenPicker.tsx
-src/components/shared/CompactMultiLanguageInput.tsx
-
-src/pages/Categories.tsx
-src/pages/CategoriesAdd.tsx
-src/pages/CategoriesEdit.tsx
-src/components/categories/CategoryTable.tsx
-```
-
-### Files to Modify
-```text
-src/lib/i18n/translations.ts - Add all new keys
-src/pages/BranchesAdd.tsx - Complete redesign with new sections
-src/pages/BranchesEdit.tsx - Complete redesign with new sections
-src/pages/ItemsAdd.tsx - Add categories, prep time, allergens, calories
-src/pages/ItemsEdit.tsx - Add categories, prep time, allergens, calories
-src/App.tsx - Add category routes
-src/components/AppSidebar.tsx - Add Categories nav item
-src/components/shared/MultiLanguageInput.tsx - Create compact variant
-```
-
----
-
-## 7. Design Specifications (Compact UX)
-
-### Spacing Standards
-- Card padding: `p-4` (down from `p-6`)
-- Card header padding: `pb-3` (smaller)
-- Field gap in grids: `gap-3` (down from `gap-4`)
-- Section spacing: `space-y-4` (down from `space-y-6`)
-
-### Grid Layouts
-- 2-column for most form fields: `grid grid-cols-1 md:grid-cols-2 gap-3`
-- 3-column for checkboxes: `grid grid-cols-2 sm:grid-cols-3 gap-2`
-
-### Component Sizing
-- Checkbox label: `text-sm`
-- Section titles: `text-base font-medium` (not large h3)
-- Input heights: Keep default but tighter margins
-
-### Color Usage
-- Active checkbox: Primary purple (`#8B5CF6`)
-- Inactive states: `text-muted-foreground`
-- Section dividers: `border-t border-border`
-
----
-
-## 8. Implementation Order
-
-1. **Compact UI Components** - CheckboxGroup, CompactRadioGroup, CompactMultiLanguageInput
-2. **i18n Keys** - Add all translation strings
-3. **Branch Pages Redesign** - Order Types, Pricing Mode, Rounding Rules
-4. **Categories Module** - Full CRUD for item categories
-5. **Items Pages Update** - Categories, Prep Time, Allergens, Calories
-6. **Database Migrations** - Schema updates
-7. **Sidebar Updates** - Add Categories navigation
-
----
-
-## 9. Visual Alignment Rules
-
-### Form Field Alignment
-- Labels above inputs (not inline)
-- Required asterisk `*` in red after label
-- Tooltips as small `ℹ️` icons after labels
-- Error states with red border and helper text below
-
-### Multi-Column Alignment
-```text
-| Field 1 Label         | Field 2 Label         |
-| [Input field]         | [Input field]         |
-```
-
-### Checkbox Alignment
-```text
-☑ Label 1    ☑ Label 2    ☐ Label 3
-```
-(inline, not stacked vertically)
-
----
-
-## 10. Sample Data Structure for Order Types
-
+### FormSectionCard Props
 ```typescript
-interface BranchOrderTypes {
-  dine_in: boolean;
-  takeaway: boolean;
-  delivery: {
-    enabled: boolean;
-    internal: boolean;
-    aggregators: {
-      uber_eats: boolean;
-      talabat: boolean;
-      jahez: boolean;
-      zomato: boolean;
-      swiggy: boolean;
-    };
-  };
-}
-
-interface ItemAllergens {
-  nuts: boolean;
-  dairy: boolean;
-  gluten: boolean;
-  eggs: boolean;
-  soy: boolean;
-  shellfish: boolean;
-  wheat: boolean;
+interface FormSectionCardProps {
+  title: string;
+  icon?: LucideIcon;
+  children: ReactNode;
+  className?: string;
 }
 ```
 
-This ensures all configurations are strongly typed and the POS order screen can dynamically filter items based on branch settings.
+### FormField Props
+```typescript
+interface FormFieldProps {
+  label: string;
+  children: ReactNode;
+  className?: string;
+  tooltip?: string;
+  required?: boolean;
+}
+```
+
+### FormRow Props
+```typescript
+interface FormRowProps {
+  columns?: 2 | 3 | 4;
+  children: ReactNode;
+  divider?: boolean;
+  className?: string;
+}
+```
+
+---
+
+## Icon Mapping for Sections
+
+| Section | Icon |
+|---------|------|
+| Basic Information | `FileText` or `Info` |
+| Order Types | `ShoppingBag` |
+| Currency & Pricing | `DollarSign` or `Wallet` |
+| Tax Settings | `Receipt` |
+| Categories | `Tags` |
+| Preparation & Nutrition | `Clock` or `Timer` |
+| Image | `Image` |
+| Status | `Activity` |
+| Allergens | `AlertTriangle` |
+
+---
+
+## Implementation Order
+
+1. **Create new components**: FormSectionCard, FormField, FormRow
+2. **Update CSS**: Add utility classes for compact styling
+3. **Update ItemsAdd/Edit**: Apply new component structure
+4. **Update BranchesAdd/Edit**: Apply new component structure
+5. **Update other Add/Edit pages**: Sales Channels, Ingredients, Categories
+6. **Test RTL**: Ensure all layouts work correctly in Arabic/Urdu
+
+---
+
+## Visual Comparison
+
+### Before (Current)
+- Large card headers with excessive padding
+- Fields scattered without clear visual grouping
+- No divider lines between sections
+- No icons in headers
+- Inconsistent spacing
+
+### After (Proposed)
+- Compact headers with icons
+- Clear visual grouping with divider lines
+- Muted labels above values
+- Consistent 2-3 column layouts
+- Tight, enterprise-grade spacing
+- Professional SaaS appearance
+
+---
+
+## Sample FormSectionCard Usage
+
+```tsx
+<FormSectionCard title="Basic Information" icon={FileText}>
+  <FormRow columns={2}>
+    <FormField label="Item Name" required>
+      <CompactMultiLanguageInput ... />
+    </FormField>
+    <FormField label="Item Type">
+      <Select ... />
+    </FormField>
+  </FormRow>
+  
+  <FormRow divider>
+    <FormField label="Description">
+      <CompactMultiLanguageInput multiline ... />
+    </FormField>
+  </FormRow>
+  
+  <FormRow columns={3}>
+    <FormField label="Base Cost">
+      <Input type="number" ... />
+    </FormField>
+    <FormField label="Is Combo">
+      <Switch ... />
+    </FormField>
+    <FormField label="Status">
+      <StatusBadge active={true} />
+    </FormField>
+  </FormRow>
+</FormSectionCard>
+```
+
+This pattern makes it very easy to build consistent, compact forms across all pages while maintaining the clean enterprise look from the reference image.
 
