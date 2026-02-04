@@ -15,21 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/hooks/use-toast";
 import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
 import { FormField } from "@/components/shared/FormField";
 import { MultiLanguageInputWithIndicators } from "@/components/shared/MultiLanguageInputWithIndicators";
 import { AllergenPicker, type AllergenType } from "@/components/shared/AllergenPicker";
-import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
 import { StockAvailabilityBadge } from "@/components/shared/StockAvailabilityBadge";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { IngredientSaveConfirmModal } from "@/components/ingredients/IngredientSaveConfirmModal";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +71,6 @@ export default function IngredientMasterAdd() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -189,30 +181,22 @@ export default function IngredientMasterAdd() {
         <h1 className="text-xl font-semibold text-foreground">{t("inventory.addIngredient")}</h1>
       </div>
 
-      {/* Section 1: Ingredient Basics (Purple) - Image + Name/Description */}
+      {/* Section 1: Ingredient Basics (Purple) - Name/Description side-by-side */}
       <DashedSectionCard title={t("ingredients.ingredientBasics") || "Ingredient Basics"} icon={Carrot} variant="purple">
-        <div className="flex gap-6">
-          {/* Left: Image Upload */}
-          <div className="flex-shrink-0">
-            <ImageUploadHero value={imageUrl} onChange={setImageUrl} size={280} />
-          </div>
-          
-          {/* Right: Name + Description (same height inputs) */}
-          <div className="flex-1 flex flex-col gap-4">
-            <MultiLanguageInputWithIndicators
-              label={t("ingredients.ingredientName")}
-              values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
-              onChange={handleNameChange}
-              required
-              singleLine
-            />
-            <MultiLanguageInputWithIndicators
-              label={t("ingredients.shortDescription") || "Short Description"}
-              values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
-              onChange={handleDescriptionChange}
-              singleLine
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <MultiLanguageInputWithIndicators
+            label={t("ingredients.ingredientName")}
+            values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
+            onChange={handleNameChange}
+            required
+            singleLine
+          />
+          <MultiLanguageInputWithIndicators
+            label={t("ingredients.shortDescription") || "Short Description"}
+            values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
+            onChange={handleDescriptionChange}
+            singleLine
+          />
         </div>
       </DashedSectionCard>
 
@@ -220,57 +204,36 @@ export default function IngredientMasterAdd() {
       <DashedSectionCard title={t("ingredients.classification") || "Classification"} icon={Tag} variant="green">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <FormField label={t("ingredients.ingredientType") || "Type"} required>
-            <Select
+            <SearchableSelect
               value={formData.ingredient_type}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, ingredient_type: value }))}
-            >
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder={t("common.select")} />
-              </SelectTrigger>
-              <SelectContent>
-                {INGREDIENT_TYPES.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(value) => setFormData((prev) => ({ ...prev, ingredient_type: value }))}
+              options={INGREDIENT_TYPES}
+              placeholder={t("common.select")}
+              searchPlaceholder={t("common.search")}
+              emptyText={t("common.noResults") || "No results found"}
+            />
           </FormField>
 
           <FormField label={t("common.unit")} required>
-            <Select
+            <SearchableSelect
               value={formData.unit}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, unit: value }))}
-            >
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder={t("common.select")} />
-              </SelectTrigger>
-              <SelectContent>
-                {UNITS.map((unit) => (
-                  <SelectItem key={unit.id} value={unit.id}>
-                    {unit.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(value) => setFormData((prev) => ({ ...prev, unit: value }))}
+              options={UNITS}
+              placeholder={t("common.select")}
+              searchPlaceholder={t("common.search")}
+              emptyText={t("common.noResults") || "No results found"}
+            />
           </FormField>
 
           <FormField label={t("ingredients.storageType") || "Storage Type"} required>
-            <Select
+            <SearchableSelect
               value={formData.storage_type}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, storage_type: value }))}
-            >
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder={t("common.select")} />
-              </SelectTrigger>
-              <SelectContent>
-                {STORAGE_TYPES.map((storage) => (
-                  <SelectItem key={storage.id} value={storage.id}>
-                    {storage.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onChange={(value) => setFormData((prev) => ({ ...prev, storage_type: value }))}
+              options={STORAGE_TYPES}
+              placeholder={t("common.select")}
+              searchPlaceholder={t("common.search")}
+              emptyText={t("common.noResults") || "No results found"}
+            />
           </FormField>
 
           <FormField label={t("ingredients.categoryGroup") || "Category/Group"}>
@@ -467,7 +430,6 @@ export default function IngredientMasterAdd() {
 
           <FormField label={t("ingredients.supplier") || "Supplier/Vendor"}>
             <Input
-              type="text"
               value={formData.supplier}
               onChange={(e) => setFormData((prev) => ({ ...prev, supplier: e.target.value }))}
               placeholder={t("common.optional")}
@@ -476,6 +438,7 @@ export default function IngredientMasterAdd() {
           </FormField>
         </div>
 
+        {/* Allergen Picker */}
         <FormField label={t("ingredients.allergenFlags") || "Allergen Flags"}>
           <AllergenPicker
             value={formData.allergens}
@@ -484,27 +447,20 @@ export default function IngredientMasterAdd() {
         </FormField>
       </DashedSectionCard>
 
-      {/* Sticky Footer */}
-      <div
-        className={cn(
-          "fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10",
-          "flex items-center gap-3",
-          isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4"
-        )}
-      >
-        <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+      {/* Footer Actions */}
+      <div className="fixed bottom-0 start-0 end-0 bg-background border-t shadow-lg z-10">
+        <div className="container max-w-6xl mx-auto px-4 py-3 flex justify-end gap-3">
           <Button
             variant="outline"
-            size="sm"
             onClick={() => navigate("/inventory/ingredients")}
-            disabled={isSaving}
+            className="gap-2"
           >
-            <X className="h-4 w-4 me-1" />
+            <X className="h-4 w-4" />
             {t("common.cancel")}
           </Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={isSaving}>
-            <Save className="h-4 w-4 me-1" />
-            {t("common.save")}
+          <Button onClick={handleSaveClick} className="gap-2" disabled={isSaving}>
+            <Save className="h-4 w-4" />
+            {isSaving ? t("common.saving") : t("common.save")}
           </Button>
         </div>
       </div>
@@ -514,8 +470,8 @@ export default function IngredientMasterAdd() {
         open={showConfirmModal}
         onOpenChange={setShowConfirmModal}
         onConfirm={handleConfirmSave}
-        ingredient={ingredientSummary}
         isLoading={isSaving}
+        ingredient={ingredientSummary}
         isEditMode={false}
       />
     </div>
