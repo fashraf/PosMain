@@ -1,0 +1,383 @@
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
+import { SimplePagination } from "@/components/maintenance/SimplePagination";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import {
+  MaintenanceDialog,
+  MaintenanceTable,
+  MaintenanceColumn,
+  DeleteConfirmModal,
+  SaveConfirmModal,
+} from "@/components/maintenance";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+interface Category {
+  id: string;
+  name_en: string;
+}
+
+interface Subcategory {
+  id: string;
+  name_en: string;
+  name_ar: string | null;
+  name_ur: string | null;
+  parent_category_id: string | null;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  maintenance_categories?: Category;
+}
+
+const emptyForm = {
+  name: { en: "", ar: "", ur: "" },
+  parent_category_id: "",
+  description: "",
+  is_active: true,
+};
+
+export default function SubcategoriesPage() {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  
+  const [data, setData] = useState<Subcategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Subcategory | null>(null);
+  const [deletingItem, setDeletingItem] = useState<Subcategory | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    const [subcatsRes, catsRes] = await Promise.all([
+      supabase
+        .from("maintenance_subcategories")
+        .select("*, maintenance_categories(id, name_en)")
+        .order("name_en"),
+      supabase.from("maintenance_categories").select("id, name_en").eq("is_active", true).order("name_en"),
+    ]);
+
+    if (subcatsRes.error) {
+      toast({ title: t("common.error"), description: subcatsRes.error.message, variant: "destructive" });
+    } else {
+      setData(subcatsRes.data || []);
+    }
+    setCategories(catsRes.data || []);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const matchesSearch =
+        item.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.name_ar?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && item.is_active) ||
+        (statusFilter === "inactive" && !item.is_active);
+      return matchesSearch && matchesStatus;
+    });
+  }, [data, searchQuery, statusFilter]);
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage]);
+
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+
+  const handleAdd = () => {
+    setEditingItem(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (item: Subcategory) => {
+    setEditingItem(item);
+    setForm({
+      name: { en: item.name_en, ar: item.name_ar || "", ur: item.name_ur || "" },
+      parent_category_id: item.parent_category_id || "",
+      description: item.description || "",
+      is_active: item.is_active,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSaveClick = () => {
+    if (!form.name.en.trim()) {
+      toast({ title: t("common.error"), description: "English name is required", variant: "destructive" });
+      return;
+    }
+    if (!form.parent_category_id) {
+      toast({ title: t("common.error"), description: "Parent category is required", variant: "destructive" });
+      return;
+    }
+    setSaveConfirmOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setIsSaving(true);
+    setSaveConfirmOpen(false);
+
+    const payload = {
+      name_en: form.name.en.trim(),
+      name_ar: form.name.ar.trim() || null,
+      name_ur: form.name.ur.trim() || null,
+      parent_category_id: form.parent_category_id || null,
+      description: form.description.trim() || null,
+      is_active: form.is_active,
+    };
+
+    let error;
+    if (editingItem) {
+      ({ error } = await supabase
+        .from("maintenance_subcategories")
+        .update(payload)
+        .eq("id", editingItem.id));
+    } else {
+      ({ error } = await supabase.from("maintenance_subcategories").insert(payload));
+    }
+
+    setIsSaving(false);
+
+    if (error) {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: t("common.success"), description: editingItem ? "Subcategory updated" : "Subcategory added" });
+      setDialogOpen(false);
+      fetchData();
+    }
+  };
+
+  const handleToggleStatus = async (item: Subcategory) => {
+    const { error } = await supabase
+      .from("maintenance_subcategories")
+      .update({ is_active: !item.is_active })
+      .eq("id", item.id);
+
+    if (error) {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    } else {
+      fetchData();
+    }
+  };
+
+  const handleDeleteClick = (item: Subcategory) => {
+    setDeletingItem(item);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingItem) return;
+    setIsSaving(true);
+
+    const { error } = await supabase
+      .from("maintenance_subcategories")
+      .delete()
+      .eq("id", deletingItem.id);
+
+    setIsSaving(false);
+    setDeleteConfirmOpen(false);
+
+    if (error) {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: t("common.success"), description: "Subcategory deleted" });
+      setDeletingItem(null);
+      fetchData();
+    }
+  };
+
+  const columns: MaintenanceColumn<Subcategory>[] = [
+    {
+      key: "name_en",
+      header: t("common.name"),
+      render: (item) => (
+        <div>
+          <span className="font-medium">{item.name_en}</span>
+          {item.name_ar && <span className="text-muted-foreground text-[11px] ms-2">({item.name_ar})</span>}
+        </div>
+      ),
+    },
+    {
+      key: "parent_category_id",
+      header: t("maintenance.parentCategory"),
+      render: (item) =>
+        item.maintenance_categories ? (
+          <Badge variant="outline" className="text-[11px]">
+            {item.maintenance_categories.name_en}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      key: "is_active",
+      header: t("common.status"),
+      render: (item) => <StatusBadge isActive={item.is_active} />,
+      className: "w-24",
+    },
+  ];
+
+  const categoryOptions = categories.map((c) => ({ id: c.id, label: c.name_en }));
+
+  return (
+    <div className="space-y-6">
+      <LoadingOverlay visible={isSaving} />
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{t("maintenance.title")} - {t("maintenance.subcategories")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage subcategories linked to parent categories
+          </p>
+        </div>
+        <Button onClick={handleAdd} className="gap-2">
+          <Plus className="h-4 w-4" />
+          {t("maintenance.addNew")}
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("common.search")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">{t("common.active")}</SelectItem>
+            <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Table */}
+      <MaintenanceTable
+        data={paginatedData}
+        columns={columns}
+        onEdit={handleEdit}
+        onToggleStatus={handleToggleStatus}
+        isLoading={isLoading}
+        emptyMessage="No subcategories found"
+        currentPage={currentPage}
+        pageSize={pageSize}
+      />
+
+      {/* Pagination */}
+      <SimplePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+
+      {/* Add/Edit Dialog */}
+      <MaintenanceDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title={editingItem ? t("maintenance.editEntry") : t("maintenance.addNew")}
+        onSave={handleSaveClick}
+        isSaving={isSaving}
+      >
+        <CompactMultiLanguageInput
+          label={t("common.name")}
+          values={form.name}
+          onChange={(lang, val) => setForm((f) => ({ ...f, name: { ...f.name, [lang]: val } }))}
+          required
+        />
+        <div className="space-y-1.5">
+          <Label className="text-[13px] font-medium">
+            {t("maintenance.parentCategory")} <span className="text-destructive">*</span>
+          </Label>
+          <SearchableSelect
+            options={categoryOptions}
+            value={form.parent_category_id}
+            onChange={(val) => setForm((f) => ({ ...f, parent_category_id: val }))}
+            placeholder="Select parent category"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[13px] font-medium">{t("common.description")}</Label>
+          <Textarea
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            placeholder="Short description..."
+            className="min-h-[60px] text-[13px]"
+          />
+        </div>
+        <div className="flex items-center justify-between pt-2">
+          <Label className="text-[13px] font-medium">{t("common.status")}</Label>
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-muted-foreground">
+              {form.is_active ? t("common.active") : t("common.inactive")}
+            </span>
+            <Switch
+              checked={form.is_active}
+              onCheckedChange={(checked) => setForm((f) => ({ ...f, is_active: checked }))}
+            />
+          </div>
+        </div>
+      </MaintenanceDialog>
+
+      {/* Save Confirmation */}
+      <SaveConfirmModal
+        open={saveConfirmOpen}
+        onOpenChange={setSaveConfirmOpen}
+        onConfirm={handleConfirmSave}
+        itemName={form.name.en}
+        entityType="subcategories"
+        isNew={!editingItem}
+        isSaving={isSaving}
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleConfirmDelete}
+        itemName={deletingItem?.name_en || ""}
+        entityType="subcategories"
+        isDeleting={isSaving}
+      />
+    </div>
+  );
+}

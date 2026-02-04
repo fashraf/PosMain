@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      allergens: {
+        Row: {
+          created_at: string
+          icon_class: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          severity: Database["public"]["Enums"]["allergen_severity"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          severity?: Database["public"]["Enums"]["allergen_severity"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          severity?: Database["public"]["Enums"]["allergen_severity"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       branches: {
         Row: {
           address: string | null
@@ -41,6 +77,185 @@ export type Database = {
         }
         Relationships: []
       }
+      classification_types: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ingredient_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      item_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maintenance_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon_class: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      maintenance_subcategories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          parent_category_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          parent_category_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          parent_category_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_subcategories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -67,6 +282,128 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      serving_times: {
+        Row: {
+          created_at: string
+          icon_class: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          sort_order: number | null
+          time_range: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          sort_order?: number | null
+          time_range?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          sort_order?: number | null
+          time_range?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      storage_types: {
+        Row: {
+          created_at: string
+          icon_class: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          temp_range: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          temp_range?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon_class?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          temp_range?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      units: {
+        Row: {
+          base_unit_id: string | null
+          conversion_factor: number | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          base_unit_id?: string | null
+          conversion_factor?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          base_unit_id?: string | null
+          conversion_factor?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_base_unit_id_fkey"
+            columns: ["base_unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_branches: {
         Row: {
@@ -134,6 +471,7 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      allergen_severity: "low" | "medium" | "high"
       app_role: "admin" | "manager" | "cashier"
     }
     CompositeTypes: {
@@ -262,6 +600,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      allergen_severity: ["low", "medium", "high"],
       app_role: ["admin", "manager", "cashier"],
     },
   },

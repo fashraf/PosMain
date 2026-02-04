@@ -18,6 +18,7 @@ import {
   Sliders,
   Calendar,
   BarChart3,
+  Wrench,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -62,6 +63,18 @@ const inventorySubItems = [
   { titleKey: "nav.reportsAlerts", url: "/inventory/reports", icon: BarChart3 },
 ];
 
+const maintenanceSubItems = [
+  { titleKey: "maintenance.categories", url: "/maintenance/categories" },
+  { titleKey: "maintenance.subcategories", url: "/maintenance/subcategories" },
+  { titleKey: "maintenance.servingTimes", url: "/maintenance/serving-times" },
+  { titleKey: "maintenance.allergens", url: "/maintenance/allergens" },
+  { titleKey: "maintenance.itemTypes", url: "/maintenance/item-types" },
+  { titleKey: "maintenance.classificationTypes", url: "/maintenance/classification-types" },
+  { titleKey: "maintenance.units", url: "/maintenance/units" },
+  { titleKey: "maintenance.storageTypes", url: "/maintenance/storage-types" },
+  { titleKey: "maintenance.ingredientGroups", url: "/maintenance/ingredient-groups" },
+];
+
 const otherNavItems = [
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
   { titleKey: "nav.categories", url: "/categories", icon: Tag },
@@ -77,6 +90,7 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const [inventoryOpen, setInventoryOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(false);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
 
   return (
     <Sidebar
@@ -196,6 +210,50 @@ export function AppSidebar() {
                               </NavLink>
                             </SidebarMenuSubButton>
                           )}
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Maintenance Menu - Collapsible */}
+              <Collapsible
+                open={maintenanceOpen && !isCollapsed}
+                onOpenChange={setMaintenanceOpen}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={t("maintenance.title")}
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
+                    >
+                      <Wrench className="h-5 w-5 shrink-0" />
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1 text-left">{t("maintenance.title")}</span>
+                          <ChevronDown className={cn(
+                            "h-4 w-4 transition-transform",
+                            maintenanceOpen && "rotate-180"
+                          )} />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {maintenanceSubItems.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.url}>
+                          <SidebarMenuSubButton asChild>
+                            <NavLink
+                              to={subItem.url}
+                              className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                            >
+                              {t(subItem.titleKey)}
+                            </NavLink>
+                          </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
                     </SidebarMenuSub>
