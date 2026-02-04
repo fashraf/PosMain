@@ -1,190 +1,195 @@
 
+# Implementation Plan: Fix Layout, Modal & Replacements
 
-# Implementation Plan: Full Width Layout, Header Redesign & Image Upload Fix
+## Summary of All Changes
 
-## Overview
-
-Based on your feedback and the reference images, I'll implement three key changes:
-
-1. **Remove max-width constraint** - Use full page width instead of `75vw`
-2. **Redesign header** - Remove the "← Edit Item" title row and add a "BACK" button to the right side of the section navigation bar
-3. **Fix image upload** - Set up storage bucket and implement actual image persistence
-4. **Make modal compact** - Keep the confirmation modal but reduce its width
-
----
-
-## Changes Summary
-
-| File | Change |
-|------|--------|
-| `ItemsAdd.tsx` | Remove max-width, update header layout, add BACK button |
-| `ItemsEdit.tsx` | Remove max-width, update header layout, add BACK button |
-| `SectionNavigationBar.tsx` | Add optional BACK button prop on the right |
-| `ItemSaveConfirmModal.tsx` | Reduce width from 75vw to a more compact size |
-| `ImageUploadHero.tsx` | Connect to storage bucket for persistence |
-| Database Migration | Create `item-images` storage bucket |
+| Issue | Solution |
+|-------|----------|
+| 1. Quick Summary Card | Remove `<ItemSummaryCard>` from ItemsAdd.tsx and ItemsEdit.tsx |
+| 2. Page footer bleed into sidebar | Fix positioning to respect sidebar width (16rem) |
+| 3. Modal 70% width + no caps | Change modal to 70vw, remove uppercase text styling |
+| 4. Replacements not working | Copy replacement handlers from ItemIngredientMappingEdit.tsx |
 
 ---
 
-## Detailed Changes
-
-### 1. Remove Max-Width (Full Page Width)
+## 1. Remove Quick Summary Card
 
 **Files:** `ItemsAdd.tsx`, `ItemsEdit.tsx`
 
-Remove the `style={{ maxWidth: "75vw" }}` constraint to use full available width:
+- Remove the `<ItemSummaryCard ... />` component and its wrapper comment
+- Remove the `ItemSummaryCard` import if no longer used
 
+---
+
+## 2. Fix Page Footer Bleed
+
+**Problem:** The footer uses `fixed bottom-0 left-0 right-0` which spans the entire viewport, bleeding under the sidebar (which is 16rem wide).
+
+**Solution:** Change the footer to respect the sidebar space using `left-[16rem]` instead of `left-0`.
+
+**Files:** `ItemsAdd.tsx`, `ItemsEdit.tsx`
+
+Current:
 ```tsx
-// Before
-<div className="mx-auto" style={{ maxWidth: "75vw" }}>
-
-// After
-<div>
+<div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10">
+  <div className="mx-auto py-3 px-4" style={{ maxWidth: "75vw" }}>
 ```
+
+Fixed:
+```tsx
+<div className="fixed bottom-0 left-[16rem] right-0 bg-background border-t z-10">
+  <div className="py-3 px-4 flex justify-end">
+```
+
+This ensures the footer starts after the sidebar (16rem = sidebar width) and doesn't bleed into it.
 
 ---
 
-### 2. Redesign Header with BACK Button
-
-Based on your reference image, the new layout will be:
-
-```text
-┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│ [📋 Basics] [🏷️ Class] [⏰ Details] [📦 Inventory] [🥕 Ingredients]          [← BACK]   │
-└──────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Changes to `SectionNavigationBar.tsx`:**
-- Add optional `onBack` and `backLabel` props
-- Render a BACK button on the right side when `onBack` is provided
-
-**Changes to `ItemsAdd.tsx` and `ItemsEdit.tsx`:**
-- Remove the entire "← Edit Item" / "Item Master - Add" header row
-- Pass `onBack` callback to `SectionNavigationBar`
-
----
-
-### 3. Fix Image Upload (Storage Bucket)
-
-**Database Migration:**
-Create a storage bucket for item images:
-
-```sql
--- Create storage bucket for item images
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('item-images', 'item-images', true);
-
--- Allow authenticated users to upload
-CREATE POLICY "Allow authenticated uploads"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'item-images');
-
--- Allow public read access
-CREATE POLICY "Allow public read"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'item-images');
-
--- Allow authenticated users to update their uploads
-CREATE POLICY "Allow authenticated updates"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING (bucket_id = 'item-images');
-
--- Allow authenticated users to delete
-CREATE POLICY "Allow authenticated deletes"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (bucket_id = 'item-images');
-```
-
-**Changes to `ImageUploadHero.tsx`:**
-- Add `onUpload` callback that accepts a File and returns the permanent URL
-- Show upload progress indicator
-- Store the permanent Supabase Storage URL
-
-**Changes to `ItemsAdd.tsx` and `ItemsEdit.tsx`:**
-- Implement `handleImageUpload` function that uploads to Supabase Storage
-- On save, use the permanent URL instead of blob URL
-
----
-
-### 4. Make Modal Compact
+## 3. Modal 70% Width + No Caps
 
 **File:** `ItemSaveConfirmModal.tsx`
 
-Reduce the modal width from `75vw` to a more compact size:
+### Width Change
+Current: `sm:max-w-[900px]`  
+New: `sm:max-w-[70vw]`
 
+### Remove Uppercase Styling
+Current labels use `uppercase` and `tracking-wide`:
 ```tsx
-// Before
-<DialogContent className="sm:max-w-[75vw] ...">
-
-// After  
-<DialogContent className="sm:max-w-[900px] ...">
+<label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
 ```
 
-Also reduce padding and spacing throughout for a more compact feel:
-- Header padding: `px-4 py-3` instead of `px-6 py-4`
-- Body padding: `p-4` instead of `p-6`
-- Gap between sections: `gap-3` instead of `gap-4`
-- Image size in hero: 56px instead of 72px
+New (title case, normal tracking):
+```tsx
+<label className="text-[11px] font-medium text-muted-foreground">
+```
+
+Apply to all instances:
+- `ReadOnlyFormField` label
+- `ReadOnlyChipsField` label  
+- `ReviewSectionCard` title
+- Table headers (`th` elements)
+- Section divider text
 
 ---
 
-## Visual Comparison
+## 4. Fix Replacements in Items Grid
 
-**Before (Current):**
-```text
-┌─────────────────────────────────────────┐
-│ ← Edit Item                             │   ← Title row (will remove)
-├─────────────────────────────────────────┤
-│ [Basics] [Class] [Details] ...          │   ← Nav bar
-├─────────────────────────────────────────┤
-│        (75vw constrained content)       │
-│                                         │
-└─────────────────────────────────────────┘
+**Files:** `ItemsAdd.tsx`, `ItemsEdit.tsx`
+
+Add the following from `ItemIngredientMappingEdit.tsx`:
+
+### A. State for Replacement Modal
+```tsx
+const [replacementModalState, setReplacementModalState] = useState({
+  open: false,
+  mappingId: "",
+  parentName: "",
+});
 ```
 
-**After (New):**
-```text
-┌──────────────────────────────────────────────────────────────────────────┐
-│ [📋 Basics] [🏷️ Class] [⏰ Details] [📦 Inv] [🥕 Ingr]        [← BACK]   │
-├──────────────────────────────────────────────────────────────────────────┤
-│                        (full width content)                              │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
+### B. Handler Functions
+```tsx
+const handleOpenReplacementModal = (mappingId: string) => {
+  const mapping = subItemMappings.find((m) => m.id === mappingId);
+  if (mapping) {
+    setReplacementModalState({
+      open: true,
+      mappingId,
+      parentName: mapping.sub_item_name,
+    });
+  }
+};
+
+const handleReplacementsChange = (replacements: ReplacementItem[]) => {
+  setSubItemMappings((prev) =>
+    prev.map((m) =>
+      m.id === replacementModalState.mappingId
+        ? { ...m, replacements }
+        : m
+    )
+  );
+};
+
+const handleRemoveReplacement = (mappingId: string, replacementId: string) => {
+  setSubItemMappings((prev) =>
+    prev.map((m) => {
+      if (m.id === mappingId && m.replacements) {
+        const filtered = m.replacements.filter((r) => r.id !== replacementId);
+        if (filtered.length > 0 && !filtered.some((r) => r.is_default)) {
+          filtered[0].is_default = true;
+        }
+        return { ...m, replacements: filtered };
+      }
+      return m;
+    })
+  );
+};
+
+const handleViewReplacement = (mappingId: string, _replacementId: string) => {
+  handleOpenReplacementModal(mappingId);
+};
+```
+
+### C. Current Replacements Memo
+```tsx
+const currentReplacements = useMemo(() => {
+  const mapping = subItemMappings.find((m) => m.id === replacementModalState.mappingId);
+  return mapping?.replacements || [];
+}, [subItemMappings, replacementModalState.mappingId]);
+```
+
+### D. Connect to ItemTable
+```tsx
+<ItemTable
+  ...
+  onReplacement={handleOpenReplacementModal}
+  onRemoveReplacement={handleRemoveReplacement}
+  onViewReplacement={handleViewReplacement}
+/>
+```
+
+### E. Add ReplacementModal Component
+Import and render the modal:
+```tsx
+import { ReplacementModal, type ReplacementItem } from "@/components/item-mapping";
+
+// In JSX after other modals:
+<ReplacementModal
+  open={replacementModalState.open}
+  onOpenChange={(open) => !open && setReplacementModalState(prev => ({ ...prev, open: false }))}
+  parentItemName={replacementModalState.parentName}
+  parentItemId={replacementModalState.mappingId}
+  replacements={currentReplacements}
+  onReplacementsChange={handleReplacementsChange}
+  availableItems={mockAvailableItems}
+  currentLanguage={currentLanguage}
+/>
 ```
 
 ---
 
-## Implementation Order
+## Files Modified
 
-1. Create storage bucket migration for image uploads
-2. Update `SectionNavigationBar.tsx` with BACK button support
-3. Update `ImageUploadHero.tsx` with storage upload capability
-4. Update `ItemsAdd.tsx`:
-   - Remove max-width
-   - Remove header row
-   - Add BACK button to nav bar
-   - Implement image upload
-5. Update `ItemsEdit.tsx`:
-   - Same changes as Add page
-6. Update `ItemSaveConfirmModal.tsx`:
-   - Make modal more compact
+| File | Changes |
+|------|---------|
+| `src/pages/ItemsAdd.tsx` | Remove summary card, fix footer, add replacement handlers + modal |
+| `src/pages/ItemsEdit.tsx` | Remove summary card, fix footer, add replacement handlers + modal |
+| `src/components/items/ItemSaveConfirmModal.tsx` | 70vw width, remove uppercase styling |
+| `src/components/item-mapping/index.ts` | Export ReplacementModal and ReplacementItem type |
 
 ---
 
-## Technical Notes
+## Visual Before/After
 
-### Image Upload Flow
+### Footer Fix
+Before: Footer bleeds under sidebar on the left  
+After: Footer starts at sidebar edge, stays within main content
 
-1. User selects image → Creates blob preview immediately (good UX)
-2. When user clicks Save → Upload to Supabase Storage
-3. Get permanent URL → Save to database
+### Modal
+Before: 900px max-width, ALL CAPS labels  
+After: 70vw width, Title Case labels, more compact
 
-### Storage Path Convention
-Images will be stored as: `item-images/{timestamp}_{filename}`
-
-This ensures unique file names and prevents conflicts.
-
+### Replacements
+Before: Clicking replacement button does nothing  
+After: Opens replacement modal, allows adding/removing/setting default replacements
