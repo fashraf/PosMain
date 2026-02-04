@@ -36,7 +36,7 @@ import {
   type AvailableIngredient,
   type AvailableItem,
 } from "@/components/item-mapping";
-import { ArrowLeft, ArrowRight, Save, X, FileText, Tags, Clock, BarChart3, Carrot, Package } from "lucide-react";
+import { Save, X, FileText, Tags, Clock, BarChart3, Carrot, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Category options
@@ -483,29 +483,19 @@ export default function ItemsEdit() {
     itemTotalCost: totalSubItemCost,
   }), [formData, ingredientMappings, subItemMappings, totalIngredientCost, totalSubItemCost]);
 
-  const BackIcon = isRTL ? ArrowRight : ArrowLeft;
-
   return (
     <>
       <LoadingOverlay visible={isSaving} message="Updating item..." />
       
       <div className="pb-24">
-        <div className="mx-auto" style={{ maxWidth: "75vw" }}>
-          {/* Header - Dynamic title with item name */}
-          <div className="flex items-center gap-3 mb-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/items")}>
-              <BackIcon className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold text-foreground">
-              Item Master - Edit {formData.name_en && `"${formData.name_en}"`}
-            </h1>
-          </div>
-
-          {/* Section Navigation Bar */}
+        <div>
+          {/* Section Navigation Bar with Back button */}
           <SectionNavigationBar
             sections={sections}
             activeSection={activeSection}
             onNavigate={handleNavigate}
+            onBack={() => navigate("/items")}
+            backLabel="BACK"
           />
 
           <div className="space-y-4 pt-3">

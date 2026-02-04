@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from "react";
-import { Camera, X, ImageIcon } from "lucide-react";
+import { Camera, X, ImageIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ImageUploadHeroProps {
   value: string | null;
@@ -22,6 +23,7 @@ export function ImageUploadHero({
 }: ImageUploadHeroProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(value);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Sync with external value changes
   useEffect(() => {
@@ -30,7 +32,43 @@ export function ImageUploadHero({
     }
   }, [value]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadToStorage = async (file: File): Promise<string | null> => {
+    try {
+      setIsUploading(true);
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `${timestamp}_${sanitizedName}`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('item-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        return null;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(data.path);
+
+      return urlData.publicUrl;
+    } catch (err) {
+      console.error('Upload failed:', err);
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file size (max 5MB)
@@ -39,10 +77,23 @@ export function ImageUploadHero({
         return;
       }
       
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      onChange(url);
-      onFileChange?.(file); // Pass file for backend upload
+      // Show immediate preview with blob URL
+      const blobUrl = URL.createObjectURL(file);
+      setPreviewUrl(blobUrl);
+      
+      // Upload to storage
+      const permanentUrl = await uploadToStorage(file);
+      
+      if (permanentUrl) {
+        // Replace blob URL with permanent URL
+        setPreviewUrl(permanentUrl);
+        onChange(permanentUrl);
+        onFileChange?.(file);
+      } else {
+        // Upload failed, keep blob preview but notify parent
+        onChange(blobUrl);
+        onFileChange?.(file);
+      }
     }
   };
 
@@ -57,7 +108,7 @@ export function ImageUploadHero({
   };
 
   const handleClick = () => {
-    if (!disabled) {
+    if (!disabled && !isUploading) {
       fileInputRef.current?.click();
     }
   };
@@ -72,7 +123,7 @@ export function ImageUploadHero({
           "border-2 border-dashed border-muted-foreground/30",
           "bg-muted/30 transition-all duration-200",
           "hover:border-primary/50 hover:bg-muted/50",
-          disabled && "opacity-50 cursor-not-allowed"
+          (disabled || isUploading) && "opacity-50 cursor-not-allowed"
         )}
       >
         {previewUrl ? (
@@ -83,11 +134,18 @@ export function ImageUploadHero({
               className="w-full h-full object-cover"
             />
             {/* Overlay on hover */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Camera className="h-6 w-6 text-white" />
+            <div className={cn(
+              "absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center",
+              isUploading && "opacity-100"
+            )}>
+              {isUploading ? (
+                <Loader2 className="h-6 w-6 text-white animate-spin" />
+              ) : (
+                <Camera className="h-6 w-6 text-white" />
+              )}
             </div>
             {/* Clear button */}
-            {!disabled && (
+            {!disabled && !isUploading && (
               <Button
                 type="button"
                 variant="destructive"
@@ -101,16 +159,22 @@ export function ImageUploadHero({
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground p-2">
-            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-              <ImageIcon className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] font-medium text-center">Click to upload</span>
-            <span className="text-[8px] text-muted-foreground/70">PNG, JPG up to 5MB</span>
+            {isUploading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <ImageIcon className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-medium text-center">Click to upload</span>
+                <span className="text-[8px] text-muted-foreground/70">PNG, JPG up to 5MB</span>
+              </>
+            )}
           </div>
         )}
 
         {/* Camera overlay button */}
-        {!previewUrl && (
+        {!previewUrl && !isUploading && (
           <div className="absolute bottom-2 end-2 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
             <Camera className="h-3 w-3" />
           </div>
@@ -123,12 +187,11 @@ export function ImageUploadHero({
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
-        disabled={disabled}
+        disabled={disabled || isUploading}
       />
 
       <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
-        {/* TODO: Connect to storage bucket for persistence */}
-        Preview only
+        {isUploading ? "Uploading..." : "Auto-saved to storage"}
       </p>
     </div>
   );
