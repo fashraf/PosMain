@@ -190,7 +190,21 @@
     text-align: center;
   }
 
-  /* Density row hover */
+  /* Row animations for mapping tables */
+  @keyframes fadeInRow {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation: fadeInRow 0.2s ease-out forwards;
+  }
   .density-table tbody tr:hover td {
     background: hsl(var(--accent));
   }
