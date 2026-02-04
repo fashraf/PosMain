@@ -14,7 +14,7 @@ interface ImageUploadHeroProps {
 export function ImageUploadHero({
   value,
   onChange,
-  size = 200,
+  size = 140,
   disabled = false,
   className,
 }: ImageUploadHeroProps) {
