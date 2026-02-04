@@ -24,7 +24,10 @@ import { ItemSaveConfirmModal } from "@/components/items/ItemSaveConfirmModal";
 import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { SectionNavigationBar, type SectionNavItem } from "@/components/shared/SectionNavigationBar";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
-import { ItemSummaryCard } from "@/components/shared/ItemSummaryCard";
+import {
+  ReplacementModal,
+  type ReplacementItem,
+} from "@/components/item-mapping";
 import {
   IngredientTable,
   ItemTable,
@@ -293,6 +296,58 @@ export default function ItemsAdd() {
     );
   };
 
+  // Replacement modal state
+  const [replacementModalState, setReplacementModalState] = useState({
+    open: false,
+    mappingId: "",
+    parentName: "",
+  });
+
+  const handleOpenReplacementModal = (mappingId: string) => {
+    const mapping = subItemMappings.find((m) => m.id === mappingId);
+    if (mapping) {
+      setReplacementModalState({
+        open: true,
+        mappingId,
+        parentName: mapping.sub_item_name,
+      });
+    }
+  };
+
+  const handleReplacementsChange = (replacements: ReplacementItem[]) => {
+    setSubItemMappings((prev) =>
+      prev.map((m) =>
+        m.id === replacementModalState.mappingId
+          ? { ...m, replacements }
+          : m
+      )
+    );
+  };
+
+  const handleRemoveReplacement = (mappingId: string, replacementId: string) => {
+    setSubItemMappings((prev) =>
+      prev.map((m) => {
+        if (m.id === mappingId && m.replacements) {
+          const filtered = m.replacements.filter((r) => r.id !== replacementId);
+          if (filtered.length > 0 && !filtered.some((r) => r.is_default)) {
+            filtered[0].is_default = true;
+          }
+          return { ...m, replacements: filtered };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handleViewReplacement = (mappingId: string, _replacementId: string) => {
+    handleOpenReplacementModal(mappingId);
+  };
+
+  const currentReplacements = useMemo(() => {
+    const mapping = subItemMappings.find((m) => m.id === replacementModalState.mappingId);
+    return mapping?.replacements || [];
+  }, [subItemMappings, replacementModalState.mappingId]);
+
   // Cost calculations
   const totalIngredientCost = useMemo(() => {
     return ingredientMappings.reduce((sum, m) => {
@@ -452,16 +507,6 @@ export default function ItemsAdd() {
                     </div>
                   </DashedSectionCard>
                 </div>
-
-                {/* Quick Summary Card */}
-                <ItemSummaryCard
-                  name={formData.name_en}
-                  category={CATEGORIES.find((c) => c.id === formData.category)?.label || ""}
-                  baseCost={formData.base_cost}
-                  ingredientCount={ingredientMappings.length}
-                  itemCount={subItemMappings.length}
-                  isCombo={formData.is_combo}
-                />
 
                 {/* Inventory Section */}
                 <div ref={sectionRefs.inventory}>
@@ -724,9 +769,9 @@ export default function ItemsAdd() {
                           if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
                         }}
                         onAdd={() => setShowAddItemModal(true)}
-                        onReplacement={() => {}}
-                        onRemoveReplacement={() => {}}
-                        onViewReplacement={() => {}}
+                        onReplacement={handleOpenReplacementModal}
+                        onRemoveReplacement={handleRemoveReplacement}
+                        onViewReplacement={handleViewReplacement}
                         totalCost={totalSubItemCost}
                         totalComboPrice={0}
                         isCombo={formData.is_combo}
@@ -740,9 +785,9 @@ export default function ItemsAdd() {
         </div>
 
         {/* Sticky Footer - contained within main content area */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10">
-          <div className="mx-auto py-3 px-4" style={{ maxWidth: "75vw" }}>
-            <div className={cn("flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+        <div className="fixed bottom-0 left-[16rem] right-0 bg-background border-t z-10">
+          <div className="py-3 px-4 flex justify-end">
+            <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
               <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}>
                 <X className="h-4 w-4 me-1" />
                 {t("common.cancel")}
@@ -789,6 +834,17 @@ export default function ItemsAdd() {
           onConfirm={handleConfirmSave}
           item={confirmModalItem}
           isLoading={isSaving}
+        />
+
+        <ReplacementModal
+          open={replacementModalState.open}
+          onOpenChange={(open) => !open && setReplacementModalState(prev => ({ ...prev, open: false }))}
+          parentItemName={replacementModalState.parentName}
+          parentItemId={replacementModalState.mappingId}
+          replacements={currentReplacements}
+          onReplacementsChange={handleReplacementsChange}
+          availableItems={mockAvailableItems}
+          currentLanguage={currentLanguage}
         />
       </div>
     </>

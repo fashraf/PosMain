@@ -109,7 +109,7 @@ function ReadOnlyFormField({
 }) {
   return (
     <div className={cn("space-y-1", className)}>
-      <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <label className="text-[11px] font-medium text-muted-foreground">
         {label}
       </label>
       <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/30 px-2 py-1 text-xs">
@@ -129,7 +129,7 @@ function ReadOnlyChipsField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <label className="text-[11px] font-medium text-muted-foreground">
         {label}
       </label>
       <div className="flex min-h-8 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-muted/30 px-2 py-1">
@@ -164,7 +164,7 @@ function ReviewSectionCard({
     <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-dashed border-muted-foreground/20">
         <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="text-[11px] font-semibold text-muted-foreground">
           {title}
         </span>
       </div>
@@ -209,7 +209,7 @@ export function ItemSaveConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] p-0 gap-0 rounded-lg overflow-hidden max-h-[90vh]">
+      <DialogContent className="sm:max-w-[70vw] p-0 gap-0 rounded-lg overflow-hidden max-h-[90vh]">
         {/* Header - Compact */}
         <DialogHeader className="px-4 py-3 border-b bg-background">
           <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ export function ItemSaveConfirmModal({
             <>
               <div className="flex items-center gap-3 pt-1">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-[11px] font-semibold text-muted-foreground">
                   Recipe Mappings
                 </span>
                 <div className="h-px flex-1 bg-border" />
@@ -395,9 +395,9 @@ export function ItemSaveConfirmModal({
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="h-7 px-2 text-left text-[10px] font-medium uppercase text-muted-foreground">Name</th>
-                          <th className="h-7 px-2 text-center text-[10px] font-medium uppercase text-muted-foreground">Qty</th>
-                          <th className="h-7 px-2 text-right text-[10px] font-medium uppercase text-muted-foreground">Unit</th>
+                          <th className="h-7 px-2 text-left text-[11px] font-medium text-muted-foreground">Name</th>
+                          <th className="h-7 px-2 text-center text-[11px] font-medium text-muted-foreground">Qty</th>
+                          <th className="h-7 px-2 text-right text-[11px] font-medium text-muted-foreground">Unit</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -409,9 +409,9 @@ export function ItemSaveConfirmModal({
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-primary/5 border-t-2 border-primary/20">
+                        <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                         <tr>
-                          <td colSpan={2} className="h-7 px-2 text-right text-[10px] font-semibold uppercase text-muted-foreground">
+                          <td colSpan={2} className="h-7 px-2 text-right text-[11px] font-semibold text-muted-foreground">
                             Total Cost
                           </td>
                           <td className="h-7 px-2 text-right font-bold text-primary text-xs">
@@ -436,9 +436,9 @@ export function ItemSaveConfirmModal({
                     <table className="w-full text-xs">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="h-7 px-2 text-left text-[10px] font-medium uppercase text-muted-foreground">Item</th>
-                          <th className="h-7 px-2 text-center text-[10px] font-medium uppercase text-muted-foreground">Qty</th>
-                          <th className="h-7 px-2 text-right text-[10px] font-medium uppercase text-muted-foreground">Price</th>
+                          <th className="h-7 px-2 text-left text-[11px] font-medium text-muted-foreground">Item</th>
+                          <th className="h-7 px-2 text-center text-[11px] font-medium text-muted-foreground">Qty</th>
+                          <th className="h-7 px-2 text-right text-[11px] font-medium text-muted-foreground">Price</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -468,9 +468,9 @@ export function ItemSaveConfirmModal({
                           </>
                         ))}
                       </tbody>
-                      <tfoot className="bg-primary/5 border-t-2 border-primary/20">
+                        <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                         <tr>
-                          <td colSpan={2} className="h-7 px-2 text-right text-[10px] font-semibold uppercase text-muted-foreground">
+                          <td colSpan={2} className="h-7 px-2 text-right text-[11px] font-semibold text-muted-foreground">
                             Total Cost
                           </td>
                           <td className="h-7 px-2 text-right font-bold text-primary text-xs">
