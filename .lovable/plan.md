@@ -1,207 +1,432 @@
 
 
-# Implementation Plan: Update Modal UI Styling
+# Implementation Plan: Maintenance Pages for Master Data
 
 ## Overview
 
-Based on the reference image, I'll update the `ItemSaveConfirmModal.tsx` with the following changes:
-
-| Change | Current | New |
-|--------|---------|-----|
-| Font Size | 10px-11px | **13px** for content text |
-| Border Style | `border` or `border-2 border-dashed` | Consistent **dotted borders** (`border-2 border-dotted`) |
-| Text Sharpness | Lighter weight, muted | **font-medium** for clarity |
-| Section Cards | `border-dashed` with varied opacity | Uniform **dotted light gray** borders |
-| Table Text | `text-xs` (12px) | **text-[13px]** |
+Create a complete set of **9 maintenance pages** for centralized management of enumerable data used across the system. Each page follows a consistent **single-table + modal CRUD** pattern matching existing project standards.
 
 ---
 
-## Detailed Changes
+## Architecture Decision
 
-### 1. ReadOnlyFormField (lines 100-120)
-
-**Current:**
-```tsx
-<label className="text-[11px] font-medium text-muted-foreground">
-<div className="flex h-8 ... text-xs">
-```
-
-**Updated:**
-```tsx
-<label className="text-[13px] font-medium text-muted-foreground">
-<div className="flex h-9 ... text-[13px] font-medium">
-```
+| Approach | Single-Table + Modal CRUD |
+|----------|---------------------------|
+| Pattern | List page with inline toggle + modal for Add/Edit |
+| Navigation | All pages accessible via sidebar under "Maintenance" submenu |
+| Components | Reuse existing `Dialog`, `Table`, `Switch`, `StatusBadge`, `CompactMultiLanguageInput`, `ConfirmActionModal` |
+| Styling | Tailwind + shadcn/ui, dotted borders on modals, 13px text, lavender hover effects |
 
 ---
 
-### 2. ReadOnlyChipsField (lines 122-151)
+## Sidebar Navigation Update
 
-**Current:**
-```tsx
-<label className="text-[11px] font-medium text-muted-foreground">
-<span className="... text-[10px] ...">
-```
+Add new "Maintenance" collapsible menu in `AppSidebar.tsx`:
 
-**Updated:**
-```tsx
-<label className="text-[13px] font-medium text-muted-foreground">
-<span className="... text-[13px] ..."> // chips inside
+```text
+📂 Maintenance
+  ├── Categories
+  ├── Subcategories
+  ├── Serving Times
+  ├── Allergens
+  ├── Item Types
+  ├── Classification Types
+  ├── Units
+  ├── Storage Types
+  └── Ingredient Groups
 ```
 
 ---
 
-### 3. ReviewSectionCard (lines 153-176)
+## Database Tables Required
 
-**Current:**
-```tsx
-<div className="rounded-lg border-2 border-dashed border-muted-foreground/30 overflow-hidden">
-  <div className="... border-b border-dashed border-muted-foreground/20">
-    <span className="text-[11px] font-semibold text-muted-foreground">
-```
-
-**Updated:**
-```tsx
-<div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
-  <div className="... border-b border-dotted border-muted-foreground/30">
-    <span className="text-[13px] font-semibold text-muted-foreground">
-```
+| Table | Key Fields |
+|-------|------------|
+| `maintenance_categories` | id, name_en, name_ar, name_ur, description, icon_class, sort_order, is_active |
+| `maintenance_subcategories` | id, name_en, name_ar, name_ur, parent_category_id (FK), description, is_active |
+| `serving_times` | id, name_en, name_ar, name_ur, sort_order, icon_class, is_active |
+| `allergens` | id, name_en, name_ar, name_ur, icon_class, severity (low/medium/high), is_active |
+| `item_types` | id, name_en, name_ar, name_ur, description, is_active |
+| `classification_types` | id, name_en, name_ar, name_ur, is_active |
+| `units` | id, name_en, name_ar, name_ur, symbol, conversion_factor, is_active |
+| `storage_types` | id, name_en, name_ar, name_ur, icon_class, temp_range, is_active |
+| `ingredient_groups` | id, name_en, name_ar, name_ur, description, is_active |
 
 ---
 
-### 4. Hero Section Name Field (lines 250-253)
+## Shared Components to Create
 
-**Current:**
-```tsx
-<div className="flex h-8 ... text-sm font-semibold truncate">
-```
+### 1. MaintenanceDialog Component
+Reusable modal for Add/Edit with:
+- Dotted border styling (`border-2 border-dotted`)
+- 13px font, Title Case labels
+- CompactMultiLanguageInput for EN/AR/UR
+- Status toggle
+- Validation with focus-on-error
+- Confirmation modal on save
 
-**Updated:**
-```tsx
-<div className="flex h-9 ... text-[13px] font-semibold truncate rounded-md border-2 border-dotted border-muted-foreground/40">
-```
+### 2. MaintenanceTable Component
+Standardized table with:
+- 42px row height
+- Zebra striping (#F9FAFB/white)
+- Lavender hover (#F3F0FF)
+- Inline status toggle
+- Actions: View, Edit
+- Auto-incrementing serial numbers
 
----
-
-### 5. Hero Overview Panel Border (line 231)
-
-**Current:**
-```tsx
-<div className="rounded-lg border bg-muted/20 p-3">
-```
-
-**Updated:**
-```tsx
-<div className="rounded-lg border-2 border-dotted border-muted-foreground/40 bg-muted/20 p-3">
-```
-
----
-
-### 6. Language Indicators (lines 261-271)
-
-**Current:**
-```tsx
-<span className="... text-[9px] ...">
-```
-
-**Updated:**
-```tsx
-<span className="... text-[11px] ...">
-```
+### 3. DeleteConfirmModal
+Styled confirmation modal:
+- Warning icon
+- Impact message ("This may affect X items")
+- Soft delete option
 
 ---
 
-### 7. Status Badges (lines 278-290)
+## Page-by-Page Specification
 
-**Current:**
-```tsx
-<span className="... text-[10px] ...">
-```
+### 1. Categories (/maintenance/categories)
 
-**Updated:**
-```tsx
-<span className="... text-[12px] ...">
-```
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Description | Textarea | No |
+| Icon Class | Input (e.g., `utensils`, `cup-straw`) | No |
+| Sort Order | Number | No |
+| Status | Toggle | Yes (default: Active) |
 
----
+**Mock Data:**
+- Vegetarian, Non-Vegetarian, Drinks, Sheesha, Desserts
 
-### 8. Mapping Tables Section
-
-#### Table Headers (lines 398-401, 439-442)
-**Current:**
-```tsx
-<th className="h-7 px-2 text-left text-[11px] font-medium text-muted-foreground">
-```
-
-**Updated:**
-```tsx
-<th className="h-8 px-3 text-left text-[13px] font-medium text-muted-foreground">
-```
-
-#### Table Cells (lines 404-410, 445-451)
-**Current:**
-```tsx
-<td className="px-2 text-foreground">
-```
-
-**Updated:**
-```tsx
-<td className="px-3 text-[13px] text-foreground font-medium">
-```
-
-#### Table Footer (lines 414-421, 473-479)
-**Current:**
-```tsx
-<td className="... text-[11px] font-semibold ...">
-<td className="... font-bold text-primary text-xs">
-```
-
-**Updated:**
-```tsx
-<td className="... text-[13px] font-semibold ...">
-<td className="... text-[13px] font-bold text-primary">
-```
+**Table Columns:**
+| # | Name | Icon | Sort | Status | Actions |
 
 ---
 
-### 9. Recipe Mappings Divider (lines 373-379)
+### 2. Subcategories (/maintenance/subcategories)
 
-**Current:**
-```tsx
-<span className="text-[11px] font-semibold text-muted-foreground">
-```
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Parent Category | SearchableSelect | Yes |
+| Description | Textarea | No |
+| Status | Toggle | Yes |
 
-**Updated:**
-```tsx
-<span className="text-[13px] font-semibold text-muted-foreground">
-```
+**Mock Data:**
+- Sea Food, Pan Cake, Pizza, Soft Drinks, Tea and Coffee, BBQ, Shawarma, Smoking Zone
 
----
-
-### 10. Ingredient/Combo Item Table Borders
-
-**Current:**
-```tsx
-<div className="rounded-lg border border-input overflow-hidden">
-```
-
-**Updated:**
-```tsx
-<div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
-```
+**Table Columns:**
+| # | Name | Parent Category | Status | Actions |
 
 ---
 
-## Summary of Border Updates
+### 3. Serving Times (/maintenance/serving-times)
 
-All major visual elements will use consistent dotted borders:
-- `border-2 border-dotted border-muted-foreground/40` for cards and tables
-- `border-dotted border-muted-foreground/30` for internal section headers
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Time Range | Input (e.g., "6:00 - 11:00") | No |
+| Sort Order | Number | No |
+| Icon Class | Input | No |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Breakfast (6:00 - 11:00), Lunch Specials (11:00 - 16:00), Dinner (16:00 - 23:00), Snacks (All Day)
+
+**Table Columns:**
+| # | Name | Time Range | Sort | Status | Actions |
 
 ---
 
-## Files Modified
+### 4. Allergens (/maintenance/allergens)
+
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Icon Class | Input | No |
+| Severity | Select (Low/Medium/High) | Yes |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Nuts (High), Dairy (Medium), Gluten (Medium), Eggs (Low), Soy (Low), Shellfish (High), Wheat (Medium)
+
+**Table Columns:**
+| # | Name | Icon | Severity | Status | Actions |
+
+**Special:** Severity badge with color coding:
+- High: Red pill
+- Medium: Yellow pill
+- Low: Gray pill
+
+---
+
+### 5. Item Types (/maintenance/item-types)
+
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Description | Textarea | No |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Edible, Drink, Sheesha, Accessory
+
+**Table Columns:**
+| # | Name | Description | Status | Actions |
+
+---
+
+### 6. Classification Types (/maintenance/classification-types)
+
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Food, Beverage, Consumable, Accessory
+
+**Table Columns:**
+| # | Name | Status | Actions |
+
+---
+
+### 7. Units (/maintenance/units)
+
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Symbol | Input (e.g., kg, g, L) | Yes |
+| Base Unit | Select (reference to another unit or "self") | No |
+| Conversion Factor | Number (e.g., 1000 for g→kg) | No |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Kilogram (kg, base), Gram (g, 0.001 kg), Liter (L, base), Milliliter (mL, 0.001 L), Piece (pcs), Pack, Box
+
+**Table Columns:**
+| # | Name | Symbol | Conversion | Status | Actions |
+
+---
+
+### 8. Storage Types (/maintenance/storage-types)
+
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Icon Class | Input (e.g., `snowflake`, `thermometer`) | No |
+| Temperature Range | Input (e.g., "-18°C", "0-4°C") | No |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Freezer (-18°C), Fridge/Chiller (0-4°C), Dry/Ambient (15-25°C), Room Temp
+
+**Table Columns:**
+| # | Name | Icon | Temp Range | Status | Actions |
+
+---
+
+### 9. Ingredient Groups (/maintenance/ingredient-groups)
+
+**Fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| Name (EN/AR/UR) | MultiLanguage Input | EN required |
+| Description | Textarea | No |
+| Status | Toggle | Yes |
+
+**Mock Data:**
+- Meat & Poultry, Dairy, Produce/Vegetables, Spices & Herbs, Dry Goods, Oils & Fats, Beverages/Base, Seafood, Bakery Items, Packaging
+
+**Table Columns:**
+| # | Name | Description | Status | Actions |
+
+---
+
+## Files to Create
+
+```text
+src/pages/maintenance/
+├── Categories.tsx
+├── Subcategories.tsx
+├── ServingTimes.tsx
+├── Allergens.tsx
+├── ItemTypes.tsx
+├── ClassificationTypes.tsx
+├── Units.tsx
+├── StorageTypes.tsx
+└── IngredientGroups.tsx
+
+src/components/maintenance/
+├── MaintenanceDialog.tsx        # Reusable Add/Edit modal
+├── MaintenanceTable.tsx         # Standardized table component
+├── DeleteConfirmModal.tsx       # Deletion confirmation
+└── SeverityBadge.tsx            # For allergens severity display
+```
+
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/items/ItemSaveConfirmModal.tsx` | Update font sizes to 13px, change all dashed borders to dotted, increase text weights for clarity |
+| `src/App.tsx` | Add routes for all 9 maintenance pages |
+| `src/components/AppSidebar.tsx` | Add "Maintenance" collapsible menu |
+| `src/lib/i18n/translations.ts` | Add translation keys for maintenance pages |
+| Database migrations | Create 9 new tables with RLS policies |
+
+---
+
+## UI Pattern for Each Page
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Maintenance - [Page Title]                    [+ Add Button] │
+├─────────────────────────────────────────────────────────────┤
+│ 🔍 Search...          [Status Filter ▼]                      │
+├─────────────────────────────────────────────────────────────┤
+│ # │ Name        │ [Other Cols]  │ Status  │ Actions          │
+├───┼─────────────┼───────────────┼─────────┼──────────────────┤
+│ 1 │ Vegetarian  │ ...           │ 🟢 Active │ 👁 ✏           │
+│ 2 │ Non-Veg     │ ...           │ ⚪ Inactive│ 👁 ✏          │
+└───┴─────────────┴───────────────┴─────────┴──────────────────┘
+│                    ← 1 2 3 ... →  (15 per page)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Modal Design
+
+```text
+┌─────────────────────────────────────────┐
+│ ╭╴Add/Edit [Entity Name]╶╮   [✕ Close] │  ← Dotted border
+├─────────────────────────────────────────┤
+│ Name *                                  │
+│ ┌────────────────────────────────────┐  │
+│ │ [EN] [AR] [UR]                     │  │  ← Tab switcher
+│ │ ┌────────────────────────────────┐ │  │
+│ │ │ Enter name...                  │ │  │
+│ │ └────────────────────────────────┘ │  │
+│ └────────────────────────────────────┘  │
+│                                         │
+│ [Other Fields...]                       │
+│                                         │
+│ Status        ○ Active  ● Inactive      │
+├─────────────────────────────────────────┤
+│                    [Cancel] [Save]      │  ← 13px, Title Case
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Confirmation Modal Pattern
+
+On Save click, show confirmation:
+
+```text
+┌─────────────────────────────────────────┐
+│         ✓ Ready to save?                │
+├─────────────────────────────────────────┤
+│  You are about to add "Vegetarian"      │
+│  as a new category.                     │
+│                                         │
+│  This will be available immediately     │
+│  across all item forms.                 │
+├─────────────────────────────────────────┤
+│              [Cancel]  [Confirm & Save] │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Translation Keys to Add
+
+```typescript
+maintenance: {
+  title: "Maintenance",
+  categories: "Categories",
+  subcategories: "Subcategories",
+  servingTimes: "Serving Times",
+  allergens: "Allergens",
+  itemTypes: "Item Types",
+  classificationTypes: "Classification Types",
+  units: "Units",
+  storageTypes: "Storage Types",
+  ingredientGroups: "Ingredient Groups",
+  addNew: "Add New",
+  editEntry: "Edit Entry",
+  deleteConfirm: "Are you sure you want to delete this entry?",
+  deleteWarning: "This action cannot be undone. Existing items using this may be affected.",
+  parentCategory: "Parent Category",
+  iconClass: "Icon Class",
+  sortOrder: "Sort Order",
+  symbol: "Symbol",
+  conversionFactor: "Conversion Factor",
+  temperatureRange: "Temperature Range",
+  severity: "Severity",
+  severityLow: "Low",
+  severityMedium: "Medium",
+  severityHigh: "High",
+  timeRange: "Time Range",
+  noData: "No entries found",
+  addFirst: "Add your first entry to get started",
+}
+```
+
+---
+
+## Best Practice Checklist
+
+| Requirement | Implementation |
+|-------------|----------------|
+| ✅ Multilingual EN/AR/UR | CompactMultiLanguageInput with 12px indicators |
+| ✅ Status Toggle | Inline Switch + StatusBadge |
+| ✅ Confirmation Modal | Before save/delete with friendly messaging |
+| ✅ Loading Overlay | LoadingOverlay on save operations |
+| ✅ Validation | Required field check, focus-on-first-error |
+| ✅ Search/Filter | Debounced search + status dropdown |
+| ✅ Pagination | 15 rows per page, DataTablePagination |
+| ✅ Tooltips | On icon fields and complex inputs |
+| ✅ Consistent Colors | Soft greens/purples, lavender hover |
+| ✅ Dotted Borders | `border-2 border-dotted` on modals |
+| ✅ 13px Typography | Sharp, clear text throughout |
+| ✅ Single-Table Design | All CRUD in modal, no separate pages |
+| ✅ Reusability | Shared MaintenanceDialog component |
+| ✅ RTL Support | Existing useLanguage hook handles this |
+
+---
+
+## Implementation Order
+
+1. **Phase 1: Infrastructure**
+   - Create database migrations for all 9 tables
+   - Create shared components (MaintenanceDialog, MaintenanceTable)
+   - Update sidebar navigation
+   - Add translation keys
+
+2. **Phase 2: Core Pages** (used in /items/add)
+   - Categories
+   - Subcategories
+   - Serving Times
+   - Allergens
+
+3. **Phase 3: Supporting Pages**
+   - Item Types
+   - Classification Types
+   - Units
+
+4. **Phase 4: Inventory Pages**
+   - Storage Types
+   - Ingredient Groups
+
+5. **Phase 5: Integration**
+   - Update ItemsAdd.tsx to fetch from maintenance tables
+   - Replace hardcoded arrays with API calls
+   - Test end-to-end flow
 
