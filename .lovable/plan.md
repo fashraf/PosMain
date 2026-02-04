@@ -1,276 +1,283 @@
 
-# Items Add/Edit Page - Complete Redesign Plan
+
+# Ingredient Master Add - Single Column Redesign
 
 ## Overview
-Redesign the `/items/add` and `/items/edit` pages with a two-column layout (Col-4 + Col-6), featuring dashed-border section cards, dynamic EN/AR/UR language indicators, inventory progress bar, and enhanced visual design matching the reference screenshot.
+Redesign the Ingredient Master Add page (`/inventory/ingredients/add`) to use a **full-width single-column layout (col-12)** with NO image upload, following the same dashed-border section card styling as the Items form.
 
 ---
 
-## Target Layout (Based on Reference Image)
+## Target Layout Design (Full Width)
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│  ← Add Item / Edit Item                                                                             │
-├──────────────────────────────────────────────┬──────────────────────────────────────────────────────┤
-│ LEFT COLUMN (col-4 / ~33%)                   │ RIGHT COLUMN (col-8 / ~66%)                          │
-│                                              │                                                      │
-│ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│ ┊ 📝 Basic Information    [purple]       ┊  │ ┊ 📝 Basic Information                  [purple] ┊  │
-│ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│ ┊  ┌────────────────────────────────┐    ┊  │ ┊  Item Type          │ Base Cost (SAR)         ┊  │
-│ ┊  │        📷 Image                │    ┊  │ ┊  ┌───────────────┐  │ ┌─────────────────────┐ ┊  │
-│ ┊  │     300×300 aspect-1:1         │    ┊  │ ┊  │ Edible      ▼ │  │ │ 12.99               │ ┊  │
-│ ┊  │    Click to upload             │    ┊  │ ┊  └───────────────┘  │ └─────────────────────┘ ┊  │
-│ ┊  │    PNG, JPG up to 5MB          │    ┊  │ ┊                                               ┊  │
-│ ┊  └────────────────────────────────┘    ┊  │ ┊  [⚪ Is Combo (i)]     [🟢 Active]            ┊  │
-│ ┊                                        ┊  │ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│ ┊  Item Name * [EN🟢|AR🔴|UR🔴]          ┊  │                                                      │
-│ ┊  ┌────────────────────────────────┐    ┊  │ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│ ┊  │ Margherita Pizza              │    ┊  │ ┊ 🏷️ Classification                    [green]  ┊  │
-│ ┊  └────────────────────────────────┘    ┊  │ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│ ┊                                        ┊  │ ┊  Category *           │ Subcategory           ┊  │
-│ ┊  Description [EN🟢|AR🔴|UR🔴]          ┊  │ ┊  ┌────────────────┐   │ ┌─[Pizza ×]────────┐  ┊  │
-│ ┊  ┌────────────────────────────────┐    ┊  │ ┊  │ Non-Vegetarian │   │ │                  │  ┊  │
-│ ┊  │ Classic pizza with tomato      │    ┊  │ ┊  └────────────────┘   │ └──────────────────┘  ┊  │
-│ ┊  │ and mozzarella                 │    ┊  │ ┊                                               ┊  │
-│ ┊  └────────────────────────────────┘    ┊  │ ┊  Serving Time *                               ┊  │
-│ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │ ┊  ☐ Breakfast ☑ Lunch Specials ☑ Dinner ☐ Snacks┊  │
-│                                              │ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │                                                      │
-│ ┊ 📦 Combo Items (EDIT ONLY)   [amber]   ┊  │ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │ ┊ ⏱️ Details                             [blue]   ┊  │
-│ ┊  → 2x Margherita                       ┊  │ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│ ┊  → 4x Chicken BBQ                      ┊  │ ┊  Prep Time (i)    │ Calories (i) │ Highlights ┊  │
-│ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │ ┊  ┌───────┐ min    │ ┌──────┐ kcal│ ┌─────────┐ ┊  │
-│                                              │ ┊  │ 20    │        │ │ 850  │     │ │Crispy...│ ┊  │
-│ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │ ┊  └───────┘        │ └──────┘     │ └─────────┘ ┊  │
-│ ┊ 📊 Inventory                [amber]    ┊  │ ┊                                               ┊  │
-│ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │ ┊  Allergens (i)                                ┊  │
-│ ┊  ┌──────────────────────────────────┐  ┊  │ ┊  [🥜Nuts] [🥛Dairy✓] [🌾Gluten✓] [🥚Eggs] ... ┊  │
-│ ┊  │████████████████░░░░░░│ 68%       │  ┊  │ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│ ┊  └──────────────────────────────────┘  ┊  │                                                      │
-│ ┊  Current Stock     Low Stock Threshold ┊  │                                                      │
-│ ┊  ┌───────────┐     ┌───────────┐       ┊  │                                                      │
-│ ┊  │ 68        │     │ 10        │       ┊  │                                                      │
-│ ┊  └───────────┘     └───────────┘       ┊  │                                                      │
-│ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │                                                      │
-├──────────────────────────────────────────────┴──────────────────────────────────────────────────────┤
-│                                                        [× Cancel]   [✓ Save]                        │
-└─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  ← Add Ingredient                                                                                      │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                        │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 🥕 Visual & Basics                                                              [purple header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Ingredient Name * [EN🟢|AR🔴|UR🔴]           │  Short Description [EN🟢|AR🔴|UR🔴]              ┊  │
+│  ┊  ┌────────────────────────────────────────┐  │  ┌────────────────────────────────────────────┐  ┊  │
+│  ┊  │ Chicken Breast                         │  │  │ Fresh boneless chicken for grilling...    │  ┊  │
+│  ┊  └────────────────────────────────────────┘  │  └────────────────────────────────────────────┘  ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                        │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 🏷️ Classification                                                               [green header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Type *              │  Unit *             │  Storage Type *      │  Category/Group            ┊  │
+│  ┊  ┌────────────────┐  │  ┌────────────────┐ │  ┌─────────────────┐ │  ┌─[Meat ×][Poultry ×]──┐  ┊  │
+│  ┊  │ Solid        ▼ │  │  │ KG           ▼ │ │  │ Freezer       ▼ │ │  │                    ▼ │  ┊  │
+│  ┊  └────────────────┘  │  └────────────────┘ │  └─────────────────┘ │  └──────────────────────┘  ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                        │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ ⚠️ Inventory & Alerts                                                           [amber header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  ┌──────────────────────────────────────────────────────────────────────────────────────────┐  ┊  │
+│  ┊  │█████████████████████████████████████████░░░░░░░░░░░░░░│ 68% Available                   │  ┊  │
+│  ┊  └──────────────────────────────────────────────────────────────────────────────────────────┘  ┊  │
+│  ┊                                                                                                ┊  │
+│  ┊  Min Stock Alert *(i) │  Shelf Life Days (i)  │  PAR Level (i)      │  Current Stock          ┊  │
+│  ┊  ┌──────────────────┐ │  ┌──────────────────┐ │  ┌──────────────────┐│  ┌──────────────────┐   ┊  │
+│  ┊  │ 10               │ │  │ 7          days  │ │  │ 25               ││  │ 100              │   ┊  │
+│  ┊  └──────────────────┘ │  └──────────────────┘ │  └──────────────────┘│  └──────────────────┘   ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                        │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 💰 Pricing                                                                       [blue header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Cost Price * (SAR)       │  Selling Price (SAR)       │  ☑ Can Purchase   ☐ Return on Cancel ┊  │
+│  ┊  ┌────────────────────┐   │  ┌────────────────────────┐ │                                      ┊  │
+│  ┊  │ SAR 15.00          │   │  │ SAR 20.00 (optional)   │ │                                      ┊  │
+│  ┊  └────────────────────┘   │  └────────────────────────┘ │                                      ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                        │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 📋 Details                                                                       [muted/gray]  ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Yield % (i)              │  Supplier/Vendor                                                   ┊  │
+│  ┊  ┌─────────────────────┐  │  ┌─────────────────────────────────────────────────────────────┐   ┊  │
+│  ┊  │ 85               %  │  │  │ Fresh Foods Co.                                             │   ┊  │
+│  ┊  └─────────────────────┘  │  └─────────────────────────────────────────────────────────────┘   ┊  │
+│  ┊                                                                                                ┊  │
+│  ┊  Allergen Flags                                                                                ┊  │
+│  ┊  [🥜Nuts] [🥛Dairy ✓] [🌾Gluten] [🥚Eggs] [🫘Soy] [🦐Shellfish] [🌾Wheat]                       ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                        │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                        [× Cancel]   [✓ Save Ingredient]               │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Key Features to Implement
+## Key Differences from Items Form
 
-### 1. Two-Column Layout
-- **Left Column (~33% - lg:col-span-4)**: Image upload, Item Name, Description, Combo Items (edit only), Inventory
-- **Right Column (~66% - lg:col-span-8)**: Item Type, Base Cost, Toggles, Classification, Details
-
-### 2. Dynamic EN/AR/UR Language Indicators
-```tsx
-// New component: MultiLanguageInputWithIndicators
-// - Compact tabs with color indicators
-// - Green text (text-success) when field has content
-// - Red text (text-danger) when field is empty
-// - 12px font size for language labels
-```
-
-### 3. New Inventory Section (Left Column)
-- Progress bar showing stock availability percentage
-- Dynamic color: Green (>70%), Yellow (30-70%), Red (<30%)
-- Fields: Current Stock (number), Low Stock Threshold (number)
-- Percentage displayed prominently
-
-### 4. Combo Items Section
-- **Only visible when:** `isCombo === true` AND editing existing item (not on Add New)
-- Shows list of items in combo with arrow prefix (→)
-- Quantity indicators (2x, 4x, etc.)
-- Simple list styling, no complex editing
-
-### 5. Enhanced Toggles
-- Is Combo toggle with tooltip icon
-- Active toggle with visual purple/gray styling
-- Aligned in a row on right side
+| Aspect | Items Form | Ingredient Form |
+|--------|------------|-----------------|
+| Layout | Two-column (4+8) | **Single column (12)** |
+| Image Upload | Yes (280x280) | **NO** |
+| Sections | 4 cards | 5 cards |
+| Focus | Menu items, combos | Raw ingredients, stock |
 
 ---
 
-## Component Changes
+## Section Cards (All Full Width)
 
-### New Components to Create
+### 1. Visual & Basics (Purple)
+- **Row 1 (2 columns):**
+  - Ingredient Name* (MultiLanguageInputWithIndicators)
+  - Short Description (MultiLanguageInputWithIndicators, multiline)
 
-#### 1. `MultiLanguageInputWithIndicators.tsx`
-```tsx
-interface MultiLanguageInputWithIndicatorsProps {
-  label: string;
-  values: { en: string; ar: string; ur: string };
-  onChange: (lang: "en" | "ar" | "ur", value: string) => void;
-  multiline?: boolean;
-  required?: boolean;
-}
+### 2. Classification (Green)
+- **Row 1 (4 columns):**
+  - Type* (Select: Solid, Liquid, Powder, Other)
+  - Unit* (Select: KG, G, L, ML, Piece, Pack, etc.)
+  - Storage Type* (Select: Freezer, Fridge, Dry, Room Temp)
+  - Category/Group (MultiSelectBadges)
 
-// Features:
-// - Language tabs with filled/empty color indicators
-// - Tab labels: "EN" / "AR" / "UR"
-// - Filled = text-success (green), Empty = text-danger (red)
-// - Right-aligned language indicator badges next to input
-```
+### 3. Inventory & Alerts (Amber)
+- **Progress bar** (full width) - shows stock percentage
+- **Row 2 (4 columns):**
+  - Min Stock Alert* (number + tooltip)
+  - Shelf Life Days (number + "days" suffix + tooltip)
+  - PAR Level (number + tooltip)
+  - Current Stock (number)
 
-#### 2. `InventoryProgressCard.tsx`
-```tsx
-interface InventoryProgressCardProps {
-  currentStock: number;
-  maxStock?: number; // defaults to 100
-  lowStockThreshold: number;
-  onCurrentStockChange: (value: number) => void;
-  onThresholdChange: (value: number) => void;
-}
+### 4. Pricing (Blue)
+- **Row 1 (4 columns):**
+  - Cost Price* (SAR prefix)
+  - Selling Price (optional, SAR prefix)
+  - Can Purchase (Switch toggle)
+  - Return on Cancel (Switch toggle)
 
-// Features:
-// - Progress bar with dynamic color
-// - Percentage label in center or to the side
-// - Two input fields below
-```
+### 5. Details (Muted/Gray - new variant)
+- **Row 1 (2 columns):**
+  - Yield % (number 0-100 + tooltip)
+  - Supplier/Vendor (text input)
+- **Row 2:**
+  - Allergen Flags (AllergenPicker component)
 
-#### 3. `ComboItemsList.tsx` (Simple read-only list)
-```tsx
-interface ComboItemsListProps {
-  items: Array<{ name: string; quantity: number }>;
-}
+---
 
-// Features:
-// - Arrow prefix (→) for each item
-// - Quantity prefix (2x, 4x)
-// - Only visible when isCombo && isEditMode
-```
-
-### Files to Modify
+## Files to Create/Modify
 
 | Action | File | Changes |
 |--------|------|---------|
-| CREATE | `src/components/shared/MultiLanguageInputWithIndicators.tsx` | New compact multilingual input with color indicators |
-| CREATE | `src/components/shared/InventoryProgressCard.tsx` | New inventory section with progress bar |
-| CREATE | `src/components/items/ComboItemsList.tsx` | Simple combo items display |
-| MODIFY | `src/pages/ItemsAdd.tsx` | Complete redesign with 2-column layout |
-| MODIFY | `src/pages/ItemsEdit.tsx` | Complete redesign + combo items visible |
-| MODIFY | `src/components/shared/DashedSectionCard.tsx` | Add support for all variants (purple, green, blue, amber) |
-| MODIFY | `src/lib/i18n/translations.ts` | Add inventory-related translation keys |
+| UPDATE | `src/components/shared/DashedSectionCard.tsx` | Add `muted` color variant |
+| CREATE | `src/components/ingredients/IngredientSaveConfirmModal.tsx` | Friendly confirmation modal |
+| REWRITE | `src/pages/inventory/IngredientMasterAdd.tsx` | Complete single-column redesign |
+| UPDATE | `src/lib/i18n/translations.ts` | Add ingredient-specific translation keys |
 
 ---
 
-## Detailed Implementation
+## Form State Structure
 
-### Form State Additions
 ```typescript
-// Add to existing form state
 const [formData, setFormData] = useState({
-  // ... existing fields
-  
-  // New inventory fields
+  // Basic Info
+  name_en: "",
+  name_ar: "",
+  name_ur: "",
+  description_en: "",
+  description_ar: "",
+  description_ur: "",
+
+  // Classification
+  ingredient_type: "",        // solid | liquid | powder | other
+  unit: "",                   // kg | g | l | ml | piece | pack
+  storage_type: "",           // freezer | fridge | dry | room_temp
+  categories: [] as string[], // Multi-select
+
+  // Inventory & Alerts
+  min_stock_alert: 10,
+  shelf_life_days: null as number | null,
+  reorder_point: null as number | null,
   current_stock: 100,
-  low_stock_threshold: 10,
+  max_stock: 100,
+
+  // Pricing
+  cost_price: 0,
+  selling_price: null as number | null,
+  can_purchase: true,
+  will_return_on_cancel: false,
+
+  // Details
+  yield_percentage: 100,
+  allergens: [] as AllergenType[],
+  supplier: "",
+
+  // Status
+  is_active: true,
 });
 ```
 
-### Progress Bar Color Logic
+---
+
+## Dropdown Options
+
+### Ingredient Type
+- Solid, Liquid, Powder, Other
+
+### Unit
+- Kilogram (KG), Gram (G), Liter (L), Milliliter (ML), Piece, Pack, Box, Dozen
+
+### Storage Type
+- Freezer (-18°C), Fridge/Chiller (0-4°C), Dry/Ambient, Room Temperature
+
+### Ingredient Categories (Multi-Select)
+- Meat & Poultry, Dairy, Produce/Vegetables, Spices & Herbs, Dry Goods, Oils & Fats, Beverages/Base, Packaging, Seafood, Bakery Items
+
+---
+
+## DashedSectionCard Update - Add Muted Variant
+
 ```typescript
-const getProgressColor = (percentage: number) => {
-  if (percentage >= 70) return "bg-green-500";
-  if (percentage >= 30) return "bg-yellow-500";
-  return "bg-red-500";
-};
+muted: {
+  border: "border-gray-300/40",
+  headerBg: "bg-gray-50",
+  headerBorder: "border-gray-200/50",
+  iconColor: "text-gray-600",
+  titleColor: "text-gray-700",
+},
 ```
 
-### Language Indicator Logic
-```typescript
-// For each language input, check if it has content
-const getLanguageIndicatorColor = (value: string) => {
-  return value.trim().length > 0 ? "text-success" : "text-danger";
-};
-```
+---
 
-### Two-Column Grid Structure
-```tsx
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-  {/* Left Column - 4/12 */}
-  <div className="lg:col-span-4 space-y-5">
-    {/* Basic Info Left (Image, Name, Description) */}
-    <DashedSectionCard title="Basic Information" icon={FileText} variant="purple">
-      <ImageUploadHero ... />
-      <MultiLanguageInputWithIndicators label="Item Name" required ... />
-      <MultiLanguageInputWithIndicators label="Description" multiline ... />
-    </DashedSectionCard>
-    
-    {/* Combo Items - Only on Edit when isCombo */}
-    {isEditMode && formData.is_combo && (
-      <DashedSectionCard title="Combo Items" icon={Package} variant="amber">
-        <ComboItemsList items={comboItems} />
-      </DashedSectionCard>
-    )}
-    
-    {/* Inventory Section */}
-    <DashedSectionCard title="Inventory" icon={BarChart} variant="amber">
-      <InventoryProgressCard ... />
-    </DashedSectionCard>
-  </div>
-  
-  {/* Right Column - 8/12 */}
-  <div className="lg:col-span-8 space-y-5">
-    {/* Basic Info Right (Type, Cost, Toggles) */}
-    <DashedSectionCard title="Basic Information" icon={FileText} variant="purple">
-      <div className="grid grid-cols-2 gap-4">
-        <Select label="Item Type" ... />
-        <Input label="Base Cost (SAR)" ... />
-      </div>
-      <div className="flex items-center gap-6 mt-4">
-        <Switch label="Is Combo" with tooltip ... />
-        <Switch label="Active" ... />
-      </div>
-    </DashedSectionCard>
-    
-    {/* Classification */}
-    <DashedSectionCard title="Classification" icon={Tags} variant="green">
-      <div className="grid grid-cols-2 gap-4">
-        <Select label="Category *" ... />
-        <MultiSelectBadges label="Subcategory" ... />
-      </div>
-      <div className="mt-4">
-        <Label>Serving Time *</Label>
-        <CheckboxGroup ... />
-      </div>
-    </DashedSectionCard>
-    
-    {/* Details */}
-    <DashedSectionCard title="Details" icon={Clock} variant="blue">
-      <div className="grid grid-cols-3 gap-4">
-        <Input label="Prep Time" suffix="min" with tooltip />
-        <Input label="Calories" suffix="kcal" with tooltip />
-        <Input label="Highlights" with tooltip />
-      </div>
-      <AllergenPicker ... />
-    </DashedSectionCard>
-  </div>
-</div>
-```
+## Confirmation Modal
+
+**Title:** "Great Choice! 🥕"  
+**Message:** "Ready to save this ingredient? It will be available for recipes & items."  
+**Summary Card:** Shows Name, Type, Unit, Category, Cost Price, Storage Type
+
+---
+
+## Grid Strategy (Maximize Horizontal Space)
+
+| Section | Grid |
+|---------|------|
+| Basics | `grid-cols-1 md:grid-cols-2` |
+| Classification | `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` |
+| Inventory | `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` |
+| Pricing | `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` |
+| Details | `grid-cols-1 md:grid-cols-2` + full-width allergens |
 
 ---
 
 ## Translation Keys to Add
 
 ```typescript
-items: {
-  // ... existing keys
+ingredients: {
+  visualAndBasics: "Visual & Basics",
+  classification: "Classification",
+  inventoryAndAlerts: "Inventory & Alerts",
+  pricing: "Pricing",
+  details: "Details",
+  ingredientType: "Type",
+  storageType: "Storage Type",
+  categoryGroup: "Category/Group",
+  minStockAlert: "Min Stock Alert",
+  shelfLifeDays: "Shelf Life (Days)",
+  parLevel: "PAR Level",
+  sellingPrice: "Selling Price",
+  canPurchase: "Can Purchase",
+  willReturnOnCancel: "Return on Cancel",
+  yieldPercentage: "Yield %",
+  supplier: "Supplier/Vendor",
+  allergenFlags: "Allergen Flags",
   
-  // New inventory section
-  inventory: "Inventory",
-  currentStock: "Current Stock",
-  lowStockThreshold: "Low Stock Threshold",
-  stockAvailable: "Available",
-  stockPercentage: "{{percentage}}% Available",
+  // Types
+  solid: "Solid",
+  liquid: "Liquid",
+  powder: "Powder",
+  other: "Other",
   
-  // Combo items
-  comboItems: "Combo Items",
-  itemsInCombo: "Items in this Combo",
+  // Storage
+  freezer: "Freezer (-18°C)",
+  fridge: "Fridge/Chiller (0-4°C)",
+  dryAmbient: "Dry/Ambient",
+  roomTemp: "Room Temperature",
+  
+  // Categories
+  meatPoultry: "Meat & Poultry",
+  dairy: "Dairy",
+  produceVegetables: "Produce/Vegetables",
+  // ...etc
+  
+  // Confirmation
+  greatChoice: "Great Choice!",
+  readyToSaveIngredient: "Ready to save this ingredient?",
+  availableForRecipes: "It will be available for recipes & items.",
+  
+  // Tooltips
+  minStockTooltip: "Trigger low-stock notification when quantity falls below this level",
+  shelfLifeTooltip: "Typical days before expiry/spoilage (used for FIFO & waste prevention)",
+  parLevelTooltip: "Ideal minimum quantity to maintain - triggers reorder when reached",
+  yieldTooltip: "Usable portion after trimming/cleaning (e.g., 85% for chicken after bones)",
+  canPurchaseTooltip: "Allow purchasing this ingredient from suppliers through PO system",
+  willReturnTooltip: "Can this ingredient be returned to stock if an order is canceled?",
 },
 ```
 
@@ -278,74 +285,23 @@ items: {
 
 ## Visual Specifications
 
-| Element | Specification |
-|---------|---------------|
-| Left column width | `lg:col-span-4` (33.33%) |
-| Right column width | `lg:col-span-8` (66.67%) |
+| Element | Value |
+|---------|-------|
+| Layout | **Full width (col-12)** |
 | Section gap | `gap-5` (20px) |
 | Card radius | `rounded-xl` (12px) |
 | Card border | `border-2 border-dashed` |
-| Image upload size | 280×280px (centered, aspect-square) |
-| Language indicator font | `text-[12px]` |
-| Progress bar height | `h-3` (12px) |
 | Input height | `h-10` (40px) |
-
-### Color Variants (Enhanced)
-| Section | Border | Header BG | Icon/Title |
-|---------|--------|-----------|------------|
-| Basic Info | `border-purple-300/40` | `bg-purple-50` | `text-purple-600/700` |
-| Classification | `border-green-300/40` | `bg-green-50` | `text-green-600/700` |
-| Details | `border-blue-300/40` | `bg-blue-50` | `text-blue-600/700` |
-| Combo Items | `border-amber-300/40` | `bg-amber-50` | `text-amber-600/700` |
-| Inventory | `border-amber-300/40` | `bg-amber-50` | `text-amber-600/700` |
+| Grid gap | `gap-4` (16px) |
+| Progress bar | `h-3` (12px) |
+| Footer | Sticky bottom |
 
 ---
 
 ## Implementation Order
 
-1. **Create `MultiLanguageInputWithIndicators.tsx`** - New input with color-coded language tabs
-2. **Create `InventoryProgressCard.tsx`** - Progress bar + stock inputs
-3. **Create `ComboItemsList.tsx`** - Simple combo items display
-4. **Update `DashedSectionCard.tsx`** - Ensure all color variants work
-5. **Redesign `ItemsAdd.tsx`** - Two-column layout, new sections (no combo items section)
-6. **Redesign `ItemsEdit.tsx`** - Same as Add but with combo items section visible when applicable
-7. **Update `translations.ts`** - Add new keys for inventory and combo sections
+1. **Update `DashedSectionCard.tsx`** - Add `muted` variant
+2. **Create `IngredientSaveConfirmModal.tsx`** - Friendly confirmation modal
+3. **Rewrite `IngredientMasterAdd.tsx`** - Complete single-column redesign
+4. **Update `translations.ts`** - Add all ingredient keys
 
----
-
-## Technical Considerations
-
-### Responsive Behavior
-- On mobile (`< lg`): Single column, sections stack vertically
-- On desktop (`lg+`): Two-column layout as shown
-
-### Combo Items Visibility Logic
-```typescript
-// Only show combo items section when:
-// 1. We are in edit mode (not add)
-// 2. The item is marked as a combo
-const showComboSection = isEditMode && formData.is_combo;
-```
-
-### Form Validation
-- Required fields: Item Name (EN), Category, Serving Time (at least one)
-- Show validation errors before confirmation modal
-- Red asterisk on required field labels
-
-### Sticky Footer
-- Fixed at bottom of viewport
-- Offset by sidebar width (`ps-[16rem]`)
-- Contains Cancel and Save buttons
-
----
-
-## Summary
-
-This redesign transforms the current vertical single-column layout into a modern, space-efficient two-column design with:
-1. Left column for image/name/description + inventory
-2. Right column for type/cost/toggles + classification + details
-3. Dynamic EN/AR/UR language indicators (green=filled, red=empty)
-4. New inventory section with smart progress bar
-5. Conditional combo items section (edit mode only)
-6. Consistent dashed-border section cards with color variants
-7. Improved mobile responsiveness
