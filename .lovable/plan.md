@@ -1,171 +1,201 @@
 
-# Implementation Plan: Fix Layout, Modal & Replacements
 
-## Summary of All Changes
+# Implementation Plan: Update Modal UI Styling
 
-| Issue | Solution |
-|-------|----------|
-| 1. Quick Summary Card | Remove `<ItemSummaryCard>` from ItemsAdd.tsx and ItemsEdit.tsx |
-| 2. Page footer bleed into sidebar | Fix positioning to respect sidebar width (16rem) |
-| 3. Modal 70% width + no caps | Change modal to 70vw, remove uppercase text styling |
-| 4. Replacements not working | Copy replacement handlers from ItemIngredientMappingEdit.tsx |
+## Overview
 
----
+Based on the reference image, I'll update the `ItemSaveConfirmModal.tsx` with the following changes:
 
-## 1. Remove Quick Summary Card
-
-**Files:** `ItemsAdd.tsx`, `ItemsEdit.tsx`
-
-- Remove the `<ItemSummaryCard ... />` component and its wrapper comment
-- Remove the `ItemSummaryCard` import if no longer used
+| Change | Current | New |
+|--------|---------|-----|
+| Font Size | 10px-11px | **13px** for content text |
+| Border Style | `border` or `border-2 border-dashed` | Consistent **dotted borders** (`border-2 border-dotted`) |
+| Text Sharpness | Lighter weight, muted | **font-medium** for clarity |
+| Section Cards | `border-dashed` with varied opacity | Uniform **dotted light gray** borders |
+| Table Text | `text-xs` (12px) | **text-[13px]** |
 
 ---
 
-## 2. Fix Page Footer Bleed
+## Detailed Changes
 
-**Problem:** The footer uses `fixed bottom-0 left-0 right-0` which spans the entire viewport, bleeding under the sidebar (which is 16rem wide).
+### 1. ReadOnlyFormField (lines 100-120)
 
-**Solution:** Change the footer to respect the sidebar space using `left-[16rem]` instead of `left-0`.
-
-**Files:** `ItemsAdd.tsx`, `ItemsEdit.tsx`
-
-Current:
-```tsx
-<div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10">
-  <div className="mx-auto py-3 px-4" style={{ maxWidth: "75vw" }}>
-```
-
-Fixed:
-```tsx
-<div className="fixed bottom-0 left-[16rem] right-0 bg-background border-t z-10">
-  <div className="py-3 px-4 flex justify-end">
-```
-
-This ensures the footer starts after the sidebar (16rem = sidebar width) and doesn't bleed into it.
-
----
-
-## 3. Modal 70% Width + No Caps
-
-**File:** `ItemSaveConfirmModal.tsx`
-
-### Width Change
-Current: `sm:max-w-[900px]`  
-New: `sm:max-w-[70vw]`
-
-### Remove Uppercase Styling
-Current labels use `uppercase` and `tracking-wide`:
-```tsx
-<label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-```
-
-New (title case, normal tracking):
+**Current:**
 ```tsx
 <label className="text-[11px] font-medium text-muted-foreground">
+<div className="flex h-8 ... text-xs">
 ```
 
-Apply to all instances:
-- `ReadOnlyFormField` label
-- `ReadOnlyChipsField` label  
-- `ReviewSectionCard` title
-- Table headers (`th` elements)
-- Section divider text
+**Updated:**
+```tsx
+<label className="text-[13px] font-medium text-muted-foreground">
+<div className="flex h-9 ... text-[13px] font-medium">
+```
 
 ---
 
-## 4. Fix Replacements in Items Grid
+### 2. ReadOnlyChipsField (lines 122-151)
 
-**Files:** `ItemsAdd.tsx`, `ItemsEdit.tsx`
-
-Add the following from `ItemIngredientMappingEdit.tsx`:
-
-### A. State for Replacement Modal
+**Current:**
 ```tsx
-const [replacementModalState, setReplacementModalState] = useState({
-  open: false,
-  mappingId: "",
-  parentName: "",
-});
+<label className="text-[11px] font-medium text-muted-foreground">
+<span className="... text-[10px] ...">
 ```
 
-### B. Handler Functions
+**Updated:**
 ```tsx
-const handleOpenReplacementModal = (mappingId: string) => {
-  const mapping = subItemMappings.find((m) => m.id === mappingId);
-  if (mapping) {
-    setReplacementModalState({
-      open: true,
-      mappingId,
-      parentName: mapping.sub_item_name,
-    });
-  }
-};
-
-const handleReplacementsChange = (replacements: ReplacementItem[]) => {
-  setSubItemMappings((prev) =>
-    prev.map((m) =>
-      m.id === replacementModalState.mappingId
-        ? { ...m, replacements }
-        : m
-    )
-  );
-};
-
-const handleRemoveReplacement = (mappingId: string, replacementId: string) => {
-  setSubItemMappings((prev) =>
-    prev.map((m) => {
-      if (m.id === mappingId && m.replacements) {
-        const filtered = m.replacements.filter((r) => r.id !== replacementId);
-        if (filtered.length > 0 && !filtered.some((r) => r.is_default)) {
-          filtered[0].is_default = true;
-        }
-        return { ...m, replacements: filtered };
-      }
-      return m;
-    })
-  );
-};
-
-const handleViewReplacement = (mappingId: string, _replacementId: string) => {
-  handleOpenReplacementModal(mappingId);
-};
+<label className="text-[13px] font-medium text-muted-foreground">
+<span className="... text-[13px] ..."> // chips inside
 ```
 
-### C. Current Replacements Memo
+---
+
+### 3. ReviewSectionCard (lines 153-176)
+
+**Current:**
 ```tsx
-const currentReplacements = useMemo(() => {
-  const mapping = subItemMappings.find((m) => m.id === replacementModalState.mappingId);
-  return mapping?.replacements || [];
-}, [subItemMappings, replacementModalState.mappingId]);
+<div className="rounded-lg border-2 border-dashed border-muted-foreground/30 overflow-hidden">
+  <div className="... border-b border-dashed border-muted-foreground/20">
+    <span className="text-[11px] font-semibold text-muted-foreground">
 ```
 
-### D. Connect to ItemTable
+**Updated:**
 ```tsx
-<ItemTable
-  ...
-  onReplacement={handleOpenReplacementModal}
-  onRemoveReplacement={handleRemoveReplacement}
-  onViewReplacement={handleViewReplacement}
-/>
+<div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
+  <div className="... border-b border-dotted border-muted-foreground/30">
+    <span className="text-[13px] font-semibold text-muted-foreground">
 ```
 
-### E. Add ReplacementModal Component
-Import and render the modal:
-```tsx
-import { ReplacementModal, type ReplacementItem } from "@/components/item-mapping";
+---
 
-// In JSX after other modals:
-<ReplacementModal
-  open={replacementModalState.open}
-  onOpenChange={(open) => !open && setReplacementModalState(prev => ({ ...prev, open: false }))}
-  parentItemName={replacementModalState.parentName}
-  parentItemId={replacementModalState.mappingId}
-  replacements={currentReplacements}
-  onReplacementsChange={handleReplacementsChange}
-  availableItems={mockAvailableItems}
-  currentLanguage={currentLanguage}
-/>
+### 4. Hero Section Name Field (lines 250-253)
+
+**Current:**
+```tsx
+<div className="flex h-8 ... text-sm font-semibold truncate">
 ```
+
+**Updated:**
+```tsx
+<div className="flex h-9 ... text-[13px] font-semibold truncate rounded-md border-2 border-dotted border-muted-foreground/40">
+```
+
+---
+
+### 5. Hero Overview Panel Border (line 231)
+
+**Current:**
+```tsx
+<div className="rounded-lg border bg-muted/20 p-3">
+```
+
+**Updated:**
+```tsx
+<div className="rounded-lg border-2 border-dotted border-muted-foreground/40 bg-muted/20 p-3">
+```
+
+---
+
+### 6. Language Indicators (lines 261-271)
+
+**Current:**
+```tsx
+<span className="... text-[9px] ...">
+```
+
+**Updated:**
+```tsx
+<span className="... text-[11px] ...">
+```
+
+---
+
+### 7. Status Badges (lines 278-290)
+
+**Current:**
+```tsx
+<span className="... text-[10px] ...">
+```
+
+**Updated:**
+```tsx
+<span className="... text-[12px] ...">
+```
+
+---
+
+### 8. Mapping Tables Section
+
+#### Table Headers (lines 398-401, 439-442)
+**Current:**
+```tsx
+<th className="h-7 px-2 text-left text-[11px] font-medium text-muted-foreground">
+```
+
+**Updated:**
+```tsx
+<th className="h-8 px-3 text-left text-[13px] font-medium text-muted-foreground">
+```
+
+#### Table Cells (lines 404-410, 445-451)
+**Current:**
+```tsx
+<td className="px-2 text-foreground">
+```
+
+**Updated:**
+```tsx
+<td className="px-3 text-[13px] text-foreground font-medium">
+```
+
+#### Table Footer (lines 414-421, 473-479)
+**Current:**
+```tsx
+<td className="... text-[11px] font-semibold ...">
+<td className="... font-bold text-primary text-xs">
+```
+
+**Updated:**
+```tsx
+<td className="... text-[13px] font-semibold ...">
+<td className="... text-[13px] font-bold text-primary">
+```
+
+---
+
+### 9. Recipe Mappings Divider (lines 373-379)
+
+**Current:**
+```tsx
+<span className="text-[11px] font-semibold text-muted-foreground">
+```
+
+**Updated:**
+```tsx
+<span className="text-[13px] font-semibold text-muted-foreground">
+```
+
+---
+
+### 10. Ingredient/Combo Item Table Borders
+
+**Current:**
+```tsx
+<div className="rounded-lg border border-input overflow-hidden">
+```
+
+**Updated:**
+```tsx
+<div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
+```
+
+---
+
+## Summary of Border Updates
+
+All major visual elements will use consistent dotted borders:
+- `border-2 border-dotted border-muted-foreground/40` for cards and tables
+- `border-dotted border-muted-foreground/30` for internal section headers
 
 ---
 
@@ -173,23 +203,5 @@ import { ReplacementModal, type ReplacementItem } from "@/components/item-mappin
 
 | File | Changes |
 |------|---------|
-| `src/pages/ItemsAdd.tsx` | Remove summary card, fix footer, add replacement handlers + modal |
-| `src/pages/ItemsEdit.tsx` | Remove summary card, fix footer, add replacement handlers + modal |
-| `src/components/items/ItemSaveConfirmModal.tsx` | 70vw width, remove uppercase styling |
-| `src/components/item-mapping/index.ts` | Export ReplacementModal and ReplacementItem type |
+| `src/components/items/ItemSaveConfirmModal.tsx` | Update font sizes to 13px, change all dashed borders to dotted, increase text weights for clarity |
 
----
-
-## Visual Before/After
-
-### Footer Fix
-Before: Footer bleeds under sidebar on the left  
-After: Footer starts at sidebar edge, stays within main content
-
-### Modal
-Before: 900px max-width, ALL CAPS labels  
-After: 70vw width, Title Case labels, more compact
-
-### Replacements
-Before: Clicking replacement button does nothing  
-After: Opens replacement modal, allows adding/removing/setting default replacements
