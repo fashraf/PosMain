@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Check, ImageIcon, Clock, Flame } from "lucide-react";
+import { Check, ImageIcon, Clock, Flame, Carrot, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ItemSaveConfirmModalProps {
@@ -23,6 +23,9 @@ interface ItemSaveConfirmModalProps {
     calories?: number | null;
     prep_time: number;
     serving_times: string[];
+    ingredientCount?: number;
+    itemCount?: number;
+    isCombo?: boolean;
   };
   isLoading?: boolean;
   isEdit?: boolean;
@@ -96,6 +99,24 @@ export function ItemSaveConfirmModal({
               )}
             </div>
           </div>
+
+          {/* Mapping counts */}
+          {(item.ingredientCount !== undefined || item.itemCount !== undefined) && (
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-dashed">
+              {item.ingredientCount !== undefined && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Carrot className="h-3.5 w-3.5 text-orange-500" />
+                  {item.ingredientCount} ingredients
+                </span>
+              )}
+              {item.isCombo && item.itemCount !== undefined && (
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Package className="h-3.5 w-3.5 text-amber-500" />
+                  {item.itemCount} items
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex-row gap-3 sm:justify-center pt-2">

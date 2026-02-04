@@ -1,6 +1,7 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { Plus, X, Eye, Star } from "lucide-react";
+import { PlusCircle, Plus, X, Eye, Star, Trash2 } from "lucide-react";
 import { QuantityControl } from "./QuantityControl";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SubItemMappingItem } from "./SubItemMappingList";
 import { cn } from "@/lib/utils";
@@ -34,14 +35,14 @@ export function ItemTable({
 
   if (!isCombo) {
     return (
-      <div className="border border-border rounded-[6px] overflow-hidden opacity-50">
+      <div className="border-2 border-dashed border-amber-300/50 rounded-lg overflow-hidden opacity-50">
         {/* Header */}
-        <div className="flex items-center justify-between h-8 px-1.5 bg-muted border-b border-border">
-          <span className="text-[13px] font-medium uppercase tracking-wide">
+        <div className="flex items-center justify-between h-10 px-3 bg-amber-50 border-b border-amber-200/50">
+          <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
             {t("itemMapping.items")}
           </span>
         </div>
-        <div className="p-4 text-center text-muted-foreground text-[13px]">
+        <div className="p-6 text-center text-muted-foreground text-sm">
           {t("itemMapping.notComboItem")}
         </div>
       </div>
@@ -49,59 +50,71 @@ export function ItemTable({
   }
 
   return (
-    <div className="border border-border rounded-[6px] overflow-hidden">
+    <div className="border-2 border-dashed border-amber-300/50 rounded-lg overflow-hidden shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between h-8 px-1.5 bg-muted border-b border-border">
-        <span className="text-[13px] font-medium uppercase tracking-wide">
+      <div className="flex items-center justify-between h-10 px-3 bg-amber-50 border-b border-amber-200/50">
+        <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
           {t("itemMapping.items")}
         </span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={onAdd}
-                className="p-0.5 text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Plus size={16} strokeWidth={1.5} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p>{t("itemMapping.addItem")}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button
+          type="button"
+          onClick={onAdd}
+          size="sm"
+          className="h-7 px-3 rounded-full bg-primary hover:bg-primary/90 text-xs"
+        >
+          <PlusCircle className="h-3.5 w-3.5 me-1" />
+          Add Item
+        </Button>
       </div>
 
       {/* Table */}
-      <table className="density-table">
+      <table className="w-full">
         <thead>
-          <tr>
-            <th className="w-[25%]">{t("common.name")}</th>
-            <th className="w-[12%] text-center">{t("itemMapping.replacement")}</th>
-            <th className="w-[20%] text-center">{t("itemMapping.quantity")}</th>
-            <th className="w-[15%] text-center">{t("itemMapping.comboPrice")}</th>
-            <th className="w-[23%] text-right">{t("itemMapping.actualCost")}</th>
-            <th className="w-[5%]"></th>
+          <tr className="bg-muted/50 border-b border-border">
+            <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide w-[25%]">
+              {t("common.name")}
+            </th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[12%]">
+              {t("itemMapping.replacement")}
+            </th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[20%]">
+              {t("itemMapping.quantity")}
+            </th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[15%]">
+              {t("itemMapping.comboPrice")}
+            </th>
+            <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide w-[23%]">
+              {t("itemMapping.actualCost")}
+            </th>
+            <th className="h-9 w-12"></th>
           </tr>
         </thead>
         <tbody>
           {mappings.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center text-muted-foreground py-4">
+              <td colSpan={6} className="text-center text-muted-foreground py-6 text-sm">
                 {t("itemMapping.noItemsMapped")}
               </td>
             </tr>
           ) : (
-            mappings.map((mapping) => {
+            mappings.map((mapping, index) => {
               const subtotal = mapping.quantity * mapping.unit_price;
               const hasReplacements = mapping.replacements && mapping.replacements.length > 0;
               
               return (
                 <>
                   {/* Main Item Row */}
-                  <tr key={mapping.id}>
-                    <td className="font-medium">{mapping.sub_item_name}</td>
+                  <tr 
+                    key={mapping.id}
+                    className={cn(
+                      "h-11 border-b border-border/50 transition-all duration-200",
+                      "animate-in fade-in slide-in-from-top-2",
+                      index % 2 === 0 ? "bg-background" : "bg-muted/30",
+                      "hover:bg-primary/5 hover:shadow-sm"
+                    )}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <td className="px-3 font-medium text-sm">{mapping.sub_item_name}</td>
                     <td className="text-center">
                       <TooltipProvider>
                         <Tooltip>
@@ -144,16 +157,16 @@ export function ItemTable({
                       </div>
                       <div className="font-medium">SAR {subtotal.toFixed(2)}</div>
                     </td>
-                    <td className="text-center">
+                    <td className="px-3 text-center">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
                               type="button"
                               onClick={() => onRemove(mapping.id)}
-                              className="p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             >
-                              <X size={16} strokeWidth={1.5} />
+                              <Trash2 size={14} strokeWidth={1.5} />
                             </button>
                           </TooltipTrigger>
                           <TooltipContent>

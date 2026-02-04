@@ -23,6 +23,8 @@ import { AllergenPicker, type AllergenType } from "@/components/shared/AllergenP
 import { ItemSaveConfirmModal } from "@/components/items/ItemSaveConfirmModal";
 import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { SectionNavigationBar, type SectionNavItem } from "@/components/shared/SectionNavigationBar";
+import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
+import { ItemSummaryCard } from "@/components/shared/ItemSummaryCard";
 import {
   IngredientTable,
   ItemTable,
@@ -113,6 +115,7 @@ export default function ItemsAdd() {
     low_stock_threshold: 10,
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState("basics");
@@ -128,7 +131,7 @@ export default function ItemsAdd() {
     type: "ingredient" | "item";
   } | null>(null);
 
-  // Section refs for scrolling
+  // Section refs for scrolling and validation
   const sectionRefs = {
     basics: useRef<HTMLDivElement>(null),
     classification: useRef<HTMLDivElement>(null),
@@ -137,6 +140,11 @@ export default function ItemsAdd() {
     ingredients: useRef<HTMLDivElement>(null),
     items: useRef<HTMLDivElement>(null),
   };
+
+  // Input refs for validation focus
+  const nameInputRef = useRef<HTMLDivElement>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const servingTimeRef = useRef<HTMLDivElement>(null);
 
   // Completion logic
   const isBasicsComplete = !!formData.name_en;
@@ -297,30 +305,52 @@ export default function ItemsAdd() {
     return subItemMappings.reduce((sum, m) => sum + m.quantity * m.unit_price, 0);
   }, [subItemMappings]);
 
+  // Validation with scroll-to-first-error
   const handleSave = () => {
+    // Check name
     if (!formData.name_en) {
-      toast({ title: "Validation Error", description: "Please fill in required fields.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "Please fill Item Name (English)", variant: "destructive" });
+      nameInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        const input = nameInputRef.current?.querySelector("input");
+        input?.focus();
+      }, 400);
       return;
     }
+    
+    // Check category
     if (!formData.category) {
-      toast({ title: "Validation Error", description: "Please select a category.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "Please select a Category", variant: "destructive" });
+      categoryRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        const trigger = categoryRef.current?.querySelector("button");
+        trigger?.focus();
+      }, 400);
       return;
     }
+    
+    // Check serving times
     if (formData.serving_times.length === 0) {
-      toast({ title: "Validation Error", description: "Please select at least one serving time.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "Please select at least one Serving Time", variant: "destructive" });
+      servingTimeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    
     setShowConfirmModal(true);
   };
 
   const handleConfirmSave = () => {
     setIsSaving(true);
+    
+    // TODO: Upload imageFile to storage bucket here
+    // const imageUrl = await uploadImage(imageFile);
+    
     setTimeout(() => {
       toast({ title: t("items.addItem"), description: `${formData.name_en} has been added.` });
       setIsSaving(false);
       setShowConfirmModal(false);
       navigate("/items");
-    }, 500);
+    }, 800);
   };
 
   const confirmModalItem = useMemo(() => ({
@@ -332,399 +362,419 @@ export default function ItemsAdd() {
     calories: formData.calories,
     prep_time: formData.preparation_time_minutes,
     serving_times: formData.serving_times.map((id) => SERVING_TIMES.find((s) => s.id === id)?.label || ""),
-  }), [formData]);
+    ingredientCount: ingredientMappings.length,
+    itemCount: subItemMappings.length,
+    isCombo: formData.is_combo,
+  }), [formData, ingredientMappings, subItemMappings]);
 
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="space-y-0 pb-24">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/items")}>
-          <BackIcon className="h-5 w-5" />
-        </Button>
-        <h1 className="text-xl font-semibold text-foreground">{t("items.addItem")}</h1>
-      </div>
-
-      {/* Section Navigation Bar */}
-      <SectionNavigationBar
-        sections={sections}
-        activeSection={activeSection}
-        onNavigate={handleNavigate}
-      />
-
-      <div className="space-y-5 pt-4">
-        {/* Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Left Column - 4/12 */}
-          <div className="lg:col-span-4 space-y-5">
-            {/* Basic Info Left (Image, Name, Description) */}
-            <div ref={sectionRefs.basics}>
-              <DashedSectionCard 
-                id="basics"
-                title={t("items.basicInformation")} 
-                icon={FileText} 
-                variant="purple"
-                isComplete={isBasicsComplete}
-              >
-                <div className="space-y-4">
-                  {/* Hero Image Upload - reduced size */}
-                  <ImageUploadHero
-                    value={formData.image_url}
-                    onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
-                    size={140}
-                    className="mx-auto"
-                  />
-
-                  {/* Item Name with indicators */}
-                  <MultiLanguageInputWithIndicators
-                    label={t("items.itemName")}
-                    values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
-                    onChange={handleNameChange}
-                    required
-                    placeholder="Enter item name..."
-                  />
-
-                  {/* Description with indicators */}
-                  <MultiLanguageInputWithIndicators
-                    label={t("common.description")}
-                    values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
-                    onChange={handleDescriptionChange}
-                    multiline
-                    placeholder="Enter description..."
-                  />
-                </div>
-              </DashedSectionCard>
-            </div>
-
-            {/* Inventory Section */}
-            <div ref={sectionRefs.inventory}>
-              <DashedSectionCard 
-                id="inventory"
-                title={t("items.inventory")} 
-                icon={BarChart3} 
-                variant="amber"
-                isComplete={isInventoryComplete}
-              >
-                <InventoryProgressCard
-                  currentStock={formData.current_stock}
-                  maxStock={100}
-                  lowStockThreshold={formData.low_stock_threshold}
-                  onCurrentStockChange={(value) => setFormData((prev) => ({ ...prev, current_stock: value }))}
-                  onThresholdChange={(value) => setFormData((prev) => ({ ...prev, low_stock_threshold: value }))}
-                />
-              </DashedSectionCard>
-            </div>
+    <>
+      <LoadingOverlay visible={isSaving} message="Saving item..." />
+      
+      <div className="pb-24">
+        <div className="mx-auto" style={{ maxWidth: "75vw" }}>
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/items")}>
+              <BackIcon className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-semibold text-foreground">Item Master - Add</h1>
           </div>
 
-          {/* Right Column - 8/12 */}
-          <div className="lg:col-span-8 space-y-5">
-            {/* Basic Info Right (Type, Cost, Toggles) */}
-            <DashedSectionCard title={t("items.basicInformation")} icon={FileText} variant="purple">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium mb-1.5 block">{t("items.itemType")}</Label>
-                    <Select
-                      value={formData.item_type}
-                      onValueChange={(value: "edible" | "non_edible") =>
-                        setFormData((prev) => ({ ...prev, item_type: value }))
-                      }
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="edible">{t("items.edible")}</SelectItem>
-                        <SelectItem value="non_edible">{t("items.nonEdible")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium mb-1.5 block">{t("items.baseCost")} (SAR)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.base_cost}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))}
-                      className="h-10"
-                    />
-                  </div>
+          {/* Section Navigation Bar */}
+          <SectionNavigationBar
+            sections={sections}
+            activeSection={activeSection}
+            onNavigate={handleNavigate}
+          />
+
+          <div className="space-y-4 pt-3">
+            {/* Two-Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              {/* Left Column - 4/12 */}
+              <div className="lg:col-span-4 space-y-4">
+                {/* Basic Info Left (Image, Name, Description) */}
+                <div ref={sectionRefs.basics}>
+                  <DashedSectionCard 
+                    id="basics"
+                    title={t("items.basicInformation")} 
+                    icon={FileText} 
+                    variant="purple"
+                    isComplete={isBasicsComplete}
+                  >
+                    <div className="space-y-3">
+                      {/* Hero Image Upload - reduced size */}
+                      <ImageUploadHero
+                        value={formData.image_url}
+                        onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
+                        onFileChange={setImageFile}
+                        size={100}
+                        className="mx-auto"
+                      />
+
+                      {/* Item Name with indicators */}
+                      <div ref={nameInputRef}>
+                        <MultiLanguageInputWithIndicators
+                          label={t("items.itemName")}
+                          values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
+                          onChange={handleNameChange}
+                          required
+                          placeholder="Enter item name..."
+                        />
+                      </div>
+
+                      {/* Description with indicators */}
+                      <MultiLanguageInputWithIndicators
+                        label={t("common.description")}
+                        values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
+                        onChange={handleDescriptionChange}
+                        multiline
+                        placeholder="Enter description..."
+                      />
+                    </div>
+                  </DashedSectionCard>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-6 pt-3 border-t">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="isCombo"
-                      checked={formData.is_combo}
-                      onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))}
+                {/* Quick Summary Card */}
+                <ItemSummaryCard
+                  name={formData.name_en}
+                  category={CATEGORIES.find((c) => c.id === formData.category)?.label || ""}
+                  baseCost={formData.base_cost}
+                  ingredientCount={ingredientMappings.length}
+                  itemCount={subItemMappings.length}
+                  isCombo={formData.is_combo}
+                />
+
+                {/* Inventory Section */}
+                <div ref={sectionRefs.inventory}>
+                  <DashedSectionCard 
+                    id="inventory"
+                    title={t("items.inventory")} 
+                    icon={BarChart3} 
+                    variant="amber"
+                    isComplete={isInventoryComplete}
+                  >
+                    <InventoryProgressCard
+                      currentStock={formData.current_stock}
+                      maxStock={100}
+                      lowStockThreshold={formData.low_stock_threshold}
+                      onCurrentStockChange={(value) => setFormData((prev) => ({ ...prev, current_stock: value }))}
+                      onThresholdChange={(value) => setFormData((prev) => ({ ...prev, low_stock_threshold: value }))}
                     />
-                    <Label htmlFor="isCombo" className="text-sm font-normal flex items-center gap-1">
-                      {t("items.isCombo")}
-                      <TooltipInfo content={t("items.comboTooltip")} />
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="status"
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
-                    />
-                    <Label htmlFor="status" className="text-sm font-normal">
-                      {formData.is_active ? t("common.active") : t("common.inactive")}
-                    </Label>
-                  </div>
+                  </DashedSectionCard>
                 </div>
               </div>
-            </DashedSectionCard>
 
-            {/* Classification Section */}
-            <div ref={sectionRefs.classification}>
-              <DashedSectionCard 
-                id="classification"
-                title={t("items.classification")} 
-                icon={Tags} 
-                variant="green"
-                isComplete={isClassificationComplete}
-              >
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium mb-1.5 block">
-                        {t("items.category")} <span className="text-destructive">*</span>
-                      </Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-                      >
-                        <SelectTrigger className="h-10">
-                          <SelectValue placeholder={t("items.selectCategory")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              {cat.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+              {/* Right Column - 8/12 */}
+              <div className="lg:col-span-8 space-y-4">
+                {/* Basic Info Right (Type, Cost, Toggles) */}
+                <DashedSectionCard title={t("items.basicInformation")} icon={FileText} variant="purple">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-sm font-medium mb-1 block">{t("items.itemType")}</Label>
+                        <Select
+                          value={formData.item_type}
+                          onValueChange={(value: "edible" | "non_edible") =>
+                            setFormData((prev) => ({ ...prev, item_type: value }))
+                          }
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="edible">{t("items.edible")}</SelectItem>
+                            <SelectItem value="non_edible">{t("items.nonEdible")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium mb-1 block">{t("items.baseCost")} (SAR)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.base_cost}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))}
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium mb-1.5 block">{t("items.subcategory")}</Label>
-                      <MultiSelectBadges
-                        options={SUBCATEGORIES}
-                        value={formData.subcategories}
-                        onChange={(value) => setFormData((prev) => ({ ...prev, subcategories: value }))}
-                        placeholder={t("items.selectSubcategories")}
-                      />
+
+                    <div className="flex flex-wrap items-center gap-6 pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="isCombo"
+                          checked={formData.is_combo}
+                          onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))}
+                        />
+                        <Label htmlFor="isCombo" className="text-sm font-normal flex items-center gap-1">
+                          {t("items.isCombo")}
+                          <TooltipInfo content={t("items.comboTooltip")} />
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="status"
+                          checked={formData.is_active}
+                          onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
+                        />
+                        <Label htmlFor="status" className="text-sm font-normal">
+                          {formData.is_active ? t("common.active") : t("common.inactive")}
+                        </Label>
+                      </div>
                     </div>
                   </div>
+                </DashedSectionCard>
 
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">
-                      {t("items.servingTime")} <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="flex flex-wrap gap-4">
-                      {SERVING_TIMES.map((time) => (
-                        <div key={time.id} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`serving-${time.id}`}
-                            checked={formData.serving_times.includes(time.id)}
-                            onCheckedChange={() => handleServingTimeToggle(time.id)}
-                          />
-                          <Label htmlFor={`serving-${time.id}`} className="text-sm font-normal cursor-pointer">
-                            {time.label}
+                {/* Classification Section */}
+                <div ref={sectionRefs.classification}>
+                  <DashedSectionCard 
+                    id="classification"
+                    title={t("items.classification")} 
+                    icon={Tags} 
+                    variant="green"
+                    isComplete={isClassificationComplete}
+                  >
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div ref={categoryRef}>
+                          <Label className="text-sm font-medium mb-1 block">
+                            {t("items.category")} <span className="text-destructive">*</span>
                           </Label>
+                          <Select
+                            value={formData.category}
+                            onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder={t("items.selectCategory")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CATEGORIES.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </DashedSectionCard>
-            </div>
+                        <div>
+                          <Label className="text-sm font-medium mb-1 block">{t("items.subcategory")}</Label>
+                          <MultiSelectBadges
+                            options={SUBCATEGORIES}
+                            value={formData.subcategories}
+                            onChange={(value) => setFormData((prev) => ({ ...prev, subcategories: value }))}
+                            placeholder={t("items.selectSubcategories")}
+                          />
+                        </div>
+                      </div>
 
-            {/* Details Section */}
-            <div ref={sectionRefs.details}>
-              <DashedSectionCard 
-                id="details"
-                title={t("items.details")} 
-                icon={Clock} 
-                variant="blue"
-                isComplete={isDetailsComplete}
-              >
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
-                        {t("items.preparationTime")}
-                        <TooltipInfo content={t("items.preparationTimeTooltip")} />
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={formData.preparation_time_minutes}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, preparation_time_minutes: parseInt(e.target.value) || 0 }))}
-                          className="h-10 pe-12"
-                        />
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">min</span>
+                      <div ref={servingTimeRef}>
+                        <Label className="text-sm font-medium mb-1.5 block">
+                          {t("items.servingTime")} <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="flex flex-wrap gap-4">
+                          {SERVING_TIMES.map((time) => (
+                            <div key={time.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`serving-${time.id}`}
+                                checked={formData.serving_times.includes(time.id)}
+                                onCheckedChange={() => handleServingTimeToggle(time.id)}
+                              />
+                              <Label htmlFor={`serving-${time.id}`} className="text-sm font-normal cursor-pointer">
+                                {time.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
-                        {t("items.calories")}
-                        <TooltipInfo content={t("items.caloriesTooltip")} />
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={formData.calories ?? ""}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value ? parseInt(e.target.value) : null }))}
-                          placeholder="Optional"
-                          className="h-10 pe-12"
+                  </DashedSectionCard>
+                </div>
+
+                {/* Details Section */}
+                <div ref={sectionRefs.details}>
+                  <DashedSectionCard 
+                    id="details"
+                    title={t("items.details")} 
+                    icon={Clock} 
+                    variant="blue"
+                    isComplete={isDetailsComplete}
+                  >
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
+                            {t("items.preparationTime")}
+                            <TooltipInfo content={t("items.preparationTimeTooltip")} />
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={formData.preparation_time_minutes}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, preparation_time_minutes: parseInt(e.target.value) || 0 }))}
+                              className="h-9 pe-10"
+                            />
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">min</span>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
+                            {t("items.calories")}
+                            <TooltipInfo content={t("items.caloriesTooltip")} />
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={formData.calories ?? ""}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value ? parseInt(e.target.value) : null }))}
+                              placeholder="Optional"
+                              className="h-9 pe-10"
+                            />
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">kcal</span>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
+                            {t("items.highlights")}
+                            <TooltipInfo content={t("items.highlightsTooltip")} />
+                          </Label>
+                          <Input
+                            type="text"
+                            value={formData.highlights}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, highlights: e.target.value }))}
+                            placeholder={t("items.highlightsPlaceholder")}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <AllergenPicker
+                          label={t("items.allergens")}
+                          value={formData.allergens}
+                          onChange={(allergens) => setFormData((prev) => ({ ...prev, allergens }))}
+                          tooltip={t("items.allergensTooltip")}
                         />
-                        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">kcal</span>
                       </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
-                        {t("items.highlights")}
-                        <TooltipInfo content={t("items.highlightsTooltip")} />
-                      </Label>
-                      <Input
-                        type="text"
-                        value={formData.highlights}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, highlights: e.target.value }))}
-                        placeholder={t("items.highlightsPlaceholder")}
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t">
-                    <AllergenPicker
-                      label={t("items.allergens")}
-                      value={formData.allergens}
-                      onChange={(allergens) => setFormData((prev) => ({ ...prev, allergens }))}
-                      tooltip={t("items.allergensTooltip")}
-                    />
-                  </div>
+                  </DashedSectionCard>
                 </div>
-              </DashedSectionCard>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Ingredient & Item Mapping Section - Full Width */}
-        <div ref={sectionRefs.ingredients}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Ingredients */}
-            <DashedSectionCard
-              id="ingredients"
-              title={t("itemMapping.ingredients")}
-              icon={Carrot}
-              variant="green"
-              isComplete={isIngredientsComplete}
-            >
-              <IngredientTable
-                mappings={ingredientMappings}
-                onQuantityChange={handleIngredientQuantityChange}
-                onRemove={(id) => {
-                  const mapping = ingredientMappings.find((m) => m.id === id);
-                  if (mapping) handleRequestRemove(id, mapping.ingredient_name, "ingredient");
-                }}
-                onAdd={() => setShowAddIngredientModal(true)}
-                totalCost={totalIngredientCost}
-              />
-            </DashedSectionCard>
-
-            {/* Items (only for combo) */}
-            {formData.is_combo && (
-              <div ref={sectionRefs.items}>
+            {/* Ingredient & Item Mapping Section - Full Width */}
+            <div ref={sectionRefs.ingredients}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Ingredients */}
                 <DashedSectionCard
-                  id="items"
-                  title={t("itemMapping.items")}
-                  icon={Package}
-                  variant="amber"
-                  isComplete={isItemsComplete}
+                  id="ingredients"
+                  title={t("itemMapping.ingredients")}
+                  icon={Carrot}
+                  variant="green"
+                  isComplete={isIngredientsComplete}
                 >
-                  <ItemTable
-                    mappings={subItemMappings}
-                    onQuantityChange={handleItemQuantityChange}
+                  <IngredientTable
+                    mappings={ingredientMappings}
+                    onQuantityChange={handleIngredientQuantityChange}
                     onRemove={(id) => {
-                      const mapping = subItemMappings.find((m) => m.id === id);
-                      if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+                      const mapping = ingredientMappings.find((m) => m.id === id);
+                      if (mapping) handleRequestRemove(id, mapping.ingredient_name, "ingredient");
                     }}
-                    onAdd={() => setShowAddItemModal(true)}
-                    onReplacement={() => {}}
-                    onRemoveReplacement={() => {}}
-                    onViewReplacement={() => {}}
-                    totalCost={totalSubItemCost}
-                    totalComboPrice={0}
-                    isCombo={formData.is_combo}
+                    onAdd={() => setShowAddIngredientModal(true)}
+                    totalCost={totalIngredientCost}
                   />
                 </DashedSectionCard>
+
+                {/* Items (only for combo) */}
+                {formData.is_combo && (
+                  <div ref={sectionRefs.items}>
+                    <DashedSectionCard
+                      id="items"
+                      title={t("itemMapping.items")}
+                      icon={Package}
+                      variant="amber"
+                      isComplete={isItemsComplete}
+                    >
+                      <ItemTable
+                        mappings={subItemMappings}
+                        onQuantityChange={handleItemQuantityChange}
+                        onRemove={(id) => {
+                          const mapping = subItemMappings.find((m) => m.id === id);
+                          if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+                        }}
+                        onAdd={() => setShowAddItemModal(true)}
+                        onReplacement={() => {}}
+                        onRemoveReplacement={() => {}}
+                        onViewReplacement={() => {}}
+                        totalCost={totalSubItemCost}
+                        totalComboPrice={0}
+                        isCombo={formData.is_combo}
+                      />
+                    </DashedSectionCard>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Sticky Footer */}
-      <div className={cn(
-        "fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10",
-        "flex items-center gap-3",
-        isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4"
-      )}>
-        <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}>
-            <X className="h-4 w-4 me-1" />
-            {t("common.cancel")}
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving}>
-            <Save className="h-4 w-4 me-1" />
-            {t("common.save")}
-          </Button>
+        {/* Sticky Footer - contained within main content area */}
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-10">
+          <div className="mx-auto py-3 px-4" style={{ maxWidth: "75vw" }}>
+            <div className={cn("flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+              <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}>
+                <X className="h-4 w-4 me-1" />
+                {t("common.cancel")}
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                <Save className="h-4 w-4 me-1" />
+                {t("common.save")}
+              </Button>
+            </div>
+          </div>
         </div>
+
+        {/* Modals */}
+        <AddIngredientModal
+          open={showAddIngredientModal}
+          onOpenChange={setShowAddIngredientModal}
+          onConfirm={handleAddIngredient}
+          ingredients={mockAvailableIngredients}
+          mappedIds={mappedIngredientIds}
+          currentLanguage={currentLanguage}
+        />
+
+        <AddItemModal
+          open={showAddItemModal}
+          onOpenChange={setShowAddItemModal}
+          onConfirm={(item, qty, _extraCost) => handleAddItem(item, qty)}
+          items={mockAvailableItems}
+          mappedIds={mappedSubItemIds}
+          currentItemId=""
+          currentLanguage={currentLanguage}
+        />
+
+        <RemoveConfirmModal
+          open={!!removeConfirm}
+          onOpenChange={(open) => !open && setRemoveConfirm(null)}
+          onConfirm={confirmRemove}
+          itemName={removeConfirm?.name || ""}
+          itemType={removeConfirm?.type || "ingredient"}
+        />
+
+        <ItemSaveConfirmModal
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          onConfirm={handleConfirmSave}
+          item={confirmModalItem}
+          isLoading={isSaving}
+        />
       </div>
-
-      {/* Modals */}
-      <AddIngredientModal
-        open={showAddIngredientModal}
-        onOpenChange={setShowAddIngredientModal}
-        onConfirm={handleAddIngredient}
-        ingredients={mockAvailableIngredients}
-        mappedIds={mappedIngredientIds}
-        currentLanguage={currentLanguage}
-      />
-
-      <AddItemModal
-        open={showAddItemModal}
-        onOpenChange={setShowAddItemModal}
-        onConfirm={(item, qty, _extraCost) => handleAddItem(item, qty)}
-        items={mockAvailableItems}
-        mappedIds={mappedSubItemIds}
-        currentItemId=""
-        currentLanguage={currentLanguage}
-      />
-
-      <RemoveConfirmModal
-        open={!!removeConfirm}
-        onOpenChange={(open) => !open && setRemoveConfirm(null)}
-        onConfirm={confirmRemove}
-        itemName={removeConfirm?.name || ""}
-        itemType={removeConfirm?.type || "ingredient"}
-      />
-
-      <ItemSaveConfirmModal
-        open={showConfirmModal}
-        onOpenChange={setShowConfirmModal}
-        onConfirm={handleConfirmSave}
-        item={confirmModalItem}
-        isLoading={isSaving}
-      />
-    </div>
+    </>
   );
 }
