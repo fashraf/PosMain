@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ColorVariant = "purple" | "green" | "blue" | "amber" | "muted";
@@ -11,6 +11,8 @@ interface DashedSectionCardProps {
   rightBadge?: ReactNode;
   children: ReactNode;
   className?: string;
+  id?: string;
+  isComplete?: boolean;
 }
 
 const variants: Record<ColorVariant, {
@@ -64,13 +66,16 @@ export function DashedSectionCard({
   rightBadge,
   children,
   className,
+  id,
+  isComplete,
 }: DashedSectionCardProps) {
   const colors = variants[variant];
 
   return (
     <div
+      id={id}
       className={cn(
-        "rounded-xl border-2 border-dashed overflow-hidden shadow-sm",
+        "rounded-xl border-2 border-dashed overflow-hidden shadow-sm scroll-mt-20",
         colors.border,
         className
       )}
@@ -86,7 +91,18 @@ export function DashedSectionCard({
           {Icon && <Icon className={cn("h-4 w-4", colors.iconColor)} strokeWidth={1.5} />}
           <h3 className={cn("text-sm font-semibold", colors.titleColor)}>{title}</h3>
         </div>
-        {rightBadge && <div>{rightBadge}</div>}
+        <div className="flex items-center gap-2">
+          {rightBadge && <div>{rightBadge}</div>}
+          {isComplete !== undefined && (
+            <div className="flex items-center">
+              {isComplete ? (
+                <Check className="h-4 w-4 text-green-600" strokeWidth={2} />
+              ) : (
+                <Circle className="h-4 w-4 text-muted-foreground/50" strokeWidth={1.5} />
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <div className="p-4 bg-white">{children}</div>
     </div>
