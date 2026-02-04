@@ -354,18 +354,42 @@ export default function ItemsAdd() {
   };
 
   const confirmModalItem = useMemo(() => ({
-    name: formData.name_en || "New Item",
+    // Identity
+    name_en: formData.name_en || "New Item",
+    name_ar: formData.name_ar,
+    name_ur: formData.name_ur,
+    description_en: formData.description_en,
     image_url: formData.image_url,
+
+    // Classification
+    item_type: formData.item_type,
     category: CATEGORIES.find((c) => c.id === formData.category)?.label || "",
     subcategories: formData.subcategories.map((id) => SUBCATEGORIES.find((s) => s.id === id)?.label || ""),
-    base_cost: formData.base_cost,
-    calories: formData.calories,
-    prep_time: formData.preparation_time_minutes,
     serving_times: formData.serving_times.map((id) => SERVING_TIMES.find((s) => s.id === id)?.label || ""),
+    
+    // Status
+    is_active: formData.is_active,
+    is_combo: formData.is_combo,
+    base_cost: formData.base_cost,
+
+    // Details
+    prep_time: formData.preparation_time_minutes,
+    calories: formData.calories,
+    highlights: formData.highlights,
+    allergens: formData.allergens,
+
+    // Inventory
+    current_stock: formData.current_stock,
+    low_stock_threshold: formData.low_stock_threshold,
+
+    // Mappings
     ingredientCount: ingredientMappings.length,
     itemCount: subItemMappings.length,
-    isCombo: formData.is_combo,
-  }), [formData, ingredientMappings, subItemMappings]);
+    ingredientMappings: ingredientMappings,
+    itemMappings: subItemMappings,
+    ingredientTotalCost: totalIngredientCost,
+    itemTotalCost: totalSubItemCost,
+  }), [formData, ingredientMappings, subItemMappings, totalIngredientCost, totalSubItemCost]);
 
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
