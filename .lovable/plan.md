@@ -1,100 +1,126 @@
 
-# Ingredient Master Form - Refined Layout Plan
+# Item Add/Edit Page Enhancement - Complete Plan
 
 ## Overview
-Refine the Ingredient Master Add/Edit forms to:
-1. Remove image upload component
-2. Place Ingredient Name (col-6) and Short Description (col-6) side-by-side
-3. Convert all dropdowns to searchable Select2-style using Popover + Command pattern (like reference image)
+Enhance the Item Add/Edit pages (`/items/add` and `/items/:id/edit`) with:
+1. Smaller image upload (50% reduction: 280px -> 140px)
+2. Fix uploaded item not saving (investigate blob URL issue)
+3. Add 2 new mapping cards (Ingredients + Items) - same as Item-Ingredient Mapping page
+4. Quick navigation bar with section anchors
+5. Section completion indicators (tick icons for mandatory fields)
 
 ---
 
 ## Target Layout Design
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│  ← Add Ingredient / Edit Ingredient                                                                   │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ 🥕 Ingredient Basics                                                            [purple header] ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  Ingredient Name * [EN🟢|AR🔴|UR🔴]    │  Short Description [EN🟢|AR🔴|UR🔴]                     ┊  │
-│  ┊  ┌──────────────────────────────────┐   │  ┌──────────────────────────────────────────────────┐  ┊  │
-│  ┊  │ Chicken Breast                   │   │  │ Fresh boneless chicken for grilling             │  ┊  │
-│  ┊  └──────────────────────────────────┘   │  └──────────────────────────────────────────────────┘  ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ 🏷️ Classification                                                               [green header] ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  Type * (Searchable)    │  Unit * (Searchable)   │  Storage * (Searchable)  │  Category/Group  ┊  │
-│  ┊  ┌──🔍 Solid ──────▼ ┐  │  ┌──🔍 KG ──────▼ ┐    │  ┌──🔍 Freezer ───▼ ┐     │  ┌─[Meat ×]───┐   ┊  │
-│  ┊  └───────────────────┘  │  └────────────────┘    │  └────────────────────┘   │  └─────────────┘  ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│  ... (remaining sections unchanged)                                                                    │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  ← Add Item / Edit Item                                                                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐│
+│  │  [📋 Basics ✓] [🏷️ Classification ✓] [⏰ Details ○] [📦 Inventory ○] [🥕 Ingredients ○] [🍕 Items ○]││
+│  └─────────────────────────────────────────────────────────────────────────────────────────────────────┘│
+│                                                                                                         │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 📋 Basic Info                     [✓] ┊  ┊ 📋 Basic Info                                        ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  ┌─────────┐                         ┊  ┊  Item Type    │  Base Cost (SAR)                      ┊  │
+│  ┊  │  📷     │  Name [EN🟢|AR🔴|UR🔴]  ┊  ┊  ┌──────────┐ │  ┌────────────┐                       ┊  │
+│  ┊  │ 140×140 │  ┌──────────────────┐   ┊  ┊  │ Edible ▼ │ │  │ SAR 12.99  │                       ┊  │
+│  ┊  │         │  │ Margherita Pizza │   ┊  ┊  └──────────┘ │  └────────────┘                       ┊  │
+│  ┊  └─────────┘  └──────────────────┘   ┊  ┊                                                       ┊  │
+│  ┊               Description            ┊  ┊  [Switch: Is Combo] [Switch: Active/Inactive]         ┊  │
+│  ┊               ┌──────────────────┐   ┊  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│  ┊               │ Classic pizza... │   ┊                                                            │
+│  ┊               └──────────────────┘   ┊  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  ┊ 🏷️ Classification                              [✓] ┊  │
+│                                            ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  ┊  Category *     │  Subcategory                        ┊  │
+│  ┊ 📦 Inventory                      [○] ┊  ┊  ┌───────────┐ │  ┌───────────────────────────────┐   ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  ┊  │ Veg     ▼ │ │  │ [Pizza ×] [BBQ ×]            │   ┊  │
+│  ┊  Stock Progress Bar + Inputs         ┊  ┊  └───────────┘ │  └───────────────────────────────┘   ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  ┊                                                       ┊  │
+│                                            ┊  Serving Time *: [☑ Breakfast] [☑ Lunch] [☐ Dinner]   ┊  │
+│                                            ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                         │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ ⏰ Details                                                                                    [○] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Prep Time (min) │ Calories (kcal) │ Highlights │ Allergens                                      ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                         │
+│  ════════════════════════════════════════════════════════════════════════════════════════════════════   │
+│  NEW: INGREDIENT & ITEM MAPPING CARDS (50/50 split like /item-ingredient-mapping/1/edit)                │
+│  ════════════════════════════════════════════════════════════════════════════════════════════════════   │
+│                                                                                                         │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮ ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 🥕 Ingredients                           [+] ┊ ┊ 🍕 Items (for Combo)                       [+] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤ ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊ Name         │ Qty    │ Cost                 ┊ ┊ Name        │ Repl │ Qty   │ Combo │ Cost     ┊  │
+│  ├──────────────┼────────┼──────────────────────┤ ├─────────────┼──────┼───────┼───────┼──────────┤  │
+│  ┊ Tomato       │ [−1+]  │ SAR 1.00             ┊ ┊ Soft Drink  │ [3]  │ [−6+] │ 0     │ SAR 15.00┊  │
+│  ┊ Cheese       │ [−1+]  │ SAR 1.80             ┊ ┊ → Cola ★    │      │       │ +0    │          ┊  │
+│  ┊ Olive Oil    │ [−1+]  │ SAR 0.25             ┊ ┊ → Sprite    │      │       │ +1.00 │          ┊  │
+│  ├──────────────┴────────┴──────────────────────┤ ├─────────────┴──────┴───────┴───────┴──────────┤  │
+│  ┊ INGREDIENTS TOTAL           SAR 3.05        ┊ ┊ ITEMS TOTAL                     SAR 61.92     ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯ ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│  (Items section only visible when is_combo = true)                                                      │
+│                                                                                                         │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                        [× Cancel]   [✓ Save Item / Update Item]        │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Key Changes
+## Key Changes Summary
 
 | Feature | Current | New |
 |---------|---------|-----|
-| Image Upload | 280x280 ImageUploadHero on left | **REMOVED** |
-| Name/Description Layout | Stacked vertically (image + inputs) | **Side-by-side (col-6 each)** |
-| Dropdowns | Standard Radix Select | **Searchable Combobox (Popover + Command)** |
+| Image Size | 280×280px | **140×140px** (50% smaller) |
+| Image Saving | Blob URL only (not persisted) | **Note: Requires storage bucket** - will add TODO comment |
+| Ingredient Mapping | Separate page (`/item-ingredient-mapping`) | **Integrated in Item form** |
+| Items Mapping (Combo) | Separate page | **Integrated in Item form** |
+| Navigation | None | **Sticky horizontal nav with section anchors** |
+| Section Completion | Not shown | **Tick icons on headers (✓ complete / ○ incomplete)** |
 
 ---
 
-## Component Changes
+## New Components to Create
 
-### 1. Create Reusable `SearchableSelect.tsx` Component
-
-A new reusable component following the existing pattern from `InventoryItemPicker.tsx`:
+### 1. `SectionNavigationBar.tsx`
+Sticky horizontal navigation bar with:
+- Section chips/pills with icons
+- Completion indicators (✓ for complete, ○ for incomplete)
+- Click to scroll to section (smooth scroll)
+- Visual highlight for active/visible section
 
 ```tsx
-interface SearchableSelectOption {
+interface SectionNavItem {
   id: string;
   label: string;
+  icon: LucideIcon;
+  isComplete: boolean;
+  ref: RefObject<HTMLDivElement>;
 }
 
-interface SearchableSelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: SearchableSelectOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyText?: string;
-  className?: string;
+interface SectionNavigationBarProps {
+  sections: SectionNavItem[];
+  activeSection?: string;
 }
 ```
 
-Features:
-- Uses Popover + Command pattern (like reference image with search icon)
-- Shows selected value in trigger button
-- Searchable dropdown list with keyboard navigation
-- Check icon for selected item
-- ChevronsUpDown indicator
+### 2. Update `DashedSectionCard.tsx`
+Add `id` prop for anchor navigation and completion indicator in header:
 
-### 2. Update `IngredientMasterAdd.tsx`
-
-Section 1 (Basics) changes:
-- Remove `ImageUploadHero` component and `imageUrl` state
-- Change layout from `flex gap-6` to `grid grid-cols-1 md:grid-cols-2 gap-4`
-- Both Name and Description become side-by-side at equal widths
-
-Section 2 (Classification) changes:
-- Replace all `<Select>` components with new `<SearchableSelect>` component
-- Type, Unit, Storage Type all become searchable
-
-### 3. Update `IngredientMasterEdit.tsx`
-
-Apply the same changes as Add page:
-- Remove image upload
-- Side-by-side Name/Description
-- Searchable dropdowns
+```tsx
+interface DashedSectionCardProps {
+  // ...existing props
+  id?: string;             // For scroll anchor
+  isComplete?: boolean;    // Show ✓ or ○ in header
+}
+```
 
 ---
 
@@ -102,93 +128,128 @@ Apply the same changes as Add page:
 
 | Action | File | Purpose |
 |--------|------|---------|
-| CREATE | `src/components/shared/SearchableSelect.tsx` | Reusable searchable dropdown (Select2 style) |
-| MODIFY | `src/pages/inventory/IngredientMasterAdd.tsx` | Remove image, side-by-side layout, searchable selects |
-| MODIFY | `src/pages/inventory/IngredientMasterEdit.tsx` | Same changes as Add page |
+| CREATE | `src/components/shared/SectionNavigationBar.tsx` | Sticky section nav with completion indicators |
+| MODIFY | `src/components/shared/DashedSectionCard.tsx` | Add id prop and completion indicator |
+| MODIFY | `src/components/shared/ImageUploadHero.tsx` | Default size reduction (280 -> 140) |
+| REWRITE | `src/pages/ItemsAdd.tsx` | Add nav, ingredient/item mapping cards, completion logic |
+| REWRITE | `src/pages/ItemsEdit.tsx` | Same changes as Add page |
+| MODIFY | `src/lib/i18n/translations.ts` | Add new translation keys |
 
 ---
 
-## SearchableSelect Component Design
+## Section Completion Logic
 
-Following the reference image style (similar to "Search for company" field):
-
-```tsx
-<Popover open={open} onOpenChange={setOpen}>
-  <PopoverTrigger asChild>
-    <Button
-      variant="outline"
-      role="combobox"
-      aria-expanded={open}
-      className="w-full justify-between h-10"
-    >
-      {selectedLabel || (
-        <span className="text-muted-foreground">{placeholder}</span>
-      )}
-      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent className="w-full p-0" align="start">
-    <Command>
-      <CommandInput placeholder={searchPlaceholder} />
-      <CommandList>
-        <CommandEmpty>{emptyText}</CommandEmpty>
-        <CommandGroup>
-          {options.map((option) => (
-            <CommandItem
-              key={option.id}
-              value={option.label}
-              onSelect={() => {
-                onChange(option.id);
-                setOpen(false);
-              }}
-            >
-              <Check className={cn("mr-2 h-4 w-4", value === option.id ? "opacity-100" : "opacity-0")} />
-              {option.label}
-            </CommandItem>
-          ))}
-        </CommandGroup>
-      </CommandList>
-    </Command>
-  </PopoverContent>
-</Popover>
-```
+| Section | Mandatory Fields | Complete When |
+|---------|-----------------|---------------|
+| Basic Info | `name_en` | Name is filled |
+| Classification | `category`, `serving_times` | Category selected AND at least 1 serving time |
+| Details | None mandatory | Always shows ○ (optional section) |
+| Inventory | None mandatory | Always shows ○ (optional section) |
+| Ingredients | None mandatory | Shows ✓ when at least 1 ingredient mapped |
+| Items (Combo) | None mandatory | Shows ✓ when at least 1 item mapped (only for combos) |
 
 ---
 
-## Basics Section Layout Change
+## Navigation Bar Design
 
-Before:
 ```tsx
-<div className="flex gap-6">
-  <div className="flex-shrink-0">
-    <ImageUploadHero value={imageUrl} onChange={setImageUrl} size={280} />
-  </div>
-  <div className="flex-1 flex flex-col gap-4">
-    <MultiLanguageInputWithIndicators label="Name" ... />
-    <MultiLanguageInputWithIndicators label="Description" ... />
+// Compact horizontal bar, sticky below header
+<div className="sticky top-0 z-20 bg-background border-b">
+  <div className="flex items-center gap-2 p-2 overflow-x-auto">
+    {sections.map(section => (
+      <button
+        key={section.id}
+        onClick={() => scrollToSection(section.id)}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm",
+          "border transition-colors whitespace-nowrap",
+          activeSection === section.id 
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-muted/50 border-border hover:bg-muted"
+        )}
+      >
+        <section.icon className="h-4 w-4" />
+        <span>{section.label}</span>
+        {section.isComplete ? (
+          <Check className="h-3.5 w-3.5 text-green-500" />
+        ) : (
+          <Circle className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
+      </button>
+    ))}
   </div>
 </div>
 ```
 
-After:
+---
+
+## Ingredient/Item Mapping Integration
+
+### State Structure
 ```tsx
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <MultiLanguageInputWithIndicators label="Ingredient Name" required singleLine ... />
-  <MultiLanguageInputWithIndicators label="Short Description" singleLine ... />
-</div>
+// Add to formData state
+const [ingredientMappings, setIngredientMappings] = useState<IngredientMappingItem[]>([]);
+const [subItemMappings, setSubItemMappings] = useState<SubItemMappingItem[]>([]);
+
+// Modal states
+const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
+const [showAddItemModal, setShowAddItemModal] = useState(false);
+const [removeConfirm, setRemoveConfirm] = useState<{...} | null>(null);
+```
+
+### Mapping Section Layout
+- Full width section below Details
+- 50/50 split grid: Ingredients (left) | Items (right)
+- Reuse existing `IngredientTable` and `ItemTable` components
+- Reuse existing `AddIngredientModal` and `AddItemModal` components
+- Items section only visible when `is_combo = true`
+
+---
+
+## Image Upload Fix
+
+The current `ImageUploadHero` creates a blob URL which is temporary and not persisted. To properly save images:
+
+1. **Short-term (this implementation)**: Keep blob URL for preview, add clear TODO comment about storage requirement
+2. **Future**: Integrate with Lovable Cloud Storage to upload and store images
+
+```tsx
+// ImageUploadHero.tsx - reduce default size
+size = 140 // Changed from 200
+
+// Add comment about persistence
+<p className="text-[11px] text-muted-foreground mt-2 text-center">
+  {/* TODO: Connect to storage bucket for persistence */}
+  Image preview only (requires storage setup)
+</p>
 ```
 
 ---
 
-## Implementation Order
+## Translation Keys to Add
 
-1. **Create `SearchableSelect.tsx`** - New reusable component for searchable dropdowns
-2. **Update `IngredientMasterAdd.tsx`**:
-   - Remove ImageUploadHero import and usage
-   - Remove imageUrl state
-   - Update Basics section to grid layout
-   - Replace Select with SearchableSelect for Type, Unit, Storage Type
-3. **Update `IngredientMasterEdit.tsx`** - Apply identical changes
+```typescript
+items: {
+  // Navigation
+  sectionNavigation: "Section Navigation",
+  jumpToSection: "Jump to section",
+  
+  // Completion
+  sectionComplete: "Section complete",
+  sectionIncomplete: "Section incomplete",
+  
+  // Mapping sections
+  ingredientMapping: "Ingredients",
+  itemMapping: "Items",
+  noIngredientsAdded: "No ingredients added yet",
+  noItemsAdded: "No items added yet",
+  addIngredientToItem: "Add ingredients to define the recipe",
+  addItemToCombo: "Add items to build the combo",
+  
+  // Preview message
+  imagePreviewOnly: "Image preview only",
+},
+```
 
 ---
 
@@ -196,10 +257,56 @@ After:
 
 | Element | Value |
 |---------|-------|
-| Name field width | `col-6` (50%) |
-| Description field width | `col-6` (50%) |
-| Grid gap | `gap-4` (16px) |
-| Input height | `h-10` (40px) |
-| Dropdown trigger | Outline button with ChevronsUpDown icon |
-| Search input | CommandInput with search icon |
-| Selected indicator | Check icon (like reference image) |
+| Image size | **140×140px** (was 280px) |
+| Nav bar height | `h-12` (48px) |
+| Nav pill padding | `px-3 py-1.5` |
+| Nav pill radius | `rounded-full` |
+| Completion icon size | `h-3.5 w-3.5` |
+| Mapping grid | `grid-cols-1 md:grid-cols-2` |
+| Section gap | `gap-5` |
+
+---
+
+## Implementation Order
+
+1. **Update `ImageUploadHero.tsx`** - Reduce default size to 140px
+2. **Create `SectionNavigationBar.tsx`** - New navigation component
+3. **Update `DashedSectionCard.tsx`** - Add id and isComplete props
+4. **Rewrite `ItemsAdd.tsx`**:
+   - Add section refs for scroll navigation
+   - Add completion calculation logic
+   - Add navigation bar
+   - Add ingredient/item mapping state and modals
+   - Add mapping section (50/50 grid)
+   - Reduce image size prop to 140
+5. **Rewrite `ItemsEdit.tsx`** - Mirror all Add page changes with pre-fill
+6. **Update translations** - Add new keys
+
+---
+
+## Mock Data for Mapping
+
+Reuse the same mock data structure from `ItemIngredientMappingEdit.tsx`:
+
+```tsx
+const mockAvailableIngredients: AvailableIngredient[] = [
+  { id: "1", name_en: "Tomato", ... },
+  { id: "2", name_en: "Cheese", ... },
+  // etc.
+];
+
+const mockAvailableItems: AvailableItem[] = [
+  { id: "1", name_en: "Margherita Pizza", ... },
+  { id: "2", name_en: "Chicken Burger", ... },
+  // etc.
+];
+```
+
+---
+
+## Technical Notes
+
+1. **Scroll to Section**: Use `element.scrollIntoView({ behavior: 'smooth', block: 'start' })` with offset for sticky header
+2. **Active Section Detection**: Use `IntersectionObserver` to detect which section is visible
+3. **Completion State**: Calculate in real-time using `useMemo` based on form state
+4. **Image Persistence**: Currently blob URLs only - requires storage bucket integration for actual persistence (out of scope for this task, will add TODO)
