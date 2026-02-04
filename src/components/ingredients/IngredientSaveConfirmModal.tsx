@@ -24,6 +24,7 @@ interface IngredientSaveConfirmModalProps {
   onConfirm: () => void;
   ingredient: IngredientSummary;
   isLoading?: boolean;
+  isEditMode?: boolean;
 }
 
 export function IngredientSaveConfirmModal({
@@ -32,8 +33,21 @@ export function IngredientSaveConfirmModal({
   onConfirm,
   ingredient,
   isLoading,
+  isEditMode = false,
 }: IngredientSaveConfirmModalProps) {
   const { t } = useLanguage();
+
+  const title = isEditMode
+    ? (t("ingredients.updated") || "Updated!")
+    : (t("ingredients.perfectReady") || "Perfect!");
+  
+  const message = isEditMode
+    ? (t("ingredients.readyToApply") || "Ready to apply changes?")
+    : (t("ingredients.readyToSaveIngredient") || "Ready to save this ingredient?");
+
+  const buttonText = isEditMode
+    ? (t("common.update") || "Update")
+    : (t("items.yesSave") || "Yes, Save");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,10 +57,10 @@ export function IngredientSaveConfirmModal({
             <Carrot className="h-7 w-7 text-green-600" />
           </div>
           <DialogTitle className="text-xl font-semibold">
-            {t("ingredients.greatChoice")} 🥕
+            {title} 🥕
           </DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            {t("ingredients.readyToSaveIngredient")}
+            {message}
           </p>
         </DialogHeader>
 
@@ -113,7 +127,7 @@ export function IngredientSaveConfirmModal({
             className="flex-1 bg-green-600 hover:bg-green-700"
           >
             <Check className="h-4 w-4 me-1.5" />
-            {isLoading ? t("common.loading") : t("items.yesSave")}
+            {isLoading ? t("common.loading") : buttonText}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Carrot,
   Tag,
@@ -72,13 +72,15 @@ const INGREDIENT_CATEGORIES = [
   { id: "bakery", label: "Bakery Items" },
 ];
 
-export default function IngredientMasterAdd() {
+export default function IngredientMasterEdit() {
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
+  const { id } = useParams();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -118,6 +120,41 @@ export default function IngredientMasterAdd() {
     is_active: true,
   });
 
+  // Load mock data for editing (replace with Supabase fetch later)
+  useEffect(() => {
+    if (id) {
+      // Mock data - in real implementation, fetch from Supabase
+      setTimeout(() => {
+        setFormData({
+          name_en: "Chicken Breast",
+          name_ar: "صدر دجاج",
+          name_ur: "چکن بریسٹ",
+          description_en: "Fresh boneless chicken breast for grilling",
+          description_ar: "صدر دجاج طازج بدون عظم للشوي",
+          description_ur: "گرلنگ کے لیے تازہ بون لیس چکن بریسٹ",
+          ingredient_type: "solid",
+          unit: "kg",
+          storage_type: "fridge",
+          categories: ["meat_poultry"],
+          min_stock_alert: 15,
+          shelf_life_days: 5,
+          reorder_point: 20,
+          current_stock: 68,
+          max_stock: 100,
+          cost_price: 25.5,
+          selling_price: 35.0,
+          can_purchase: true,
+          will_return_on_cancel: false,
+          yield_percentage: 85,
+          allergens: [],
+          supplier: "Fresh Poultry Co.",
+          is_active: true,
+        });
+        setIsLoading(false);
+      }, 500);
+    }
+  }, [id]);
+
   const handleNameChange = (lang: "en" | "ar" | "ur", value: string) => {
     setFormData((prev) => ({ ...prev, [`name_${lang}`]: value }));
   };
@@ -155,7 +192,7 @@ export default function IngredientMasterAdd() {
 
     toast({
       title: t("common.success") || "Success",
-      description: t("inventory.ingredientCreated"),
+      description: t("inventory.itemUpdated") || "Ingredient updated successfully",
     });
     navigate("/inventory/ingredients");
   };
@@ -179,6 +216,14 @@ export default function IngredientMasterAdd() {
     costPrice: formData.cost_price,
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-muted-foreground">{t("common.loading")}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 pb-24">
       {/* Header */}
@@ -186,7 +231,7 @@ export default function IngredientMasterAdd() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/inventory/ingredients")}>
           <BackIcon className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold text-foreground">{t("inventory.addIngredient")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("ingredients.editIngredient") || "Edit Ingredient"}</h1>
       </div>
 
       {/* Section 1: Ingredient Basics (Purple) - Image + Name/Description */}
@@ -504,7 +549,7 @@ export default function IngredientMasterAdd() {
           </Button>
           <Button size="sm" onClick={handleSaveClick} disabled={isSaving}>
             <Save className="h-4 w-4 me-1" />
-            {t("common.save")}
+            {t("common.update") || "Update"}
           </Button>
         </div>
       </div>
@@ -516,7 +561,7 @@ export default function IngredientMasterAdd() {
         onConfirm={handleConfirmSave}
         ingredient={ingredientSummary}
         isLoading={isSaving}
-        isEditMode={false}
+        isEditMode={true}
       />
     </div>
   );

@@ -8,6 +8,7 @@ interface MultiLanguageInputWithIndicatorsProps {
   values: { en: string; ar: string; ur: string };
   onChange: (lang: "en" | "ar" | "ur", value: string) => void;
   multiline?: boolean;
+  singleLine?: boolean;
   required?: boolean;
   placeholder?: string;
 }
@@ -23,12 +24,14 @@ export function MultiLanguageInputWithIndicators({
   values,
   onChange,
   multiline = false,
+  singleLine = false,
   required = false,
   placeholder,
 }: MultiLanguageInputWithIndicatorsProps) {
   const [activeLang, setActiveLang] = useState<"en" | "ar" | "ur">("en");
 
-  const InputComponent = multiline ? Textarea : Input;
+  // If singleLine is true, always use Input regardless of multiline
+  const InputComponent = singleLine ? Input : (multiline ? Textarea : Input);
 
   return (
     <div className="space-y-1.5">
@@ -46,7 +49,7 @@ export function MultiLanguageInputWithIndicators({
                 type="button"
                 onClick={() => setActiveLang(lang.code)}
                 className={cn(
-                  "px-1.5 py-0.5 text-[11px] font-medium rounded transition-colors",
+                  "px-1.5 py-0.5 text-[12px] font-medium rounded transition-colors",
                   activeLang === lang.code
                     ? "bg-primary/10 text-primary"
                     : "hover:bg-muted",
@@ -68,7 +71,7 @@ export function MultiLanguageInputWithIndicators({
         dir={LANGUAGES.find((l) => l.code === activeLang)?.dir}
         className={cn(
           "h-10",
-          multiline && "min-h-[80px] resize-none"
+          !singleLine && multiline && "min-h-[80px] resize-none"
         )}
       />
     </div>

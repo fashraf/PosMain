@@ -34,6 +34,7 @@ import ItemMasterAdd from "@/pages/inventory/ItemMasterAdd";
 import ItemMasterEdit from "@/pages/inventory/ItemMasterEdit";
 import IngredientMaster from "@/pages/inventory/IngredientMaster";
 import IngredientMasterAdd from "@/pages/inventory/IngredientMasterAdd";
+import IngredientMasterEdit from "@/pages/inventory/IngredientMasterEdit";
 import StockIssue from "@/pages/inventory/StockIssue";
 import StockTransfer from "@/pages/inventory/StockTransfer";
 import StockAdjustment from "@/pages/inventory/StockAdjustment";
@@ -86,6 +87,7 @@ const App = () => (
                       <Route path="/inventory/items/:id/edit" element={<ItemMasterEdit />} />
                       <Route path="/inventory/ingredients" element={<IngredientMaster />} />
                       <Route path="/inventory/ingredients/add" element={<IngredientMasterAdd />} />
+                      <Route path="/inventory/ingredients/:id/edit" element={<IngredientMasterEdit />} />
                       <Route path="/inventory/operations/issue" element={<StockIssue />} />
                       <Route path="/inventory/operations/transfer" element={<StockTransfer />} />
                       <Route path="/inventory/operations/adjustment" element={<StockAdjustment />} />

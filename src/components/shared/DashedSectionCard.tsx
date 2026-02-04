@@ -8,6 +8,7 @@ interface DashedSectionCardProps {
   title: string;
   icon?: LucideIcon;
   variant?: ColorVariant;
+  rightBadge?: ReactNode;
   children: ReactNode;
   className?: string;
 }
@@ -60,6 +61,7 @@ export function DashedSectionCard({
   title,
   icon: Icon,
   variant = "purple",
+  rightBadge,
   children,
   className,
 }: DashedSectionCardProps) {
@@ -68,20 +70,23 @@ export function DashedSectionCard({
   return (
     <div
       className={cn(
-        "rounded-xl border-2 border-dashed overflow-hidden",
+        "rounded-xl border-2 border-dashed overflow-hidden shadow-sm",
         colors.border,
         className
       )}
     >
       <div
         className={cn(
-          "px-4 py-2.5 border-b border-dashed flex items-center gap-2",
+          "px-4 py-2.5 border-b border-dashed flex items-center justify-between",
           colors.headerBg,
           colors.headerBorder
         )}
       >
-        {Icon && <Icon className={cn("h-4 w-4", colors.iconColor)} strokeWidth={1.5} />}
-        <h3 className={cn("text-sm font-semibold", colors.titleColor)}>{title}</h3>
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className={cn("h-4 w-4", colors.iconColor)} strokeWidth={1.5} />}
+          <h3 className={cn("text-sm font-semibold", colors.titleColor)}>{title}</h3>
+        </div>
+        {rightBadge && <div>{rightBadge}</div>}
       </div>
       <div className="p-4 bg-white">{children}</div>
     </div>

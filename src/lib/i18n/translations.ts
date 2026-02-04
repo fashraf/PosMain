@@ -224,6 +224,9 @@ export const translations = {
       back: "Back",
       select: "Select",
       optional: "optional",
+      update: "Update",
+      success: "Success",
+      error: "Error",
     },
     // Auth
     auth: {
@@ -432,8 +435,12 @@ export const translations = {
       bakeryItems: "Bakery Items",
       // Confirmation modal
       greatChoice: "Great Choice!",
+      perfectReady: "Perfect!",
       readyToSaveIngredient: "Ready to save this ingredient?",
+      updated: "Updated!",
+      readyToApply: "Ready to apply changes?",
       availableForRecipes: "It will be available for recipes & items.",
+      ingredientBasics: "Ingredient Basics",
       // Tooltips
       minStockTooltip: "Trigger low-stock notification when quantity falls below this level",
       shelfLifeTooltip: "Typical days before expiry/spoilage (used for FIFO & waste prevention)",
