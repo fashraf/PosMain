@@ -466,6 +466,15 @@ export const translations = {
       highlightsTooltip: "Comma-separated keywords that describe this item's special qualities.",
       // Combo
       comboTooltip: "Combo = bundle of 2+ items at special price. Category & subcategory become non-editable after save.",
+      // Inventory
+      inventory: "Inventory",
+      currentStock: "Current Stock",
+      lowStockThreshold: "Low Stock Threshold",
+      stockAvailable: "Available",
+      // Combo items
+      comboItems: "Combo Items",
+      itemsInCombo: "Items in this Combo",
+      noComboItems: "No items in this combo yet.",
       // Confirmation modal
       looksDelicious: "Looks Delicious!",
       readyToSave: "Ready to save this item?",
