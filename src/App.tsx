@@ -40,7 +40,16 @@ import StockTransfer from "@/pages/inventory/StockTransfer";
 import StockAdjustment from "@/pages/inventory/StockAdjustment";
 import BatchExpiry from "@/pages/inventory/BatchExpiry";
 import ReportsAlerts from "@/pages/inventory/ReportsAlerts";
-
+// Maintenance Module
+import CategoriesPage from "@/pages/maintenance/Categories";
+import SubcategoriesPage from "@/pages/maintenance/Subcategories";
+import ServingTimesPage from "@/pages/maintenance/ServingTimes";
+import AllergensPage from "@/pages/maintenance/Allergens";
+import ItemTypesPage from "@/pages/maintenance/ItemTypes";
+import ClassificationTypesPage from "@/pages/maintenance/ClassificationTypes";
+import UnitsPage from "@/pages/maintenance/Units";
+import StorageTypesPage from "@/pages/maintenance/StorageTypes";
+import IngredientGroupsPage from "@/pages/maintenance/IngredientGroups";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -93,6 +102,16 @@ const App = () => (
                       <Route path="/inventory/operations/adjustment" element={<StockAdjustment />} />
                       <Route path="/inventory/batch-expiry" element={<BatchExpiry />} />
                       <Route path="/inventory/reports" element={<ReportsAlerts />} />
+                      {/* Maintenance Module Routes */}
+                      <Route path="/maintenance/categories" element={<CategoriesPage />} />
+                      <Route path="/maintenance/subcategories" element={<SubcategoriesPage />} />
+                      <Route path="/maintenance/serving-times" element={<ServingTimesPage />} />
+                      <Route path="/maintenance/allergens" element={<AllergensPage />} />
+                      <Route path="/maintenance/item-types" element={<ItemTypesPage />} />
+                      <Route path="/maintenance/classification-types" element={<ClassificationTypesPage />} />
+                      <Route path="/maintenance/units" element={<UnitsPage />} />
+                      <Route path="/maintenance/storage-types" element={<StorageTypesPage />} />
+                      <Route path="/maintenance/ingredient-groups" element={<IngredientGroupsPage />} />
                       {/* Catch-all for 404 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

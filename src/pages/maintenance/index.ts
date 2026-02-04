@@ -1,0 +1,9 @@
+export { default as CategoriesPage } from "./Categories";
+export { default as SubcategoriesPage } from "./Subcategories";
+export { default as ServingTimesPage } from "./ServingTimes";
+export { default as AllergensPage } from "./Allergens";
+export { default as ItemTypesPage } from "./ItemTypes";
+export { default as ClassificationTypesPage } from "./ClassificationTypes";
+export { default as UnitsPage } from "./Units";
+export { default as StorageTypesPage } from "./StorageTypes";
+export { default as IngredientGroupsPage } from "./IngredientGroups";
