@@ -13,21 +13,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FormSectionCard } from "@/components/shared/FormSectionCard";
-import { FormField } from "@/components/shared/FormField";
-import { FormRow } from "@/components/shared/FormRow";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
+import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
+import { MultiSelectBadges } from "@/components/shared/MultiSelectBadges";
 import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
-import { CheckboxGroup } from "@/components/shared/CheckboxGroup";
 import { AllergenPicker, type AllergenType } from "@/components/shared/AllergenPicker";
-import { ConfirmChangesModal, type Change } from "@/components/shared/ConfirmChangesModal";
-import { ArrowLeft, ArrowRight, Save, X, ImageIcon, Upload, FileText, Tags, Clock, Image } from "lucide-react";
+import { ItemSaveConfirmModal } from "@/components/items/ItemSaveConfirmModal";
+import { TooltipInfo } from "@/components/shared/TooltipInfo";
+import { ArrowLeft, ArrowRight, Save, X, FileText, Tags, Clock, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const mockCategories = [
-  { id: "1", name_en: "Breakfast" },
-  { id: "2", name_en: "Lunch Specials" },
-  { id: "3", name_en: "Dinner" },
-  { id: "4", name_en: "Snacks" },
+// Category options
+const CATEGORIES = [
+  { id: "vegetarian", label: "Vegetarian" },
+  { id: "non_vegetarian", label: "Non-Vegetarian" },
+  { id: "drinks", label: "Drinks" },
+  { id: "sheesha", label: "Sheesha" },
+  { id: "desserts", label: "Desserts" },
+];
+
+// Subcategory options
+const SUBCATEGORIES = [
+  { id: "seafood", label: "Sea Food" },
+  { id: "pancake", label: "Pan Cake" },
+  { id: "pizza", label: "Pizza" },
+  { id: "soft_drinks", label: "Soft Drinks" },
+  { id: "tea_coffee", label: "Tea and Coffee" },
+  { id: "bbq", label: "BBQ" },
+  { id: "shawarma", label: "Shawarma" },
+  { id: "smoking_zone", label: "Smoking Zone" },
+];
+
+// Serving time options
+const SERVING_TIMES = [
+  { id: "breakfast", label: "Breakfast" },
+  { id: "lunch", label: "Lunch Specials" },
+  { id: "dinner", label: "Dinner" },
+  { id: "snacks", label: "Snacks" },
 ];
 
 const mockItems = [
@@ -44,10 +67,13 @@ const mockItems = [
     is_combo: false, 
     image_url: null, 
     is_active: true,
-    categories: ["2", "3"],
+    category: "non_vegetarian",
+    subcategories: ["pizza"],
+    serving_times: ["lunch", "dinner"],
     preparation_time_minutes: 20,
     allergens: ["dairy", "gluten"] as AllergenType[],
     calories: 850,
+    highlights: "Crispy, Fresh, Authentic",
   },
   { 
     id: "2", 
@@ -62,10 +88,13 @@ const mockItems = [
     is_combo: false, 
     image_url: null, 
     is_active: true,
-    categories: ["2"],
+    category: "non_vegetarian",
+    subcategories: ["bbq"],
+    serving_times: ["lunch", "dinner"],
     preparation_time_minutes: 15,
     allergens: ["gluten", "eggs"] as AllergenType[],
     calories: 650,
+    highlights: "Juicy, Grilled",
   },
 ];
 
@@ -75,7 +104,7 @@ export default function ItemsEdit() {
   const { id } = useParams();
   const { toast } = useToast();
 
-  const [initialData, setInitialData] = useState({
+  const [formData, setFormData] = useState({
     name_en: "",
     name_ar: "",
     name_ur: "",
@@ -87,20 +116,22 @@ export default function ItemsEdit() {
     is_combo: false,
     image_url: null as string | null,
     is_active: true,
-    categories: [] as string[],
+    category: "",
+    subcategories: [] as string[],
+    serving_times: [] as string[],
     preparation_time_minutes: 15,
     allergens: [] as AllergenType[],
     calories: null as number | null,
+    highlights: "",
   });
 
-  const [formData, setFormData] = useState({ ...initialData });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const item = mockItems.find((i) => i.id === id);
     if (item) {
-      const data = {
+      setFormData({
         name_en: item.name_en,
         name_ar: item.name_ar,
         name_ur: item.name_ur,
@@ -112,13 +143,14 @@ export default function ItemsEdit() {
         is_combo: item.is_combo,
         image_url: item.image_url,
         is_active: item.is_active,
-        categories: item.categories,
+        category: item.category,
+        subcategories: item.subcategories,
+        serving_times: item.serving_times,
         preparation_time_minutes: item.preparation_time_minutes,
         allergens: item.allergens,
         calories: item.calories,
-      };
-      setInitialData(data);
-      setFormData(data);
+        highlights: item.highlights,
+      });
     }
   }, [id]);
 
@@ -130,45 +162,26 @@ export default function ItemsEdit() {
     setFormData((prev) => ({ ...prev, [`description_${lang}`]: value }));
   };
 
-  const categoryOptions = mockCategories.map((cat) => ({
-    id: cat.id,
-    label: cat.name_en,
-  }));
-
-  const getChanges = useMemo((): Change[] => {
-    const changes: Change[] = [];
-    if (formData.name_en !== initialData.name_en) changes.push({ field: t("common.name") + " (EN)", oldValue: initialData.name_en, newValue: formData.name_en });
-    if (formData.name_ar !== initialData.name_ar) changes.push({ field: t("common.name") + " (AR)", oldValue: initialData.name_ar, newValue: formData.name_ar });
-    if (formData.name_ur !== initialData.name_ur) changes.push({ field: t("common.name") + " (UR)", oldValue: initialData.name_ur, newValue: formData.name_ur });
-    if (formData.item_type !== initialData.item_type) changes.push({ field: t("items.itemType"), oldValue: initialData.item_type === "edible" ? t("items.edible") : t("items.nonEdible"), newValue: formData.item_type === "edible" ? t("items.edible") : t("items.nonEdible") });
-    if (formData.base_cost !== initialData.base_cost) changes.push({ field: t("items.baseCost"), oldValue: `$${initialData.base_cost.toFixed(2)}`, newValue: `$${formData.base_cost.toFixed(2)}` });
-    if (formData.is_combo !== initialData.is_combo) changes.push({ field: t("items.isCombo"), oldValue: initialData.is_combo ? t("common.yes") : t("common.no"), newValue: formData.is_combo ? t("common.yes") : t("common.no") });
-    
-    if (JSON.stringify(formData.categories) !== JSON.stringify(initialData.categories)) {
-      const oldCats = initialData.categories.map(id => mockCategories.find(c => c.id === id)?.name_en).filter(Boolean).join(", ");
-      const newCats = formData.categories.map(id => mockCategories.find(c => c.id === id)?.name_en).filter(Boolean).join(", ");
-      changes.push({ field: t("items.categories"), oldValue: oldCats || "None", newValue: newCats || "None" });
-    }
-    
-    if (formData.preparation_time_minutes !== initialData.preparation_time_minutes) {
-      changes.push({ field: t("items.preparationTime"), oldValue: `${initialData.preparation_time_minutes} min`, newValue: `${formData.preparation_time_minutes} min` });
-    }
-    
-    if (JSON.stringify(formData.allergens) !== JSON.stringify(initialData.allergens)) {
-      changes.push({ field: t("items.allergens"), oldValue: initialData.allergens.join(", ") || "None", newValue: formData.allergens.join(", ") || "None" });
-    }
-    
-    if (formData.calories !== initialData.calories) {
-      changes.push({ field: t("items.calories"), oldValue: initialData.calories ? `${initialData.calories} kcal` : "Not set", newValue: formData.calories ? `${formData.calories} kcal` : "Not set" });
-    }
-    
-    if (formData.is_active !== initialData.is_active) changes.push({ field: t("common.status"), oldValue: initialData.is_active ? t("common.active") : t("common.inactive"), newValue: formData.is_active ? t("common.active") : t("common.inactive") });
-    return changes;
-  }, [formData, initialData, t]);
+  const handleServingTimeToggle = (timeId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      serving_times: prev.serving_times.includes(timeId)
+        ? prev.serving_times.filter((t) => t !== timeId)
+        : [...prev.serving_times, timeId],
+    }));
+  };
 
   const handleSave = () => {
     if (!formData.name_en) {
       toast({ title: "Validation Error", description: "Please fill in required fields.", variant: "destructive" });
+      return;
+    }
+    if (!formData.category) {
+      toast({ title: "Validation Error", description: "Please select a category.", variant: "destructive" });
+      return;
+    }
+    if (formData.serving_times.length === 0) {
+      toast({ title: "Validation Error", description: "Please select at least one serving time.", variant: "destructive" });
       return;
     }
     setShowConfirmModal(true);
@@ -184,10 +197,22 @@ export default function ItemsEdit() {
     }, 500);
   };
 
+  const confirmModalItem = useMemo(() => ({
+    name: formData.name_en,
+    image_url: formData.image_url,
+    category: CATEGORIES.find((c) => c.id === formData.category)?.label || "",
+    subcategories: formData.subcategories.map((id) => SUBCATEGORIES.find((s) => s.id === id)?.label || ""),
+    base_cost: formData.base_cost,
+    calories: formData.calories,
+    prep_time: formData.preparation_time_minutes,
+    serving_times: formData.serving_times.map((id) => SERVING_TIMES.find((s) => s.id === id)?.label || ""),
+  }), [formData]);
+
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="space-y-3 pb-20">
+    <div className="space-y-5 pb-24 max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/items")}>
           <BackIcon className="h-5 w-5" />
@@ -195,134 +220,240 @@ export default function ItemsEdit() {
         <h1 className="text-xl font-semibold text-foreground">{t("items.editItem")}</h1>
       </div>
 
-      {/* Basic Info */}
-      <FormSectionCard title={t("branches.basicInfo")} icon={FileText}>
-        <FormRow columns={2}>
-          <FormField label={t("items.itemName")} required>
-            <CompactMultiLanguageInput
-              label=""
-              values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
-              onChange={handleNameChange}
-            />
-          </FormField>
-          <FormField label={t("items.itemType")}>
-            <Select value={formData.item_type} onValueChange={(value: "edible" | "non_edible") => setFormData((prev) => ({ ...prev, item_type: value }))}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="edible">{t("items.edible")}</SelectItem>
-                <SelectItem value="non_edible">{t("items.nonEdible")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormField>
-        </FormRow>
+      {/* Hero Image Upload */}
+      <ImageUploadHero
+        value={formData.image_url}
+        onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
+        size={200}
+      />
 
-        <FormRow divider>
-          <FormField label={t("common.description")} className="col-span-full">
+      {/* Basic Information Section */}
+      <DashedSectionCard title={t("items.basicInformation")} icon={FileText} variant="purple">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <Label className="text-sm font-medium mb-1.5 block">
+                {t("items.itemName")} <span className="text-destructive">*</span>
+              </Label>
+              <CompactMultiLanguageInput
+                label=""
+                values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
+                onChange={handleNameChange}
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">{t("items.itemType")}</Label>
+              <Select
+                value={formData.item_type}
+                onValueChange={(value: "edible" | "non_edible") =>
+                  setFormData((prev) => ({ ...prev, item_type: value }))
+                }
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="edible">{t("items.edible")}</SelectItem>
+                  <SelectItem value="non_edible">{t("items.nonEdible")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">{t("items.baseCost")} (SAR)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.base_cost}
+                onChange={(e) => setFormData((prev) => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))}
+                className="h-10"
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">{t("common.description")}</Label>
             <CompactMultiLanguageInput
               label=""
               values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
               onChange={handleDescriptionChange}
               multiline
             />
-          </FormField>
-        </FormRow>
-
-        <FormRow columns={3} divider>
-          <FormField label={t("items.baseCost")}>
-            <Input type="number" min="0" step="0.01" value={formData.base_cost} onChange={(e) => setFormData((prev) => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))} className="h-9" />
-          </FormField>
-
-          <div className="flex items-center gap-2 pt-5">
-            <Switch id="isCombo" checked={formData.is_combo} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))} />
-            <Label htmlFor="isCombo" className="text-sm font-normal">{t("items.isCombo")}</Label>
           </div>
 
-          <div className="flex items-center gap-2 pt-5">
-            <Switch id="status" checked={formData.is_active} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))} />
-            <Label htmlFor="status" className="text-sm font-normal">{formData.is_active ? t("common.active") : t("common.inactive")}</Label>
+          <div className="flex flex-wrap items-center gap-6 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="isCombo"
+                checked={formData.is_combo}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))}
+              />
+              <Label htmlFor="isCombo" className="text-sm font-normal flex items-center gap-1">
+                {t("items.isCombo")}
+                <TooltipInfo content={t("items.comboTooltip")} />
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="status"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
+              />
+              <Label htmlFor="status" className="text-sm font-normal">
+                {formData.is_active ? t("common.active") : t("common.inactive")}
+              </Label>
+            </div>
           </div>
-        </FormRow>
-      </FormSectionCard>
-
-      {/* Categories */}
-      <FormSectionCard title={t("items.categories")} icon={Tags}>
-        <CheckboxGroup
-          label={t("items.assignCategories")}
-          options={categoryOptions}
-          value={formData.categories}
-          onChange={(cats) => setFormData((prev) => ({ ...prev, categories: cats }))}
-          columns={4}
-        />
-      </FormSectionCard>
-
-      {/* Preparation & Nutrition */}
-      <FormSectionCard title={t("items.preparationAndNutrition")} icon={Clock}>
-        <FormRow columns={2}>
-          <FormField label={t("items.preparationTimeMinutes")} tooltip={t("tooltips.preparationTime")}>
-            <div className="relative max-w-[150px]">
-              <Input
-                type="number"
-                min="0"
-                value={formData.preparation_time_minutes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, preparation_time_minutes: parseInt(e.target.value) || 0 }))}
-                className="pe-10 h-9"
-              />
-              <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">min</span>
-            </div>
-          </FormField>
-
-          <FormField label={t("items.calories")} tooltip={t("tooltips.calories")}>
-            <div className="relative max-w-[150px]">
-              <Input
-                type="number"
-                min="0"
-                value={formData.calories ?? ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value ? parseInt(e.target.value) : null }))}
-                placeholder="Optional"
-                className="pe-10 h-9"
-              />
-              <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">kcal</span>
-            </div>
-          </FormField>
-        </FormRow>
-
-        <div className="border-t pt-3 mt-3">
-          <AllergenPicker
-            label={t("items.allergens")}
-            value={formData.allergens}
-            onChange={(allergens) => setFormData((prev) => ({ ...prev, allergens }))}
-            tooltip={t("tooltips.allergens")}
-          />
         </div>
-      </FormSectionCard>
+      </DashedSectionCard>
 
-      {/* Image */}
-      <FormSectionCard title={t("items.image")} icon={Image}>
-        <div className="border-2 border-dashed border-muted rounded-lg p-4 flex flex-col items-center justify-center gap-2">
-          {formData.image_url ? (
-            <img src={formData.image_url} alt="Preview" className="h-20 w-20 object-cover rounded-lg" />
-          ) : (
-            <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
-              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+      {/* Classification Section */}
+      <DashedSectionCard title={t("items.classification")} icon={Tags} variant="green">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">
+                {t("items.category")} <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder={t("items.selectCategory")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-          <Button variant="outline" size="sm" disabled>
-            <Upload className="h-4 w-4 me-1" />
-            {t("items.uploadImage")}
-          </Button>
-          <p className="text-xs text-muted-foreground">Image upload coming soon</p>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">{t("items.subcategory")}</Label>
+              <MultiSelectBadges
+                options={SUBCATEGORIES}
+                value={formData.subcategories}
+                onChange={(value) => setFormData((prev) => ({ ...prev, subcategories: value }))}
+                placeholder={t("items.selectSubcategories")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm font-medium mb-2 block">
+              {t("items.servingTime")} <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex flex-wrap gap-4">
+              {SERVING_TIMES.map((time) => (
+                <div key={time.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`serving-${time.id}`}
+                    checked={formData.serving_times.includes(time.id)}
+                    onCheckedChange={() => handleServingTimeToggle(time.id)}
+                  />
+                  <Label htmlFor={`serving-${time.id}`} className="text-sm font-normal cursor-pointer">
+                    {time.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </FormSectionCard>
+      </DashedSectionCard>
+
+      {/* Details Section */}
+      <DashedSectionCard title={t("items.details")} icon={Clock} variant="blue">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
+                {t("items.preparationTime")}
+                <TooltipInfo content={t("items.preparationTimeTooltip")} />
+              </Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.preparation_time_minutes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, preparation_time_minutes: parseInt(e.target.value) || 0 }))}
+                  className="h-10 pe-12"
+                />
+                <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">min</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
+                {t("items.calories")}
+                <TooltipInfo content={t("items.caloriesTooltip")} />
+              </Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.calories ?? ""}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value ? parseInt(e.target.value) : null }))}
+                  placeholder="Optional"
+                  className="h-10 pe-12"
+                />
+                <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">kcal</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
+                {t("items.highlights")}
+                <TooltipInfo content={t("items.highlightsTooltip")} />
+              </Label>
+              <Input
+                type="text"
+                value={formData.highlights}
+                onChange={(e) => setFormData((prev) => ({ ...prev, highlights: e.target.value }))}
+                placeholder={t("items.highlightsPlaceholder")}
+                className="h-10"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2 border-t">
+            <AllergenPicker
+              label={t("items.allergens")}
+              value={formData.allergens}
+              onChange={(allergens) => setFormData((prev) => ({ ...prev, allergens }))}
+              tooltip={t("items.allergensTooltip")}
+            />
+          </div>
+        </div>
+      </DashedSectionCard>
 
       {/* Sticky Footer */}
-      <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
+      <div className={cn(
+        "fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10",
+        "flex items-center gap-3",
+        isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4"
+      )}>
         <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}><X className="h-4 w-4 me-1" />{t("common.cancel")}</Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving}><Save className="h-4 w-4 me-1" />{t("common.save")}</Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}>
+            <X className="h-4 w-4 me-1" />
+            {t("common.cancel")}
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
+            <Save className="h-4 w-4 me-1" />
+            {t("common.save")}
+          </Button>
         </div>
       </div>
 
-      <ConfirmChangesModal open={showConfirmModal} onOpenChange={setShowConfirmModal} onConfirm={handleConfirmSave} changes={getChanges} isLoading={isSaving} />
+      {/* Confirmation Modal */}
+      <ItemSaveConfirmModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        onConfirm={handleConfirmSave}
+        item={confirmModalItem}
+        isLoading={isSaving}
+        isEdit
+      />
     </div>
   );
 }
