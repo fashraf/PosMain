@@ -109,10 +109,10 @@ function ReadOnlyFormField({
 }) {
   return (
     <div className={cn("space-y-1", className)}>
-      <label className="text-[11px] font-medium text-muted-foreground">
+      <label className="text-[13px] font-medium text-muted-foreground">
         {label}
       </label>
-      <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/30 px-2 py-1 text-xs">
+      <div className="flex h-9 w-full items-center rounded-md border-2 border-dotted border-muted-foreground/40 bg-muted/30 px-2 py-1 text-[13px] font-medium">
         {value || <span className="text-muted-foreground">—</span>}
       </div>
     </div>
@@ -129,21 +129,21 @@ function ReadOnlyChipsField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-medium text-muted-foreground">
+      <label className="text-[13px] font-medium text-muted-foreground">
         {label}
       </label>
-      <div className="flex min-h-8 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-muted/30 px-2 py-1">
+      <div className="flex min-h-9 w-full flex-wrap items-center gap-1 rounded-md border-2 border-dotted border-muted-foreground/40 bg-muted/30 px-2 py-1">
         {chips.length > 0 ? (
           chips.map((chip) => (
             <span 
               key={chip} 
-              className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+              className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[13px] font-medium text-primary"
             >
               {chip}
             </span>
           ))
         ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-[13px] text-muted-foreground">—</span>
         )}
       </div>
     </div>
@@ -161,10 +161,10 @@ function ReviewSectionCard({
   children: React.ReactNode; 
 }) {
   return (
-    <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-dashed border-muted-foreground/20">
-        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-[11px] font-semibold text-muted-foreground">
+    <div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-dotted border-muted-foreground/30">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="text-[13px] font-semibold text-muted-foreground">
           {title}
         </span>
       </div>
@@ -228,10 +228,10 @@ export function ItemSaveConfirmModal({
         {/* Body - Scrollable */}
         <div className="p-4 max-h-[65vh] overflow-y-auto space-y-3">
           {/* Hero Overview Panel - Compact */}
-          <div className="rounded-lg border bg-muted/20 p-3">
+          <div className="rounded-lg border-2 border-dotted border-muted-foreground/40 bg-muted/20 p-3">
             <div className="flex gap-3">
               {/* Image - Smaller */}
-              <div className="w-14 h-14 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
+              <div className="w-14 h-14 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border-2 border-dotted border-muted-foreground/40">
                 {item.image_url ? (
                   <img
                     src={item.image_url}
@@ -248,7 +248,7 @@ export function ItemSaveConfirmModal({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     {/* Name in form-control style */}
-                    <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/30 px-2 py-1 text-sm font-semibold truncate">
+                    <div className="flex h-9 w-full items-center rounded-md border-2 border-dotted border-muted-foreground/40 bg-muted/30 px-2 py-1 text-[13px] font-semibold truncate">
                       {item.name_en || "Untitled Item"}
                     </div>
                     {/* Multilingual indicators */}
@@ -261,7 +261,7 @@ export function ItemSaveConfirmModal({
                         <span
                           key={lang.code}
                           className={cn(
-                            "px-1 py-0.5 text-[9px] font-medium rounded",
+                            "px-1.5 py-0.5 text-[11px] font-medium rounded",
                             lang.hasContent 
                               ? "bg-accent text-accent-foreground" 
                               : "bg-destructive/20 text-destructive"
@@ -276,7 +276,7 @@ export function ItemSaveConfirmModal({
                   {/* Status badges */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span className={cn(
-                      "px-1.5 py-0.5 text-[10px] font-medium rounded-full",
+                      "px-2 py-0.5 text-[12px] font-medium rounded-full",
                       item.is_active 
                         ? "bg-accent text-accent-foreground" 
                         : "bg-muted text-muted-foreground"
@@ -284,7 +284,7 @@ export function ItemSaveConfirmModal({
                       {item.is_active ? "Active" : "Inactive"}
                     </span>
                     {item.is_combo && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-secondary text-secondary-foreground">
+                      <span className="px-2 py-0.5 text-[12px] font-medium rounded-full bg-secondary text-secondary-foreground">
                         Combo
                       </span>
                     )}
@@ -372,7 +372,7 @@ export function ItemSaveConfirmModal({
             <>
               <div className="flex items-center gap-3 pt-1">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-[11px] font-semibold text-muted-foreground">
+                <span className="text-[13px] font-semibold text-muted-foreground">
                   Recipe Mappings
                 </span>
                 <div className="h-px flex-1 bg-border" />
@@ -384,37 +384,37 @@ export function ItemSaveConfirmModal({
               )}>
                 {/* Ingredients Table */}
                 {ingredientMappings.length > 0 && (
-                  <div className="rounded-lg border border-input overflow-hidden">
-                    <div className="flex items-center justify-between px-2 py-1.5 bg-accent/50 border-b">
-                      <span className="text-[10px] font-semibold text-accent-foreground uppercase flex items-center gap-1">
-                        <Carrot className="h-3 w-3" />
+                  <div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2 bg-accent/50 border-b border-dotted border-muted-foreground/30">
+                      <span className="text-[13px] font-semibold text-accent-foreground flex items-center gap-1.5">
+                        <Carrot className="h-4 w-4" />
                         Ingredients
                       </span>
-                      <span className="text-[10px] text-muted-foreground">({ingredientMappings.length})</span>
+                      <span className="text-[13px] text-muted-foreground">({ingredientMappings.length})</span>
                     </div>
-                    <table className="w-full text-xs">
+                    <table className="w-full">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="h-7 px-2 text-left text-[11px] font-medium text-muted-foreground">Name</th>
-                          <th className="h-7 px-2 text-center text-[11px] font-medium text-muted-foreground">Qty</th>
-                          <th className="h-7 px-2 text-right text-[11px] font-medium text-muted-foreground">Unit</th>
+                          <th className="h-8 px-3 text-left text-[13px] font-medium text-muted-foreground">Name</th>
+                          <th className="h-8 px-3 text-center text-[13px] font-medium text-muted-foreground">Qty</th>
+                          <th className="h-8 px-3 text-right text-[13px] font-medium text-muted-foreground">Unit</th>
                         </tr>
                       </thead>
                       <tbody>
                         {ingredientMappings.map((m, i) => (
-                          <tr key={m.id} className={cn("h-7", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
-                            <td className="px-2 text-foreground">{m.ingredient_name}</td>
-                            <td className="px-2 text-center text-muted-foreground">{m.quantity.toFixed(2)}</td>
-                            <td className="px-2 text-right text-muted-foreground">{m.unit}</td>
+                          <tr key={m.id} className={cn("h-8", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
+                            <td className="px-3 text-[13px] font-medium text-foreground">{m.ingredient_name}</td>
+                            <td className="px-3 text-center text-[13px] text-muted-foreground">{m.quantity.toFixed(2)}</td>
+                            <td className="px-3 text-right text-[13px] text-muted-foreground">{m.unit}</td>
                           </tr>
                         ))}
                       </tbody>
-                        <tfoot className="bg-primary/5 border-t-2 border-primary/20">
+                      <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                         <tr>
-                          <td colSpan={2} className="h-7 px-2 text-right text-[11px] font-semibold text-muted-foreground">
+                          <td colSpan={2} className="h-8 px-3 text-right text-[13px] font-semibold text-muted-foreground">
                             Total Cost
                           </td>
-                          <td className="h-7 px-2 text-right font-bold text-primary text-xs">
+                          <td className="h-8 px-3 text-right text-[13px] font-bold text-primary">
                             SAR {ingredientTotalCost.toFixed(2)}
                           </td>
                         </tr>
@@ -425,38 +425,38 @@ export function ItemSaveConfirmModal({
 
                 {/* Items Table (Combo only) */}
                 {item.is_combo && itemMappings.length > 0 && (
-                  <div className="rounded-lg border border-input overflow-hidden">
-                    <div className="flex items-center justify-between px-2 py-1.5 bg-secondary/50 border-b">
-                      <span className="text-[10px] font-semibold text-secondary-foreground uppercase flex items-center gap-1">
-                        <Package className="h-3 w-3" />
+                  <div className="rounded-lg border-2 border-dotted border-muted-foreground/40 overflow-hidden">
+                    <div className="flex items-center justify-between px-3 py-2 bg-secondary/50 border-b border-dotted border-muted-foreground/30">
+                      <span className="text-[13px] font-semibold text-secondary-foreground flex items-center gap-1.5">
+                        <Package className="h-4 w-4" />
                         Combo Items
                       </span>
-                      <span className="text-[10px] text-muted-foreground">({itemMappings.length})</span>
+                      <span className="text-[13px] text-muted-foreground">({itemMappings.length})</span>
                     </div>
-                    <table className="w-full text-xs">
+                    <table className="w-full">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="h-7 px-2 text-left text-[11px] font-medium text-muted-foreground">Item</th>
-                          <th className="h-7 px-2 text-center text-[11px] font-medium text-muted-foreground">Qty</th>
-                          <th className="h-7 px-2 text-right text-[11px] font-medium text-muted-foreground">Price</th>
+                          <th className="h-8 px-3 text-left text-[13px] font-medium text-muted-foreground">Item</th>
+                          <th className="h-8 px-3 text-center text-[13px] font-medium text-muted-foreground">Qty</th>
+                          <th className="h-8 px-3 text-right text-[13px] font-medium text-muted-foreground">Price</th>
                         </tr>
                       </thead>
                       <tbody>
                         {itemMappings.map((m, i) => (
                           <>
-                            <tr key={m.id} className={cn("h-7", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
-                              <td className="px-2 text-foreground">{m.sub_item_name}</td>
-                              <td className="px-2 text-center text-muted-foreground">{m.quantity}</td>
-                              <td className="px-2 text-right text-muted-foreground">SAR {m.unit_price.toFixed(2)}</td>
+                            <tr key={m.id} className={cn("h-8", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
+                              <td className="px-3 text-[13px] font-medium text-foreground">{m.sub_item_name}</td>
+                              <td className="px-3 text-center text-[13px] text-muted-foreground">{m.quantity}</td>
+                              <td className="px-3 text-right text-[13px] text-muted-foreground">SAR {m.unit_price.toFixed(2)}</td>
                             </tr>
                             {/* Replacements */}
                             {m.replacements?.map((r) => (
-                              <tr key={r.id} className="h-6 bg-muted/20">
-                                <td className="px-2 ps-4 text-muted-foreground text-[10px]">
+                              <tr key={r.id} className="h-7 bg-muted/20">
+                                <td className="px-3 ps-5 text-muted-foreground text-[12px]">
                                   → {r.item_name} {r.is_default && <span className="text-primary">★</span>}
                                 </td>
-                                <td className="px-2 text-center text-muted-foreground text-[10px]"></td>
-                                <td className="px-2 text-right text-[10px]">
+                                <td className="px-3 text-center text-muted-foreground text-[12px]"></td>
+                                <td className="px-3 text-right text-[12px]">
                                   {r.extra_cost > 0 ? (
                                     <span className="text-primary">+{r.extra_cost.toFixed(2)}</span>
                                   ) : (
@@ -468,12 +468,12 @@ export function ItemSaveConfirmModal({
                           </>
                         ))}
                       </tbody>
-                        <tfoot className="bg-primary/5 border-t-2 border-primary/20">
+                      <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                         <tr>
-                          <td colSpan={2} className="h-7 px-2 text-right text-[11px] font-semibold text-muted-foreground">
+                          <td colSpan={2} className="h-8 px-3 text-right text-[13px] font-semibold text-muted-foreground">
                             Total Cost
                           </td>
-                          <td className="h-7 px-2 text-right font-bold text-primary text-xs">
+                          <td className="h-8 px-3 text-right text-[13px] font-bold text-primary">
                             SAR {itemTotalCost.toFixed(2)}
                           </td>
                         </tr>
