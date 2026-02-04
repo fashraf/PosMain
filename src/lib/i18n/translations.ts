@@ -413,9 +413,39 @@ export const translations = {
       isCombo: "Is Combo",
       noItems: "No items found. Add your first item to get started.",
       uploadImage: "Upload Image",
-      // New fields
+      // Section titles
+      basicInformation: "Basic Information",
+      classification: "Classification",
+      details: "Details",
+      // Categories & Classification
       categories: "Categories",
       assignCategories: "Assign to categories",
+      category: "Category",
+      subcategory: "Subcategory",
+      servingTime: "Serving Time",
+      selectCategory: "Select category",
+      selectSubcategories: "Select subcategories",
+      // Category options
+      vegetarian: "Vegetarian",
+      nonVegetarian: "Non-Vegetarian",
+      drinks: "Drinks",
+      sheesha: "Sheesha",
+      desserts: "Desserts",
+      // Subcategory options
+      seaFood: "Sea Food",
+      panCake: "Pan Cake",
+      pizza: "Pizza",
+      softDrinks: "Soft Drinks",
+      teaCoffee: "Tea and Coffee",
+      bbq: "BBQ",
+      shawarma: "Shawarma",
+      smokingZone: "Smoking Zone",
+      // Serving times
+      breakfast: "Breakfast",
+      lunchSpecials: "Lunch Specials",
+      dinner: "Dinner",
+      snacks: "Snacks",
+      // Preparation & Nutrition
       preparationTime: "Prep Time",
       preparationTimeMinutes: "Preparation Time (minutes)",
       preparationTimeTooltip: "Estimated preparation time for kitchen display and delivery ETA.",
@@ -431,6 +461,16 @@ export const translations = {
       calories: "Calories",
       caloriesTooltip: "Optional calorie value for health-conscious menus.",
       preparationAndNutrition: "Preparation & Nutrition",
+      highlights: "Highlights",
+      highlightsPlaceholder: "e.g., Crispy, Fresh, Authentic",
+      highlightsTooltip: "Comma-separated keywords that describe this item's special qualities.",
+      // Combo
+      comboTooltip: "Combo = bundle of 2+ items at special price. Category & subcategory become non-editable after save.",
+      // Confirmation modal
+      looksDelicious: "Looks Delicious!",
+      readyToSave: "Ready to save this item?",
+      noGoBack: "No, Go Back",
+      yesSave: "Yes, Save!",
     },
     // Item Ingredients Mapping (Legacy - keeping for nav)
     itemIngredients: {
