@@ -109,10 +109,10 @@ function ReadOnlyFormField({
 }) {
   return (
     <div className={cn("space-y-1", className)}>
-      <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </label>
-      <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/30 px-3 py-2 text-sm">
+      <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/30 px-2 py-1 text-xs">
         {value || <span className="text-muted-foreground">—</span>}
       </div>
     </div>
@@ -129,21 +129,21 @@ function ReadOnlyChipsField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+      <label className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </label>
-      <div className="flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-muted/30 px-3 py-2">
+      <div className="flex min-h-8 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-muted/30 px-2 py-1">
         {chips.length > 0 ? (
           chips.map((chip) => (
             <span 
               key={chip} 
-              className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+              className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
             >
               {chip}
             </span>
           ))
         ) : (
-          <span className="text-sm text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">—</span>
         )}
       </div>
     </div>
@@ -162,13 +162,13 @@ function ReviewSectionCard({
 }) {
   return (
     <div className="rounded-lg border-2 border-dashed border-muted-foreground/30 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-b border-dashed border-muted-foreground/20">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/30 border-b border-dashed border-muted-foreground/20">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           {title}
         </span>
       </div>
-      <div className="p-4">
+      <div className="p-3">
         {children}
       </div>
     </div>
@@ -209,16 +209,16 @@ export function ItemSaveConfirmModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[75vw] p-0 gap-0 rounded-lg overflow-hidden">
-        {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b bg-background">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🍕</span>
+      <DialogContent className="sm:max-w-[900px] p-0 gap-0 rounded-lg overflow-hidden max-h-[90vh]">
+        {/* Header - Compact */}
+        <DialogHeader className="px-4 py-3 border-b bg-background">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🍕</span>
             <div>
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className="text-base font-semibold">
                 {isEdit ? "Ready to Update This Item?" : "Ready to Save This Item?"}
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground">
                 {isEdit ? "Review all details before updating" : "Review all details before saving"}
               </p>
             </div>
@@ -226,12 +226,12 @@ export function ItemSaveConfirmModal({
         </DialogHeader>
 
         {/* Body - Scrollable */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
-          {/* Hero Overview Panel */}
-          <div className="rounded-xl border bg-muted/20 p-4">
-            <div className="flex gap-4">
-              {/* Image */}
-              <div className="w-[72px] h-[72px] rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
+        <div className="p-4 max-h-[65vh] overflow-y-auto space-y-3">
+          {/* Hero Overview Panel - Compact */}
+          <div className="rounded-lg border bg-muted/20 p-3">
+            <div className="flex gap-3">
+              {/* Image - Smaller */}
+              <div className="w-14 h-14 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
                 {item.image_url ? (
                   <img
                     src={item.image_url}
@@ -239,7 +239,7 @@ export function ItemSaveConfirmModal({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
                 )}
               </div>
 
@@ -248,11 +248,11 @@ export function ItemSaveConfirmModal({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     {/* Name in form-control style */}
-                    <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/30 px-3 py-2 text-sm font-semibold truncate">
+                    <div className="flex h-8 w-full items-center rounded-md border border-input bg-muted/30 px-2 py-1 text-sm font-semibold truncate">
                       {item.name_en || "Untitled Item"}
                     </div>
                     {/* Multilingual indicators */}
-                    <div className="flex items-center gap-1.5 mt-2">
+                    <div className="flex items-center gap-1 mt-1.5">
                       {[
                         { code: "EN", hasContent: !!item.name_en },
                         { code: "AR", hasContent: !!item.name_ar },
@@ -261,7 +261,7 @@ export function ItemSaveConfirmModal({
                         <span
                           key={lang.code}
                           className={cn(
-                            "px-1.5 py-0.5 text-[10px] font-medium rounded",
+                            "px-1 py-0.5 text-[9px] font-medium rounded",
                             lang.hasContent 
                               ? "bg-accent text-accent-foreground" 
                               : "bg-destructive/20 text-destructive"
@@ -274,9 +274,9 @@ export function ItemSaveConfirmModal({
                   </div>
 
                   {/* Status badges */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span className={cn(
-                      "px-2 py-0.5 text-xs font-medium rounded-full",
+                      "px-1.5 py-0.5 text-[10px] font-medium rounded-full",
                       item.is_active 
                         ? "bg-accent text-accent-foreground" 
                         : "bg-muted text-muted-foreground"
@@ -284,7 +284,7 @@ export function ItemSaveConfirmModal({
                       {item.is_active ? "Active" : "Inactive"}
                     </span>
                     {item.is_combo && (
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-secondary text-secondary-foreground">
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-secondary text-secondary-foreground">
                         Combo
                       </span>
                     )}
@@ -295,10 +295,10 @@ export function ItemSaveConfirmModal({
           </div>
 
           {/* Section Cards - 2 column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Basics */}
             <ReviewSectionCard title="Basics" icon={FileText}>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <ReadOnlyFormField 
                   label="Item Type" 
                   value={item.item_type === "edible" ? "Edible" : "Non-Edible"} 
@@ -312,7 +312,7 @@ export function ItemSaveConfirmModal({
 
             {/* Classification */}
             <ReviewSectionCard title="Classification" icon={Tags}>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <ReadOnlyFormField label="Category" value={item.category} />
                 <ReadOnlyChipsField label="Subcategories" chips={item.subcategories} />
                 <ReadOnlyChipsField label="Serving Times" chips={item.serving_times} />
@@ -321,13 +321,13 @@ export function ItemSaveConfirmModal({
 
             {/* Details */}
             <ReviewSectionCard title="Details" icon={Clock}>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   <ReadOnlyFormField 
                     label="Prep Time" 
                     value={
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Clock className="h-3 w-3 text-muted-foreground" />
                         {item.prep_time} min
                       </span>
                     } 
@@ -337,7 +337,7 @@ export function ItemSaveConfirmModal({
                     value={
                       item.calories ? (
                         <span className="flex items-center gap-1">
-                          <Flame className="h-3.5 w-3.5 text-destructive" />
+                          <Flame className="h-3 w-3 text-destructive" />
                           {item.calories} kcal
                         </span>
                       ) : null
@@ -354,7 +354,7 @@ export function ItemSaveConfirmModal({
 
             {/* Inventory */}
             <ReviewSectionCard title="Inventory" icon={BarChart3}>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <ReadOnlyFormField 
                   label="Current Stock" 
                   value={item.current_stock !== undefined ? item.current_stock.toString() : null} 
@@ -370,51 +370,51 @@ export function ItemSaveConfirmModal({
           {/* Mapping Tables Section */}
           {(ingredientMappings.length > 0 || (item.is_combo && itemMappings.length > 0)) && (
             <>
-              <div className="flex items-center gap-4 pt-2">
+              <div className="flex items-center gap-3 pt-1">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Recipe Mappings
                 </span>
                 <div className="h-px flex-1 bg-border" />
               </div>
 
               <div className={cn(
-                "grid gap-4",
+                "grid gap-3",
                 item.is_combo && itemMappings.length > 0 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
               )}>
                 {/* Ingredients Table */}
                 {ingredientMappings.length > 0 && (
                   <div className="rounded-lg border border-input overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 bg-accent/50 border-b">
-                      <span className="text-xs font-semibold text-accent-foreground uppercase flex items-center gap-1.5">
-                        <Carrot className="h-3.5 w-3.5" />
+                    <div className="flex items-center justify-between px-2 py-1.5 bg-accent/50 border-b">
+                      <span className="text-[10px] font-semibold text-accent-foreground uppercase flex items-center gap-1">
+                        <Carrot className="h-3 w-3" />
                         Ingredients
                       </span>
-                      <span className="text-xs text-muted-foreground">({ingredientMappings.length})</span>
+                      <span className="text-[10px] text-muted-foreground">({ingredientMappings.length})</span>
                     </div>
-                    <table className="w-full text-sm">
+                    <table className="w-full text-xs">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="h-8 px-3 text-left text-[11px] font-medium uppercase text-muted-foreground">Name</th>
-                          <th className="h-8 px-3 text-center text-[11px] font-medium uppercase text-muted-foreground">Qty</th>
-                          <th className="h-8 px-3 text-right text-[11px] font-medium uppercase text-muted-foreground">Unit</th>
+                          <th className="h-7 px-2 text-left text-[10px] font-medium uppercase text-muted-foreground">Name</th>
+                          <th className="h-7 px-2 text-center text-[10px] font-medium uppercase text-muted-foreground">Qty</th>
+                          <th className="h-7 px-2 text-right text-[10px] font-medium uppercase text-muted-foreground">Unit</th>
                         </tr>
                       </thead>
                       <tbody>
                         {ingredientMappings.map((m, i) => (
-                          <tr key={m.id} className={cn("h-9", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
-                            <td className="px-3 text-foreground">{m.ingredient_name}</td>
-                            <td className="px-3 text-center text-muted-foreground">{m.quantity.toFixed(2)}</td>
-                            <td className="px-3 text-right text-muted-foreground">{m.unit}</td>
+                          <tr key={m.id} className={cn("h-7", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
+                            <td className="px-2 text-foreground">{m.ingredient_name}</td>
+                            <td className="px-2 text-center text-muted-foreground">{m.quantity.toFixed(2)}</td>
+                            <td className="px-2 text-right text-muted-foreground">{m.unit}</td>
                           </tr>
                         ))}
                       </tbody>
                       <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                         <tr>
-                          <td colSpan={2} className="h-9 px-3 text-right text-xs font-semibold uppercase text-muted-foreground">
+                          <td colSpan={2} className="h-7 px-2 text-right text-[10px] font-semibold uppercase text-muted-foreground">
                             Total Cost
                           </td>
-                          <td className="h-9 px-3 text-right font-bold text-primary">
+                          <td className="h-7 px-2 text-right font-bold text-primary text-xs">
                             SAR {ingredientTotalCost.toFixed(2)}
                           </td>
                         </tr>
@@ -426,37 +426,37 @@ export function ItemSaveConfirmModal({
                 {/* Items Table (Combo only) */}
                 {item.is_combo && itemMappings.length > 0 && (
                   <div className="rounded-lg border border-input overflow-hidden">
-                    <div className="flex items-center justify-between px-3 py-2 bg-secondary/50 border-b">
-                      <span className="text-xs font-semibold text-secondary-foreground uppercase flex items-center gap-1.5">
-                        <Package className="h-3.5 w-3.5" />
+                    <div className="flex items-center justify-between px-2 py-1.5 bg-secondary/50 border-b">
+                      <span className="text-[10px] font-semibold text-secondary-foreground uppercase flex items-center gap-1">
+                        <Package className="h-3 w-3" />
                         Combo Items
                       </span>
-                      <span className="text-xs text-muted-foreground">({itemMappings.length})</span>
+                      <span className="text-[10px] text-muted-foreground">({itemMappings.length})</span>
                     </div>
-                    <table className="w-full text-sm">
+                    <table className="w-full text-xs">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="h-8 px-3 text-left text-[11px] font-medium uppercase text-muted-foreground">Item</th>
-                          <th className="h-8 px-3 text-center text-[11px] font-medium uppercase text-muted-foreground">Qty</th>
-                          <th className="h-8 px-3 text-right text-[11px] font-medium uppercase text-muted-foreground">Price</th>
+                          <th className="h-7 px-2 text-left text-[10px] font-medium uppercase text-muted-foreground">Item</th>
+                          <th className="h-7 px-2 text-center text-[10px] font-medium uppercase text-muted-foreground">Qty</th>
+                          <th className="h-7 px-2 text-right text-[10px] font-medium uppercase text-muted-foreground">Price</th>
                         </tr>
                       </thead>
                       <tbody>
                         {itemMappings.map((m, i) => (
                           <>
-                            <tr key={m.id} className={cn("h-9", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
-                              <td className="px-3 text-foreground">{m.sub_item_name}</td>
-                              <td className="px-3 text-center text-muted-foreground">{m.quantity}</td>
-                              <td className="px-3 text-right text-muted-foreground">SAR {m.unit_price.toFixed(2)}</td>
+                            <tr key={m.id} className={cn("h-7", i % 2 === 0 ? "bg-background" : "bg-muted/30")}>
+                              <td className="px-2 text-foreground">{m.sub_item_name}</td>
+                              <td className="px-2 text-center text-muted-foreground">{m.quantity}</td>
+                              <td className="px-2 text-right text-muted-foreground">SAR {m.unit_price.toFixed(2)}</td>
                             </tr>
                             {/* Replacements */}
                             {m.replacements?.map((r) => (
-                              <tr key={r.id} className="h-8 bg-muted/20">
-                                <td className="px-3 ps-6 text-muted-foreground text-xs">
+                              <tr key={r.id} className="h-6 bg-muted/20">
+                                <td className="px-2 ps-4 text-muted-foreground text-[10px]">
                                   → {r.item_name} {r.is_default && <span className="text-primary">★</span>}
                                 </td>
-                                <td className="px-3 text-center text-muted-foreground text-xs"></td>
-                                <td className="px-3 text-right text-xs">
+                                <td className="px-2 text-center text-muted-foreground text-[10px]"></td>
+                                <td className="px-2 text-right text-[10px]">
                                   {r.extra_cost > 0 ? (
                                     <span className="text-primary">+{r.extra_cost.toFixed(2)}</span>
                                   ) : (
@@ -470,10 +470,10 @@ export function ItemSaveConfirmModal({
                       </tbody>
                       <tfoot className="bg-primary/5 border-t-2 border-primary/20">
                         <tr>
-                          <td colSpan={2} className="h-9 px-3 text-right text-xs font-semibold uppercase text-muted-foreground">
+                          <td colSpan={2} className="h-7 px-2 text-right text-[10px] font-semibold uppercase text-muted-foreground">
                             Total Cost
                           </td>
-                          <td className="h-9 px-3 text-right font-bold text-primary">
+                          <td className="h-7 px-2 text-right font-bold text-primary text-xs">
                             SAR {itemTotalCost.toFixed(2)}
                           </td>
                         </tr>
@@ -486,24 +486,29 @@ export function ItemSaveConfirmModal({
           )}
         </div>
 
-        {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t bg-muted/30 flex-row gap-3 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            No, Go Back
-          </Button>
-          <Button
-            type="button"
-            onClick={onConfirm}
-            disabled={isLoading}
-          >
-            <Check className="h-4 w-4 me-1" />
-            {isEdit ? "Yes, Update" : "Yes, Save"}
-          </Button>
+        {/* Footer - Compact */}
+        <DialogFooter className="px-4 py-3 border-t bg-muted/30">
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+              size="sm"
+            >
+              No, Go Back
+            </Button>
+            <Button
+              type="button"
+              onClick={onConfirm}
+              disabled={isLoading}
+              size="sm"
+              className="gap-1.5"
+            >
+              <Check className="h-3.5 w-3.5" />
+              {isEdit ? "Yes, Update Item" : "Yes, Save Item"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
