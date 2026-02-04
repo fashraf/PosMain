@@ -1,228 +1,225 @@
 
-
-# Ingredient Master Add - Single Column Redesign
+# Ingredient Master Add/Edit - Refined UI Plan
 
 ## Overview
-Redesign the Ingredient Master Add page (`/inventory/ingredients/add`) to use a **full-width single-column layout (col-12)** with NO image upload, following the same dashed-border section card styling as the Items form.
+Refine the Ingredient Master form to support both **Add** and **Edit** modes with a more compact, visually polished layout featuring image upload, dynamic EN/AR/UR indicators, and a small stock availability ribbon instead of large progress bar.
 
 ---
 
-## Target Layout Design (Full Width)
+## Target Layout Design
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│  ← Add Ingredient                                                                                      │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ 🥕 Visual & Basics                                                              [purple header] ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  Ingredient Name * [EN🟢|AR🔴|UR🔴]           │  Short Description [EN🟢|AR🔴|UR🔴]              ┊  │
-│  ┊  ┌────────────────────────────────────────┐  │  ┌────────────────────────────────────────────┐  ┊  │
-│  ┊  │ Chicken Breast                         │  │  │ Fresh boneless chicken for grilling...    │  ┊  │
-│  ┊  └────────────────────────────────────────┘  │  └────────────────────────────────────────────┘  ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ 🏷️ Classification                                                               [green header] ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  Type *              │  Unit *             │  Storage Type *      │  Category/Group            ┊  │
-│  ┊  ┌────────────────┐  │  ┌────────────────┐ │  ┌─────────────────┐ │  ┌─[Meat ×][Poultry ×]──┐  ┊  │
-│  ┊  │ Solid        ▼ │  │  │ KG           ▼ │ │  │ Freezer       ▼ │ │  │                    ▼ │  ┊  │
-│  ┊  └────────────────┘  │  └────────────────┘ │  └─────────────────┘ │  └──────────────────────┘  ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ ⚠️ Inventory & Alerts                                                           [amber header] ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  ┌──────────────────────────────────────────────────────────────────────────────────────────┐  ┊  │
-│  ┊  │█████████████████████████████████████████░░░░░░░░░░░░░░│ 68% Available                   │  ┊  │
-│  ┊  └──────────────────────────────────────────────────────────────────────────────────────────┘  ┊  │
-│  ┊                                                                                                ┊  │
-│  ┊  Min Stock Alert *(i) │  Shelf Life Days (i)  │  PAR Level (i)      │  Current Stock          ┊  │
-│  ┊  ┌──────────────────┐ │  ┌──────────────────┐ │  ┌──────────────────┐│  ┌──────────────────┐   ┊  │
-│  ┊  │ 10               │ │  │ 7          days  │ │  │ 25               ││  │ 100              │   ┊  │
-│  ┊  └──────────────────┘ │  └──────────────────┘ │  └──────────────────┘│  └──────────────────┘   ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ 💰 Pricing                                                                       [blue header] ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  Cost Price * (SAR)       │  Selling Price (SAR)       │  ☑ Can Purchase   ☐ Return on Cancel ┊  │
-│  ┊  ┌────────────────────┐   │  ┌────────────────────────┐ │                                      ┊  │
-│  ┊  │ SAR 15.00          │   │  │ SAR 20.00 (optional)   │ │                                      ┊  │
-│  ┊  └────────────────────┘   │  └────────────────────────┘ │                                      ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│                                                                                                        │
-│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
-│  ┊ 📋 Details                                                                       [muted/gray]  ┊  │
-│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
-│  ┊  Yield % (i)              │  Supplier/Vendor                                                   ┊  │
-│  ┊  ┌─────────────────────┐  │  ┌─────────────────────────────────────────────────────────────┐   ┊  │
-│  ┊  │ 85               %  │  │  │ Fresh Foods Co.                                             │   ┊  │
-│  ┊  └─────────────────────┘  │  └─────────────────────────────────────────────────────────────┘   ┊  │
-│  ┊                                                                                                ┊  │
-│  ┊  Allergen Flags                                                                                ┊  │
-│  ┊  [🥜Nuts] [🥛Dairy ✓] [🌾Gluten] [🥚Eggs] [🫘Soy] [🦐Shellfish] [🌾Wheat]                       ┊  │
-│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
-│                                                                                                        │
-├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                        [× Cancel]   [✓ Save Ingredient]               │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  ← Add Ingredient / Edit Ingredient                                                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                     │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 🥕 Ingredient Basics                                                         [purple header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  ┌────────────────┐    │  Ingredient Name * [EN🟢|AR🔴|UR🔴]                                  ┊  │
+│  ┊  │     📷         │    │  ┌──────────────────────────────────────────────────────────────┐   ┊  │
+│  ┊  │   Image        │    │  │ Chicken Breast                                               │   ┊  │
+│  ┊  │  280×280       │    │  └──────────────────────────────────────────────────────────────┘   ┊  │
+│  ┊  │ aspect-1:1     │    │                                                                      ┊  │
+│  ┊  │               │    │  Short Description [EN🟢|AR🔴|UR🔴]                                  ┊  │
+│  ┊  └────────────────┘    │  ┌──────────────────────────────────────────────────────────────┐   ┊  │
+│  ┊   Click to upload      │  │ Fresh boneless chicken for grilling (same height as name)   │   ┊  │
+│  ┊   PNG, JPG 5MB         │  └──────────────────────────────────────────────────────────────┘   ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                     │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 🏷️ Classification                                                            [green header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Type *          │  Unit *         │  Storage Type *    │  Category/Group                   ┊  │
+│  ┊  ┌─────────────┐ │  ┌────────────┐ │  ┌───────────────┐ │  ┌─[Meat ×][Poultry ×]─────────┐  ┊  │
+│  ┊  │ Solid     ▼ │ │  │ KG       ▼ │ │  │ Freezer     ▼ │ │  │                           ▼ │  ┊  │
+│  ┊  └─────────────┘ │  └────────────┘ │  └───────────────┘ │  └─────────────────────────────┘  ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                     │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈[🟢 68%]┈╮  │
+│  ┊ ⚠️ Inventory & Alerts                                                         [amber header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Min Stock *(i)    │  Shelf Life (i)      │  PAR Level (i)     │  Current Stock             ┊  │
+│  ┊  ┌───────────────┐ │  ┌────────────┐ days │  ┌───────────────┐ │  ┌───────────────────────┐  ┊  │
+│  ┊  │ 10            │ │  │ 7          │      │  │ 25            │ │  │ 100                   │  ┊  │
+│  ┊  └───────────────┘ │  └────────────┘      │  └───────────────┘ │  └───────────────────────┘  ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                     │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 💰 Pricing                                                                    [blue header]  ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Cost Price * (SAR)     │  Selling Price        │  ☑ Can Purchase    ☐ Return on Cancel     ┊  │
+│  ┊  ┌──────────────────┐   │  ┌──────────────────┐ │                                            ┊  │
+│  ┊  │ SAR 15.00        │   │  │ SAR 20.00        │ │                                            ┊  │
+│  ┊  └──────────────────┘   │  └──────────────────┘ │                                            ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                     │
+│  ╭┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╮  │
+│  ┊ 📋 Details                                                                    [muted header] ┊  │
+│  ├┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┤  │
+│  ┊  Yield % (i)             │  Supplier/Vendor                                                  ┊  │
+│  ┊  ┌────────────────────┐  │  ┌────────────────────────────────────────────────────────────┐   ┊  │
+│  ┊  │ 85              %  │  │  │ Fresh Foods Co.                                            │   ┊  │
+│  ┊  └────────────────────┘  │  └────────────────────────────────────────────────────────────┘   ┊  │
+│  ┊                                                                                              ┊  │
+│  ┊  Allergen Flags                                                                              ┊  │
+│  ┊  [🥜Nuts] [🥛Dairy ✓] [🌾Gluten] [🥚Eggs] [🫘Soy] [🦐Shellfish] [🌾Wheat]                     ┊  │
+│  ╰┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╯  │
+│                                                                                                     │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                     [× Cancel]   [✓ Save / Update Ingredient]      │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Key Differences from Items Form
+## Key Changes from Current Implementation
 
-| Aspect | Items Form | Ingredient Form |
-|--------|------------|-----------------|
-| Layout | Two-column (4+8) | **Single column (12)** |
-| Image Upload | Yes (280x280) | **NO** |
-| Sections | 4 cards | 5 cards |
-| Focus | Menu items, combos | Raw ingredients, stock |
+| Feature | Current | New |
+|---------|---------|-----|
+| Basics Section | Two inputs side-by-side, no image | Image left (280px), Name + Description right (same height) |
+| Progress Bar | Large full-width bar in Inventory card | Small ribbon/pill badge on card header corner |
+| EN/AR/UR indicators | 11px font | **12px exactly**, dynamic green/red colors |
+| Description height | min-h-[80px] (taller) | **Same height as Name input** (h-10 / 40px) |
+| Edit Mode | No edit page exists | Create `IngredientMasterEdit.tsx` with pre-fill |
+| Button Text | "Save" always | "Save" on add, **"Update"** on edit |
+| Confirmation | Same message | Different message for add vs edit |
 
 ---
 
-## Section Cards (All Full Width)
+## Component Changes
 
-### 1. Visual & Basics (Purple)
-- **Row 1 (2 columns):**
-  - Ingredient Name* (MultiLanguageInputWithIndicators)
-  - Short Description (MultiLanguageInputWithIndicators, multiline)
+### 1. Update `DashedSectionCard.tsx`
+Add optional `rightBadge` prop for the stock availability ribbon:
 
-### 2. Classification (Green)
-- **Row 1 (4 columns):**
-  - Type* (Select: Solid, Liquid, Powder, Other)
-  - Unit* (Select: KG, G, L, ML, Piece, Pack, etc.)
-  - Storage Type* (Select: Freezer, Fridge, Dry, Room Temp)
-  - Category/Group (MultiSelectBadges)
+```tsx
+interface DashedSectionCardProps {
+  title: string;
+  icon?: LucideIcon;
+  variant?: ColorVariant;
+  rightBadge?: ReactNode; // NEW - for stock ribbon
+  children: ReactNode;
+}
+```
 
-### 3. Inventory & Alerts (Amber)
-- **Progress bar** (full width) - shows stock percentage
-- **Row 2 (4 columns):**
-  - Min Stock Alert* (number + tooltip)
-  - Shelf Life Days (number + "days" suffix + tooltip)
-  - PAR Level (number + tooltip)
-  - Current Stock (number)
+### 2. Create `StockAvailabilityBadge.tsx`
+Small pill/ribbon showing stock percentage:
+- Color: Green (>70%), Yellow (30-70%), Red (<30%)
+- Format: "68% Available" or just "68%"
+- Small, elegant, positioned in header
 
-### 4. Pricing (Blue)
-- **Row 1 (4 columns):**
-  - Cost Price* (SAR prefix)
-  - Selling Price (optional, SAR prefix)
-  - Can Purchase (Switch toggle)
-  - Return on Cancel (Switch toggle)
+### 3. Update `MultiLanguageInputWithIndicators.tsx`
+- Font-size: Change from `text-[11px]` to **`text-[12px]`**
+- Add `singleLine` prop for description to match name height
 
-### 5. Details (Muted/Gray - new variant)
-- **Row 1 (2 columns):**
-  - Yield % (number 0-100 + tooltip)
-  - Supplier/Vendor (text input)
-- **Row 2:**
-  - Allergen Flags (AllergenPicker component)
+### 4. Rewrite `IngredientMasterAdd.tsx`
+- Add **ImageUploadHero** on left side
+- Place Name + Description on right side (same input heights)
+- Replace progress bar with **StockAvailabilityBadge** in Inventory card header
+- Keep all other sections
+
+### 5. Create `IngredientMasterEdit.tsx`
+- Clone of Add page with:
+  - Pre-fill form data from route params (mock for now)
+  - Button text: "Update" instead of "Save"
+  - Page title: "Edit Ingredient"
+  - Confirmation modal text: "Updated! Ready to apply changes?"
+
+### 6. Update `IngredientSaveConfirmModal.tsx`
+- Add `isEditMode` prop
+- Different title/message for edit mode
+
+### 7. Add route for edit
+- `/inventory/ingredients/:id/edit` → `IngredientMasterEdit`
 
 ---
 
 ## Files to Create/Modify
 
-| Action | File | Changes |
+| Action | File | Purpose |
 |--------|------|---------|
-| UPDATE | `src/components/shared/DashedSectionCard.tsx` | Add `muted` color variant |
-| CREATE | `src/components/ingredients/IngredientSaveConfirmModal.tsx` | Friendly confirmation modal |
-| REWRITE | `src/pages/inventory/IngredientMasterAdd.tsx` | Complete single-column redesign |
-| UPDATE | `src/lib/i18n/translations.ts` | Add ingredient-specific translation keys |
+| CREATE | `src/components/shared/StockAvailabilityBadge.tsx` | Small stock ribbon component |
+| MODIFY | `src/components/shared/DashedSectionCard.tsx` | Add rightBadge prop |
+| MODIFY | `src/components/shared/MultiLanguageInputWithIndicators.tsx` | 12px font, singleLine option |
+| REWRITE | `src/pages/inventory/IngredientMasterAdd.tsx` | New layout with image + refined UI |
+| CREATE | `src/pages/inventory/IngredientMasterEdit.tsx` | Edit page with pre-fill |
+| MODIFY | `src/components/ingredients/IngredientSaveConfirmModal.tsx` | Edit mode messaging |
+| MODIFY | `src/App.tsx` | Add edit route |
+| MODIFY | `src/lib/i18n/translations.ts` | Add edit mode strings |
 
 ---
 
-## Form State Structure
+## Visual Specifications
 
-```typescript
-const [formData, setFormData] = useState({
-  // Basic Info
-  name_en: "",
-  name_ar: "",
-  name_ur: "",
-  description_en: "",
-  description_ar: "",
-  description_ur: "",
+| Element | Specification |
+|---------|---------------|
+| Image size | 280×280px (aspect-square) |
+| Name input height | `h-10` (40px) |
+| Description height | `h-10` (40px) - matches name |
+| EN/AR/UR label font | **`text-[12px]`** |
+| Stock badge | Small pill, positioned in header right |
+| Card shadows | `shadow-sm` for subtle depth |
+| Input borders | `border rounded-md` with focus ring |
 
-  // Classification
-  ingredient_type: "",        // solid | liquid | powder | other
-  unit: "",                   // kg | g | l | ml | piece | pack
-  storage_type: "",           // freezer | fridge | dry | room_temp
-  categories: [] as string[], // Multi-select
+### Stock Badge Colors
+| Range | Background | Text |
+|-------|------------|------|
+| >70% | `bg-green-100` | `text-green-700` |
+| 30-70% | `bg-yellow-100` | `text-yellow-700` |
+| <30% | `bg-red-100` | `text-red-700` |
 
-  // Inventory & Alerts
-  min_stock_alert: 10,
-  shelf_life_days: null as number | null,
-  reorder_point: null as number | null,
-  current_stock: 100,
-  max_stock: 100,
+---
 
-  // Pricing
-  cost_price: 0,
-  selling_price: null as number | null,
-  can_purchase: true,
-  will_return_on_cancel: false,
+## Section 1: Ingredient Basics Layout
 
-  // Details
-  yield_percentage: 100,
-  allergens: [] as AllergenType[],
-  supplier: "",
-
-  // Status
-  is_active: true,
-});
+```tsx
+<DashedSectionCard title="Ingredient Basics" icon={Carrot} variant="purple">
+  <div className="flex gap-6">
+    {/* Left: Image Upload */}
+    <div className="flex-shrink-0">
+      <ImageUploadHero value={imageUrl} onChange={setImageUrl} size={280} />
+    </div>
+    
+    {/* Right: Name + Description (stacked, same height) */}
+    <div className="flex-1 flex flex-col gap-4">
+      <MultiLanguageInputWithIndicators
+        label="Ingredient Name"
+        values={{ en, ar, ur }}
+        onChange={handleNameChange}
+        required
+        singleLine  // h-10
+      />
+      <MultiLanguageInputWithIndicators
+        label="Short Description"
+        values={{ en, ar, ur }}
+        onChange={handleDescChange}
+        singleLine  // h-10 same as name
+      />
+    </div>
+  </div>
+</DashedSectionCard>
 ```
 
 ---
 
-## Dropdown Options
+## Inventory Card with Stock Badge
 
-### Ingredient Type
-- Solid, Liquid, Powder, Other
-
-### Unit
-- Kilogram (KG), Gram (G), Liter (L), Milliliter (ML), Piece, Pack, Box, Dozen
-
-### Storage Type
-- Freezer (-18°C), Fridge/Chiller (0-4°C), Dry/Ambient, Room Temperature
-
-### Ingredient Categories (Multi-Select)
-- Meat & Poultry, Dairy, Produce/Vegetables, Spices & Herbs, Dry Goods, Oils & Fats, Beverages/Base, Packaging, Seafood, Bakery Items
-
----
-
-## DashedSectionCard Update - Add Muted Variant
-
-```typescript
-muted: {
-  border: "border-gray-300/40",
-  headerBg: "bg-gray-50",
-  headerBorder: "border-gray-200/50",
-  iconColor: "text-gray-600",
-  titleColor: "text-gray-700",
-},
+```tsx
+<DashedSectionCard
+  title="Inventory & Alerts"
+  icon={AlertTriangle}
+  variant="amber"
+  rightBadge={<StockAvailabilityBadge percentage={68} />}
+>
+  {/* No progress bar - just the fields */}
+  <div className="grid grid-cols-4 gap-4">
+    <FormField label="Min Stock Alert" tooltip="..." required>...</FormField>
+    <FormField label="Shelf Life" tooltip="...">...</FormField>
+    <FormField label="PAR Level" tooltip="...">...</FormField>
+    <FormField label="Current Stock">...</FormField>
+  </div>
+</DashedSectionCard>
 ```
-
----
-
-## Confirmation Modal
-
-**Title:** "Great Choice! 🥕"  
-**Message:** "Ready to save this ingredient? It will be available for recipes & items."  
-**Summary Card:** Shows Name, Type, Unit, Category, Cost Price, Storage Type
-
----
-
-## Grid Strategy (Maximize Horizontal Space)
-
-| Section | Grid |
-|---------|------|
-| Basics | `grid-cols-1 md:grid-cols-2` |
-| Classification | `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` |
-| Inventory | `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` |
-| Pricing | `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` |
-| Details | `grid-cols-1 md:grid-cols-2` + full-width allergens |
 
 ---
 
@@ -230,78 +227,80 @@ muted: {
 
 ```typescript
 ingredients: {
-  visualAndBasics: "Visual & Basics",
-  classification: "Classification",
-  inventoryAndAlerts: "Inventory & Alerts",
-  pricing: "Pricing",
-  details: "Details",
-  ingredientType: "Type",
-  storageType: "Storage Type",
-  categoryGroup: "Category/Group",
-  minStockAlert: "Min Stock Alert",
-  shelfLifeDays: "Shelf Life (Days)",
-  parLevel: "PAR Level",
-  sellingPrice: "Selling Price",
-  canPurchase: "Can Purchase",
-  willReturnOnCancel: "Return on Cancel",
-  yieldPercentage: "Yield %",
-  supplier: "Supplier/Vendor",
-  allergenFlags: "Allergen Flags",
+  // Edit mode
+  editIngredient: "Edit Ingredient",
+  updateIngredient: "Update Ingredient",
   
-  // Types
-  solid: "Solid",
-  liquid: "Liquid",
-  powder: "Powder",
-  other: "Other",
-  
-  // Storage
-  freezer: "Freezer (-18°C)",
-  fridge: "Fridge/Chiller (0-4°C)",
-  dryAmbient: "Dry/Ambient",
-  roomTemp: "Room Temperature",
-  
-  // Categories
-  meatPoultry: "Meat & Poultry",
-  dairy: "Dairy",
-  produceVegetables: "Produce/Vegetables",
-  // ...etc
-  
-  // Confirmation
-  greatChoice: "Great Choice!",
-  readyToSaveIngredient: "Ready to save this ingredient?",
-  availableForRecipes: "It will be available for recipes & items.",
-  
-  // Tooltips
-  minStockTooltip: "Trigger low-stock notification when quantity falls below this level",
-  shelfLifeTooltip: "Typical days before expiry/spoilage (used for FIFO & waste prevention)",
-  parLevelTooltip: "Ideal minimum quantity to maintain - triggers reorder when reached",
-  yieldTooltip: "Usable portion after trimming/cleaning (e.g., 85% for chicken after bones)",
-  canPurchaseTooltip: "Allow purchasing this ingredient from suppliers through PO system",
-  willReturnTooltip: "Can this ingredient be returned to stock if an order is canceled?",
+  // Confirmation modal
+  perfectReady: "Perfect!",
+  readyToSave: "Ready to save this ingredient?",
+  updated: "Updated!",
+  readyToApply: "Ready to apply changes?",
 },
+
+common: {
+  update: "Update",
+}
 ```
-
----
-
-## Visual Specifications
-
-| Element | Value |
-|---------|-------|
-| Layout | **Full width (col-12)** |
-| Section gap | `gap-5` (20px) |
-| Card radius | `rounded-xl` (12px) |
-| Card border | `border-2 border-dashed` |
-| Input height | `h-10` (40px) |
-| Grid gap | `gap-4` (16px) |
-| Progress bar | `h-3` (12px) |
-| Footer | Sticky bottom |
 
 ---
 
 ## Implementation Order
 
-1. **Update `DashedSectionCard.tsx`** - Add `muted` variant
-2. **Create `IngredientSaveConfirmModal.tsx`** - Friendly confirmation modal
-3. **Rewrite `IngredientMasterAdd.tsx`** - Complete single-column redesign
-4. **Update `translations.ts`** - Add all ingredient keys
+1. **Create `StockAvailabilityBadge.tsx`** - New small badge component
+2. **Update `DashedSectionCard.tsx`** - Add rightBadge prop support
+3. **Update `MultiLanguageInputWithIndicators.tsx`** - 12px font, singleLine prop
+4. **Rewrite `IngredientMasterAdd.tsx`** - Image + refined layout
+5. **Create `IngredientMasterEdit.tsx`** - Pre-fill + edit mode
+6. **Update `IngredientSaveConfirmModal.tsx`** - Edit mode support
+7. **Update `App.tsx`** - Add edit route
+8. **Update `translations.ts`** - Edit strings
 
+---
+
+## Form Validation
+
+Required fields (same for add & edit):
+- Ingredient Name (EN)
+- Type
+- Unit
+- Storage Type
+- Min Stock Alert
+- Cost Price
+
+---
+
+## Edit Mode Detection
+
+```tsx
+// In IngredientMasterEdit.tsx
+const { id } = useParams();
+const isEditMode = !!id;
+
+// Pre-fill mock data (later: fetch from Supabase)
+useEffect(() => {
+  if (id) {
+    // Mock data for now
+    setFormData({
+      name_en: "Chicken Breast",
+      ingredient_type: "solid",
+      // ...pre-filled values
+    });
+  }
+}, [id]);
+```
+
+---
+
+## Summary
+
+This refined design creates a polished, efficient Ingredient Master form that:
+
+1. Adds **image upload** capability (left side, 280px square)
+2. Keeps Name & Description **same height** (compact, no gaps)
+3. Replaces large progress bar with **small stock ribbon** badge
+4. Uses **12px font** for EN/AR/UR indicators
+5. Supports both **Add** and **Edit** modes
+6. Shows **"Update"** button text in edit mode
+7. Has **different confirmation messages** for add vs edit
+8. Maintains all dashed-border section cards with color variants
