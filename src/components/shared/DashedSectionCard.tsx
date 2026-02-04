@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ColorVariant = "purple" | "green" | "blue" | "amber";
+type ColorVariant = "purple" | "green" | "blue" | "amber" | "muted";
 
 interface DashedSectionCardProps {
   title: string;
@@ -46,6 +46,13 @@ const variants: Record<ColorVariant, {
     headerBorder: "border-amber-200/50",
     iconColor: "text-amber-600",
     titleColor: "text-amber-700",
+  },
+  muted: {
+    border: "border-gray-300/40",
+    headerBg: "bg-gray-50",
+    headerBorder: "border-gray-200/50",
+    iconColor: "text-gray-600",
+    titleColor: "text-gray-700",
   },
 };
 
