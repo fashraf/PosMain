@@ -857,6 +857,7 @@ export default function ItemsAdd() {
               icon={Package}
               variant="muted"
               isComplete={isItemsComplete}
+              rightBadge={
                 <Button
                   variant="outline"
                   size="sm"
@@ -875,10 +876,13 @@ export default function ItemsAdd() {
                   const mapping = subItemMappings.find((m) => m.id === id);
                   if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
                 }}
-                onManageReplacements={handleOpenReplacementModal}
+                onAdd={() => setShowAddItemModal(true)}
+                onReplacement={handleOpenReplacementModal}
                 onRemoveReplacement={handleRemoveReplacement}
                 onViewReplacement={handleViewReplacement}
-                currentLanguage={currentLanguage}
+                totalCost={totalSubItemCost}
+                totalComboPrice={totalSubItemCost}
+                isCombo={formData.is_combo}
               />
               
               {subItemMappings.length > 0 && (
@@ -971,8 +975,16 @@ export default function ItemsAdd() {
           is_active: formData.is_active,
           is_combo: formData.is_combo,
           base_cost: formData.base_cost,
+          prep_time: formData.preparation_time_minutes || 0,
+          calories: formData.calories,
+          highlights: formData.highlights,
+          allergens: formData.allergens,
+          current_stock: formData.current_stock,
+          low_stock_threshold: formData.low_stock_threshold,
           ingredientMappings: ingredientMappings,
-          subItemMappings: subItemMappings,
+          itemMappings: subItemMappings,
+          ingredientTotalCost: totalIngredientCost,
+          itemTotalCost: totalSubItemCost,
         }}
       />
 

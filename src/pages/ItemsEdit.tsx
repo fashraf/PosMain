@@ -676,12 +676,9 @@ export default function ItemsEdit() {
               </div>
 
               <ImageUploadHero
-                currentImage={formData.image_url}
-                onImageChange={(file) => setImageFile(file)}
-                onImageRemove={() => {
-                  setFormData((prev) => ({ ...prev, image_url: null }));
-                  setImageFile(null);
-                }}
+                value={formData.image_url}
+                onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
+                onFileChange={(file) => setImageFile(file)}
               />
 
               <div className="flex items-center justify-between pt-2 border-t">
@@ -857,6 +854,8 @@ export default function ItemsEdit() {
               currentStock={formData.current_stock}
               maxStock={100}
               lowStockThreshold={formData.low_stock_threshold}
+              onCurrentStockChange={(val) => setFormData((prev) => ({ ...prev, current_stock: val }))}
+              onThresholdChange={(val) => setFormData((prev) => ({ ...prev, low_stock_threshold: val }))}
             />
           </DashedSectionCard>
         </div>
@@ -868,7 +867,7 @@ export default function ItemsEdit() {
             icon={Carrot}
             variant="muted"
             isComplete={isIngredientsComplete}
-            headerAction={
+            rightBadge={
               <Button
                 variant="outline"
                 size="sm"
@@ -905,7 +904,7 @@ export default function ItemsEdit() {
               icon={Package}
               variant="muted"
               isComplete={isItemsComplete}
-              headerAction={
+              rightBadge={
                 <Button
                   variant="outline"
                   size="sm"
@@ -924,10 +923,13 @@ export default function ItemsEdit() {
                   const mapping = subItemMappings.find((m) => m.id === id);
                   if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
                 }}
-                onManageReplacements={handleOpenReplacementModal}
+                onAdd={() => setShowAddItemModal(true)}
+                onReplacement={handleOpenReplacementModal}
                 onRemoveReplacement={handleRemoveReplacement}
                 onViewReplacement={handleViewReplacement}
-                currentLanguage={currentLanguage}
+                totalCost={totalSubItemCost}
+                totalComboPrice={totalSubItemCost}
+                isCombo={formData.is_combo}
               />
               
               {subItemMappings.length > 0 && (
@@ -1008,16 +1010,30 @@ export default function ItemsEdit() {
         onOpenChange={setShowConfirmModal}
         onConfirm={handleConfirmSave}
         isLoading={isSaving}
+        isEdit={true}
         item={{
-          name: formData.name_en,
+          name_en: formData.name_en,
+          name_ar: formData.name_ar,
+          name_ur: formData.name_ur,
+          description_en: formData.description_en,
+          image_url: formData.image_url,
+          item_type: formData.item_type,
           category: categories?.find((c) => c.id === formData.category)?.name_en || "",
-          servingTimes: formData.serving_times
-            .map((id) => servingTimes?.find((s) => s.id === id)?.name_en || id)
-            .join(", "),
-          baseCost: formData.base_cost,
-          isCombo: formData.is_combo,
-          ingredientCount: ingredientMappings.length,
-          subItemCount: subItemMappings.length,
+          subcategories: formData.subcategories,
+          serving_times: formData.serving_times,
+          is_active: formData.is_active,
+          is_combo: formData.is_combo,
+          base_cost: formData.base_cost,
+          prep_time: formData.preparation_time_minutes || 0,
+          calories: formData.calories,
+          highlights: formData.highlights,
+          allergens: formData.allergens,
+          current_stock: formData.current_stock,
+          low_stock_threshold: formData.low_stock_threshold,
+          ingredientMappings: ingredientMappings,
+          itemMappings: subItemMappings,
+          ingredientTotalCost: totalIngredientCost,
+          itemTotalCost: totalSubItemCost,
         }}
       />
 
@@ -1026,7 +1042,7 @@ export default function ItemsEdit() {
         onOpenChange={(open) => setComboConfirm((prev) => ({ ...prev, open }))}
         onConfirm={confirmComboChange}
         title={t("items.enableComboMode")}
-        description={t("items.comboModeDescription")}
+        message={t("items.comboModeDescription") || "This will enable combo mode for this item."}
         confirmLabel={t("common.confirm")}
       />
 
@@ -1035,7 +1051,7 @@ export default function ItemsEdit() {
         onOpenChange={(open) => setStatusConfirm((prev) => ({ ...prev, open }))}
         onConfirm={confirmStatusChange}
         title={t("items.deactivateItem")}
-        description={t("items.deactivateItemDescription")}
+        message={t("items.deactivateItemDescription") || "This will deactivate the item."}
         confirmLabel={t("common.confirm")}
         variant="destructive"
       />
