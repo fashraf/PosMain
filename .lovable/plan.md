@@ -1,505 +1,532 @@
 
-# Implementation Plan: Dynamic Dropdowns & Toggle Confirmations
+# Restaurant POS System - Tablet-First Implementation Plan
 
-## Problem Summary
-
-The Item Master Add/Edit forms (`ItemsAdd.tsx`, `ItemsEdit.tsx`) and Ingredient Master forms (`IngredientMasterAdd.tsx`, `IngredientMasterEdit.tsx`) are using **hardcoded dropdown arrays** instead of fetching from maintenance tables. Changes made in maintenance pages (e.g., renaming "Vegetarian" to "Vegetarian1") are NOT reflected in these forms.
-
----
-
-## Current State (Hardcoded Arrays Found)
-
-| File | Hardcoded Arrays |
-|------|-----------------|
-| `ItemsAdd.tsx` (lines 46-72) | `CATEGORIES`, `SUBCATEGORIES`, `SERVING_TIMES` |
-| `ItemsEdit.tsx` (lines 46-72) | `CATEGORIES`, `SUBCATEGORIES`, `SERVING_TIMES` |
-| `IngredientMasterAdd.tsx` (lines 30-66) | `INGREDIENT_TYPES`, `UNITS`, `STORAGE_TYPES`, `INGREDIENT_CATEGORIES` |
-| `IngredientMasterEdit.tsx` (lines 30-66) | `INGREDIENT_TYPES`, `UNITS`, `STORAGE_TYPES`, `INGREDIENT_CATEGORIES` |
+## Executive Summary
+Build a dedicated tablet-optimized Point of Sale module for restaurant waiters and cashiers. This is a **new standalone module** within the existing admin system, accessible via `/pos` route, with its own layout optimized for 10-13 inch landscape tablets.
 
 ---
 
-## Solution Overview
+## Architecture Overview
 
-1. **Replace all hardcoded arrays** with dynamic data from `useMaintenanceData.ts` hooks
-2. **Use `SearchableSelect`** for single-select dropdowns (Category, Item Type, Unit, Storage Type)
-3. **Use `SearchableMultiSelect`** for multi-select fields (Subcategory, Serving Times)
-4. **Implement cascading logic** - Subcategory filters by selected Category
-5. **Add confirmation modals** for important toggle changes (Is Combo, Status)
-6. **Add comprehensive tooltips** to all fields
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                         POS MAIN SCREEN                             │
+├──────────────────────────────────────┬──────────────────────────────┤
+│           LEFT PANEL (70%)           │    RIGHT PANEL (30%)         │
+│  ┌────────────────────────────────┐  │  ┌────────────────────────┐  │
+│  │      CATEGORY BAR (STICKY)     │  │  │     CART HEADER        │  │
+│  │ [Breakfast][Lunch][Dinner][⭐]  │  │  │     Order #1234        │  │
+│  └────────────────────────────────┘  │  └────────────────────────┘  │
+│  ┌────────────────────────────────┐  │  ┌────────────────────────┐  │
+│  │                                │  │  │                        │  │
+│  │      SCROLLABLE ITEM GRID      │  │  │    CART ITEMS LIST     │  │
+│  │    (3-4 cards per row)         │  │  │    (Scrollable)        │  │
+│  │                                │  │  │                        │  │
+│  │  ┌──────┐ ┌──────┐ ┌──────┐   │  │  │  Pepsi x1        1.00  │  │
+│  │  │ Item │ │ Item │ │ Item │   │  │  │  (c) Masala x2  40.00  │  │
+│  │  │ Card │ │ Card │ │ Card │   │  │  │    +Cheese            │  │
+│  │  └──────┘ └──────┘ └──────┘   │  │  │    -Onion             │  │
+│  │                                │  │  │                        │  │
+│  └────────────────────────────────┘  │  └────────────────────────┘  │
+│                                      │  ┌────────────────────────┐  │
+│                                      │  │  Subtotal       41.00  │  │
+│                                      │  │  VAT 15%         6.15  │  │
+│                                      │  │  ─────────────────────  │  │
+│                                      │  │  TOTAL          47.15  │  │
+│                                      │  └────────────────────────┘  │
+│                                      │  ┌────────────────────────┐  │
+│                                      │  │    [ PAY 47.15 ]       │  │
+│                                      │  │    (Sticky Button)     │  │
+│                                      │  └────────────────────────┘  │
+└──────────────────────────────────────┴──────────────────────────────┘
+```
 
 ---
 
-## Files to Modify
+## Database Schema Changes
 
-### Item Forms (Primary Changes)
+### New Tables Required
 
-| File | Changes |
-|------|---------|
-| `src/pages/ItemsAdd.tsx` | Remove hardcoded arrays, import hooks, replace Select with SearchableSelect, add cascading subcategory logic, add toggle confirmations |
-| `src/pages/ItemsEdit.tsx` | Same changes as ItemsAdd.tsx |
+#### 1. `pos_menu_items` - POS-specific item configuration
+```sql
+CREATE TABLE pos_menu_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name_en TEXT NOT NULL,
+  name_ar TEXT,
+  name_ur TEXT,
+  description_en TEXT,
+  category_id UUID REFERENCES maintenance_categories(id),
+  base_price DECIMAL(10,2) NOT NULL,
+  image_url TEXT,
+  is_customizable BOOLEAN DEFAULT false,
+  is_favorite BOOLEAN DEFAULT false,
+  is_available BOOLEAN DEFAULT true,
+  sort_order INTEGER,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
-### Ingredient Forms
+#### 2. `pos_item_ingredients` - Ingredients that can be modified
+```sql
+CREATE TABLE pos_item_ingredients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  menu_item_id UUID REFERENCES pos_menu_items(id) ON DELETE CASCADE,
+  ingredient_name_en TEXT NOT NULL,
+  ingredient_name_ar TEXT,
+  extra_price DECIMAL(10,2) DEFAULT 0,
+  is_removable BOOLEAN DEFAULT true,
+  is_default_included BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
-| File | Changes |
-|------|---------|
-| `src/pages/inventory/IngredientMasterAdd.tsx` | Remove hardcoded arrays, import hooks, replace all dropdowns with SearchableSelect using dynamic data |
-| `src/pages/inventory/IngredientMasterEdit.tsx` | Same changes as IngredientMasterAdd.tsx |
+#### 3. `pos_item_replacements` - Replacement options (e.g., drinks)
+```sql
+CREATE TABLE pos_item_replacements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  menu_item_id UUID REFERENCES pos_menu_items(id) ON DELETE CASCADE,
+  replacement_group TEXT NOT NULL, -- e.g., "Drink", "Side"
+  replacement_name_en TEXT NOT NULL,
+  replacement_name_ar TEXT,
+  price_difference DECIMAL(10,2) DEFAULT 0,
+  is_default BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
-### Translations
+#### 4. `pos_orders` - Order header
+```sql
+CREATE TABLE pos_orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_number SERIAL,
+  order_type TEXT CHECK (order_type IN ('pay_order', 'delivery', 'takeaway', 'dine_in')),
+  customer_mobile TEXT,
+  customer_name TEXT,
+  subtotal DECIMAL(10,2) NOT NULL,
+  vat_amount DECIMAL(10,2) NOT NULL,
+  total_amount DECIMAL(10,2) NOT NULL,
+  payment_status TEXT CHECK (payment_status IN ('pending', 'paid', 'cancelled')),
+  payment_method TEXT,
+  taken_by UUID REFERENCES profiles(id),
+  branch_id UUID REFERENCES branches(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
-| File | Changes |
-|------|---------|
-| `src/lib/i18n/translations.ts` | Add confirmation modal messages for toggle actions |
+#### 5. `pos_order_items` - Order line items with customization
+```sql
+CREATE TABLE pos_order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID REFERENCES pos_orders(id) ON DELETE CASCADE,
+  menu_item_id UUID REFERENCES pos_menu_items(id),
+  item_name TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  unit_price DECIMAL(10,2) NOT NULL,
+  customization_json JSONB, -- Stores extras, removals, replacements
+  customization_hash TEXT, -- For matching identical customizations
+  line_total DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
 ---
 
-## Detailed Implementation
+## File Structure
 
-### Phase 1: ItemsAdd.tsx Changes
-
-**1. Remove hardcoded arrays** (lines 46-72):
-```typescript
-// DELETE these lines:
-const CATEGORIES = [...];
-const SUBCATEGORIES = [...];
-const SERVING_TIMES = [...];
+```text
+src/
+├── pages/
+│   └── pos/
+│       ├── POSMain.tsx              # Main split-screen layout
+│       ├── POSCheckout.tsx          # Checkout modal/drawer
+│       └── index.ts
+│
+├── components/
+│   └── pos/
+│       ├── layout/
+│       │   ├── POSLayout.tsx        # Tablet-optimized wrapper (no sidebar)
+│       │   ├── SplitPanelContainer.tsx
+│       │   └── index.ts
+│       │
+│       ├── category/
+│       │   ├── CategoryBar.tsx      # Horizontal scrolling pills
+│       │   ├── CategoryPill.tsx     # Individual category button
+│       │   └── index.ts
+│       │
+│       ├── items/
+│       │   ├── ItemGrid.tsx         # Grid container
+│       │   ├── ItemCard.tsx         # Individual item card
+│       │   ├── SimpleItemCard.tsx   # Non-customizable item
+│       │   ├── CustomizableItemCard.tsx # With Customize button
+│       │   └── index.ts
+│       │
+│       ├── cart/
+│       │   ├── CartPanel.tsx        # Right sidebar cart
+│       │   ├── CartHeader.tsx       # Order info
+│       │   ├── CartItemList.tsx     # Scrollable items
+│       │   ├── CartItem.tsx         # Individual cart row
+│       │   ├── CartTotals.tsx       # Subtotal, VAT, Total
+│       │   ├── PayButton.tsx        # Sticky pay button
+│       │   └── index.ts
+│       │
+│       ├── customization/
+│       │   ├── CustomizeDrawer.tsx  # Bottom sheet modal
+│       │   ├── DrawerHeader.tsx     # Item name + image
+│       │   ├── IngredientSection.tsx # Remove/Extra toggles
+│       │   ├── IngredientCard.tsx   # Individual ingredient
+│       │   ├── ReplacementSection.tsx # Radio group replacements
+│       │   ├── ReplacementCard.tsx  # Selectable replacement
+│       │   ├── PriceSummary.tsx     # Live price calculation
+│       │   └── index.ts
+│       │
+│       ├── checkout/
+│       │   ├── CheckoutDrawer.tsx   # Full checkout modal
+│       │   ├── OrderSummary.tsx     # Final order review
+│       │   ├── OrderTypeSelector.tsx # Pay/Delivery/Takeaway/Dine-In
+│       │   ├── CustomerForm.tsx     # Mobile + Name inputs
+│       │   ├── PaymentOptions.tsx   # Pay Now / Pay Later
+│       │   ├── OrderTakenBy.tsx     # User dropdown
+│       │   └── index.ts
+│       │
+│       └── shared/
+│           ├── TouchButton.tsx      # 48x48 min touch target
+│           ├── ItemImage.tsx        # 40x40 with placeholder
+│           └── index.ts
+│
+├── hooks/
+│   └── pos/
+│       ├── usePOSCart.ts           # Cart state management
+│       ├── usePOSItems.ts          # Items query hook
+│       ├── usePOSCategories.ts     # Categories query hook
+│       ├── useCustomization.ts     # Customization state
+│       ├── useCheckout.ts          # Checkout flow
+│       └── index.ts
+│
+└── lib/
+    └── pos/
+        ├── cartUtils.ts            # Hash generation, merging logic
+        ├── priceCalculations.ts    # VAT, totals
+        └── types.ts                # TypeScript interfaces
 ```
 
-**2. Add imports for hooks and components**:
+---
+
+## Component Specifications
+
+### 1. POSLayout.tsx
+- Full-screen layout without admin sidebar
+- Fixed landscape orientation optimization
+- No page reloads - single page application
+- Touch-optimized scrolling
+
+### 2. CategoryBar.tsx
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ ← [Breakfast] [Lunch] [Dinner] [Drinks] [Desserts] [⭐ Favorites] → │
+└─────────────────────────────────────────────────────────────────┘
+```
+- Height: 56px minimum
+- Horizontal scroll with swipe
+- Active state: filled primary color
+- Inactive: outlined
+
+### 3. ItemCard.tsx
+```text
+SIMPLE ITEM:
+┌────────────────────────────────┐
+│ [40px IMG]   🍹 Pepsi          │
+│              Rs. 1.00          │
+│                                │
+│     [ ➕ ADD ]  (56px height)  │
+└────────────────────────────────┘
+
+CUSTOMIZABLE ITEM:
+┌────────────────────────────────┐
+│ [40px IMG]   🥘 Masala Paneer  │
+│              Rs. 228.00        │
+│                                │
+│ [ ➕ ADD ]    [ ✏️ CUSTOMIZE ]  │
+└────────────────────────────────┘
+```
+- Card min-width: 200px
+- Button height: 56px minimum
+- ADD: Primary filled
+- CUSTOMIZE: Secondary outlined
+- Image: 40x40, rounded-lg, object-cover
+
+### 4. CartItem.tsx
+```text
+┌─────────────────────────────────────────────┐
+│ Pepsi              [ - ]  1  [ + ]    1.00  │
+├─────────────────────────────────────────────┤
+│ (c) Masala Paneer  [ - ]  2  [ + ]   40.00  │
+│     + Cheese (+7.00)                        │
+│     - Onion                                 │
+│     Replace: Coke                           │
+└─────────────────────────────────────────────┘
+```
+- (c) indicator for customized items
+- Inline quantity controls
+- Click to edit customization
+- Swipe to delete (optional)
+
+### 5. CustomizeDrawer.tsx
+Bottom sheet using `vaul` Drawer component:
+- 80% viewport height
+- Scrollable content area
+- Sticky footer with "Add to Cart" button
+- Live price updates
+
+### 6. IngredientCard.tsx
+```text
+┌──────────────────────────────────────────┐
+│ 🧀 Cheese                                │
+│    Rs. 7.00                              │
+│                                          │
+│ [ ➖ REMOVE ]          [ ➕ EXTRA ]       │
+│  (red when active)    (green when active)│
+└──────────────────────────────────────────┘
+```
+- Mutually exclusive states
+- Visual feedback: red outline for REMOVE, green for EXTRA
+- Touch targets: 48x48 minimum
+
+### 7. ReplacementCard.tsx
+```text
+UNSELECTED:                    SELECTED:
+┌──────────────┐              ┌──────────────┐
+│ 🥤 Pepsi     │              │ 🥤 Coke ✔️   │ ← Green bg
+│ Rs. 0.00     │              │ +Rs. 0.00    │   White text
+└──────────────┘              └──────────────┘
+```
+- Radio behavior (single selection)
+- Entire card clickable
+- Selected: green background, white text, checkmark
+
+---
+
+## State Management
+
+### Cart Context (usePOSCart.ts)
 ```typescript
-import { 
-  useCategories, 
-  useSubcategories, 
-  useServingTimes,
-  useItemTypes,
-  useLocalizedLabel 
-} from "@/hooks/useMaintenanceData";
-import { SearchableSelect } from "@/components/shared/SearchableSelect";
-import { SearchableMultiSelect } from "@/components/shared/SearchableMultiSelect";
-import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
+interface CartItem {
+  id: string;
+  menuItemId: string;
+  name: string;
+  basePrice: number;
+  quantity: number;
+  customization: {
+    extras: Array<{ name: string; price: number }>;
+    removals: string[];
+    replacement?: { name: string; priceDiff: number };
+  };
+  customizationHash: string; // MD5 of sorted customization
+  lineTotal: number;
+}
+
+interface CartState {
+  items: CartItem[];
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  total: number;
+}
 ```
 
-**3. Add hook calls inside component**:
+### Customization Merging Logic
 ```typescript
-// Dynamic data hooks
-const { data: categories, isLoading: categoriesLoading } = useCategories();
-const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategories(formData.category);
-const { data: servingTimes, isLoading: servingTimesLoading } = useServingTimes();
-const { data: itemTypes, isLoading: itemTypesLoading } = useItemTypes();
-const getLocalizedLabel = useLocalizedLabel();
-```
-
-**4. Add confirmation modal states**:
-```typescript
-const [comboConfirm, setComboConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
-const [statusConfirm, setStatusConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
-```
-
-**5. Transform data for dropdowns**:
-```typescript
-const categoryOptions = useMemo(() => 
-  (categories || []).map(c => ({ id: c.id, label: getLocalizedLabel(c) })), 
-  [categories, getLocalizedLabel]
-);
-
-const subcategoryOptions = useMemo(() => 
-  (subcategories || []).map(s => ({ id: s.id, label: getLocalizedLabel(s) })), 
-  [subcategories, getLocalizedLabel]
-);
-
-const servingTimeOptions = useMemo(() => 
-  (servingTimes || []).map(s => ({ id: s.id, label: getLocalizedLabel(s) })), 
-  [servingTimes, getLocalizedLabel]
-);
-
-const itemTypeOptions = useMemo(() => 
-  (itemTypes || []).map(i => ({ id: i.id, label: getLocalizedLabel(i) })), 
-  [itemTypes, getLocalizedLabel]
-);
-```
-
-**6. Reset subcategories when category changes**:
-```typescript
-useEffect(() => {
-  // Clear subcategory selection when category changes
-  if (formData.category) {
-    setFormData(prev => ({ ...prev, subcategories: [] }));
-  }
-}, [formData.category]);
-```
-
-**7. Replace Category dropdown** (around line 608-622):
-```typescript
-<SearchableSelect
-  value={formData.category}
-  onChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-  options={categoryOptions}
-  placeholder={t("items.selectCategory")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={categoriesLoading}
-/>
-```
-
-**8. Replace Subcategory dropdown** with multi-select:
-```typescript
-<SearchableMultiSelect
-  value={formData.subcategories}
-  onChange={(value) => setFormData((prev) => ({ ...prev, subcategories: value }))}
-  options={subcategoryOptions}
-  placeholder={formData.category ? t("items.selectSubcategories") : t("items.selectCategoryFirst")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={subcategoriesLoading}
-  disabled={!formData.category}
-/>
-```
-
-**9. Replace Serving Times** with multi-select checkboxes:
-```typescript
-<SearchableMultiSelect
-  value={formData.serving_times}
-  onChange={(value) => setFormData((prev) => ({ ...prev, serving_times: value }))}
-  options={servingTimeOptions}
-  placeholder={t("items.selectServingTimes")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={servingTimesLoading}
-/>
-```
-
-**10. Replace Item Type dropdown** (around line 539-552):
-```typescript
-<SearchableSelect
-  value={formData.item_type}
-  onChange={(value) => setFormData((prev) => ({ ...prev, item_type: value }))}
-  options={itemTypeOptions}
-  placeholder={t("common.select")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={itemTypesLoading}
-/>
-```
-
-**11. Add toggle confirmation handlers**:
-```typescript
-const handleComboToggle = (checked: boolean) => {
-  if (checked) {
-    // Enabling combo - show confirmation
-    setComboConfirm({ open: true, newValue: true });
+// Same item + same customization = merge quantities
+function addToCart(newItem: CartItem, cart: CartItem[]) {
+  const existing = cart.find(
+    item => item.menuItemId === newItem.menuItemId 
+         && item.customizationHash === newItem.customizationHash
+  );
+  
+  if (existing) {
+    existing.quantity += newItem.quantity;
+    existing.lineTotal = existing.quantity * calculateItemPrice(existing);
   } else {
-    // Disabling - direct change
-    setFormData((prev) => ({ ...prev, is_combo: false }));
+    cart.push(newItem);
   }
-};
-
-const confirmComboChange = () => {
-  setFormData((prev) => ({ ...prev, is_combo: comboConfirm.newValue }));
-  setComboConfirm({ open: false, newValue: false });
-};
-
-const handleStatusToggle = (checked: boolean) => {
-  if (!checked) {
-    // Deactivating - show confirmation
-    setStatusConfirm({ open: true, newValue: false });
-  } else {
-    setFormData((prev) => ({ ...prev, is_active: true }));
-  }
-};
-
-const confirmStatusChange = () => {
-  setFormData((prev) => ({ ...prev, is_active: statusConfirm.newValue }));
-  setStatusConfirm({ open: false, newValue: false });
-};
-```
-
-**12. Update Switch components to use confirmation**:
-```typescript
-<Switch
-  id="isCombo"
-  checked={formData.is_combo}
-  onCheckedChange={handleComboToggle}
-/>
-
-<Switch
-  id="status"
-  checked={formData.is_active}
-  onCheckedChange={handleStatusToggle}
-/>
-```
-
-**13. Add confirmation modals at end of JSX**:
-```typescript
-{/* Combo Confirmation */}
-<ConfirmActionModal
-  open={comboConfirm.open}
-  onOpenChange={(open) => !open && setComboConfirm({ open: false, newValue: false })}
-  onConfirm={confirmComboChange}
-  title={t("items.enableComboTitle")}
-  message={t("items.enableComboMessage")}
-  confirmLabel={t("common.confirm")}
-/>
-
-{/* Status Confirmation */}
-<ConfirmActionModal
-  open={statusConfirm.open}
-  onOpenChange={(open) => !open && setStatusConfirm({ open: false, newValue: false })}
-  onConfirm={confirmStatusChange}
-  title={t("items.deactivateItemTitle")}
-  message={t("items.deactivateItemMessage")}
-  confirmLabel={t("common.confirm")}
-  variant="destructive"
-/>
-```
-
-**14. Update confirmModalItem to use dynamic labels**:
-```typescript
-const confirmModalItem = useMemo(() => ({
-  // ...
-  category: categories?.find((c) => c.id === formData.category)?.name_en || "",
-  subcategories: formData.subcategories.map((id) => 
-    subcategories?.find((s) => s.id === id)?.name_en || ""
-  ).filter(Boolean),
-  serving_times: formData.serving_times.map((id) => 
-    servingTimes?.find((s) => s.id === id)?.name_en || ""
-  ).filter(Boolean),
-  item_type: itemTypes?.find((i) => i.id === formData.item_type)?.name_en || formData.item_type,
-  // ...
-}), [formData, categories, subcategories, servingTimes, itemTypes, ...]);
+}
 ```
 
 ---
 
-### Phase 2: ItemsEdit.tsx Changes
+## Routing Changes
 
-Apply identical changes as ItemsAdd.tsx:
-- Remove hardcoded arrays
-- Import hooks and components
-- Add hook calls
-- Add confirmation modals
-- Replace all dropdowns
-- Update category-subcategory cascading
-
----
-
-### Phase 3: IngredientMasterAdd.tsx Changes
-
-**1. Remove hardcoded arrays** (lines 30-66):
+Update `src/App.tsx`:
 ```typescript
-// DELETE these lines:
-const INGREDIENT_TYPES = [...];
-const UNITS = [...];
-const STORAGE_TYPES = [...];
-const INGREDIENT_CATEGORIES = [...];
-```
-
-**2. Add imports**:
-```typescript
-import { 
-  useUnits, 
-  useStorageTypes, 
-  useIngredientGroups,
-  useLocalizedLabel 
-} from "@/hooks/useMaintenanceData";
-import { SearchableMultiSelect } from "@/components/shared/SearchableMultiSelect";
-```
-
-**3. Add hook calls**:
-```typescript
-const { data: units, isLoading: unitsLoading } = useUnits();
-const { data: storageTypes, isLoading: storageTypesLoading } = useStorageTypes();
-const { data: ingredientGroups, isLoading: groupsLoading } = useIngredientGroups();
-const getLocalizedLabel = useLocalizedLabel();
-
-// Keep ingredient types as static (Solid/Liquid/Powder/Other is standard)
-const INGREDIENT_TYPES = [
-  { id: "solid", label: t("ingredients.solid") },
-  { id: "liquid", label: t("ingredients.liquid") },
-  { id: "powder", label: t("ingredients.powder") },
-  { id: "other", label: t("ingredients.other") },
-];
-```
-
-**4. Transform data for dropdowns**:
-```typescript
-const unitOptions = useMemo(() => 
-  (units || []).map(u => ({ 
-    id: u.id, 
-    label: `${getLocalizedLabel(u)} (${u.symbol})` 
-  })), 
-  [units, getLocalizedLabel]
-);
-
-const storageTypeOptions = useMemo(() => 
-  (storageTypes || []).map(s => ({ 
-    id: s.id, 
-    label: `${getLocalizedLabel(s)}${s.temp_range ? ` (${s.temp_range})` : ''}` 
-  })), 
-  [storageTypes, getLocalizedLabel]
-);
-
-const ingredientGroupOptions = useMemo(() => 
-  (ingredientGroups || []).map(g => ({ id: g.id, label: getLocalizedLabel(g) })), 
-  [ingredientGroups, getLocalizedLabel]
-);
-```
-
-**5. Replace Unit dropdown**:
-```typescript
-<SearchableSelect
-  value={formData.unit}
-  onChange={(value) => setFormData((prev) => ({ ...prev, unit: value }))}
-  options={unitOptions}
-  placeholder={t("common.select")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={unitsLoading}
-/>
-```
-
-**6. Replace Storage Type dropdown**:
-```typescript
-<SearchableSelect
-  value={formData.storage_type}
-  onChange={(value) => setFormData((prev) => ({ ...prev, storage_type: value }))}
-  options={storageTypeOptions}
-  placeholder={t("common.select")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={storageTypesLoading}
-/>
-```
-
-**7. Replace Category chips with SearchableMultiSelect**:
-```typescript
-<SearchableMultiSelect
-  value={formData.categories}
-  onChange={(value) => setFormData((prev) => ({ ...prev, categories: value }))}
-  options={ingredientGroupOptions}
-  placeholder={t("common.select")}
-  searchPlaceholder={t("common.search")}
-  emptyText={t("common.noResults")}
-  isLoading={groupsLoading}
-/>
-```
-
-**8. Update ingredientSummary to use dynamic labels**:
-```typescript
-const ingredientSummary = {
-  name: formData.name_en,
-  type: INGREDIENT_TYPES.find((t) => t.id === formData.ingredient_type)?.label || "",
-  unit: units?.find((u) => u.id === formData.unit)?.name_en || "",
-  storageType: storageTypes?.find((s) => s.id === formData.storage_type)?.name_en || "",
-  categories: formData.categories.map(
-    (cId) => ingredientGroups?.find((g) => g.id === cId)?.name_en || cId
-  ),
-  costPrice: formData.cost_price,
-};
+// Add new POS route (outside AdminLayout)
+<Route path="/pos" element={
+  <ProtectedRoute>
+    <POSLayout>
+      <POSMain />
+    </POSLayout>
+  </ProtectedRoute>
+} />
 ```
 
 ---
 
-### Phase 4: IngredientMasterEdit.tsx Changes
+## Styling Guidelines
 
-Apply identical changes as IngredientMasterAdd.tsx.
+### Touch Target Enforcement
+```css
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 16px;
+}
+```
 
----
+### Button Styles
+```css
+.pos-btn-primary {
+  @apply h-14 min-h-[56px] text-base font-medium;
+  @apply bg-primary text-primary-foreground;
+  @apply active:scale-95 transition-transform;
+}
 
-### Phase 5: Add Translations
+.pos-btn-secondary {
+  @apply h-14 min-h-[56px] text-base font-medium;
+  @apply border-2 border-primary bg-transparent text-primary;
+}
+```
 
-Add to `src/lib/i18n/translations.ts`:
+### Item Card Grid
+```css
+.item-grid {
+  @apply grid gap-4;
+  @apply grid-cols-2 md:grid-cols-3 lg:grid-cols-4;
+}
 
-```typescript
-// English
-items: {
-  // ... existing
-  selectCategoryFirst: "Select category first",
-  selectServingTimes: "Select serving times",
-  enableComboTitle: "Enable Combo?",
-  enableComboMessage: "Enabling combo allows sub-item mapping. This will change how this item is configured. Continue?",
-  deactivateItemTitle: "Deactivate Item?",
-  deactivateItemMessage: "Deactivating this item will remove it from POS and menu display. It can be reactivated later.",
-},
-ingredients: {
-  // ... existing
-  solid: "Solid",
-  liquid: "Liquid", 
-  powder: "Powder",
-  other: "Other",
-},
-
-// Arabic
-items: {
-  selectCategoryFirst: "اختر الفئة أولاً",
-  selectServingTimes: "اختر أوقات التقديم",
-  enableComboTitle: "تفعيل الكومبو؟",
-  enableComboMessage: "تفعيل الكومبو يسمح بربط العناصر الفرعية. سيغير هذا كيفية تكوين هذا العنصر. متابعة؟",
-  deactivateItemTitle: "إلغاء تنشيط العنصر؟",
-  deactivateItemMessage: "إلغاء تنشيط هذا العنصر سيزيله من نقطة البيع وعرض القائمة. يمكن إعادة تنشيطه لاحقًا.",
-},
-ingredients: {
-  solid: "صلب",
-  liquid: "سائل",
-  powder: "مسحوق",
-  other: "أخرى",
-},
-
-// Urdu
-items: {
-  selectCategoryFirst: "پہلے زمرہ منتخب کریں",
-  selectServingTimes: "سروس کے اوقات منتخب کریں",
-  enableComboTitle: "کومبو فعال کریں؟",
-  enableComboMessage: "کومبو کو فعال کرنے سے ذیلی آئٹم میپنگ ممکن ہو جائے گی۔ یہ اس آئٹم کی تشکیل کو تبدیل کر دے گا۔ جاری رکھیں؟",
-  deactivateItemTitle: "آئٹم غیر فعال کریں؟",
-  deactivateItemMessage: "اس آئٹم کو غیر فعال کرنے سے یہ POS اور مینو سے ہٹ جائے گا۔ بعد میں دوبارہ فعال کیا جا سکتا ہے۔",
-},
-ingredients: {
-  solid: "ٹھوس",
-  liquid: "مائع",
-  powder: "پاؤڈر",
-  other: "دیگر",
-},
+.item-card {
+  @apply bg-card border rounded-xl p-4;
+  @apply min-w-[180px];
+  @apply active:bg-accent/50 transition-colors;
+}
 ```
 
 ---
 
-## Tooltip Additions
+## Implementation Phases
 
-Add tooltips to all dropdowns using `TooltipInfo`:
+### Phase 1: Foundation (Priority: HIGH)
+1. Database migrations for all POS tables
+2. POSLayout.tsx - tablet-optimized wrapper
+3. SplitPanelContainer.tsx - 70/30 layout
+4. Basic routing setup
 
-| Field | Tooltip |
-|-------|---------|
-| Category | "Main grouping used for filtering, reports, and kitchen routing (pulled live from maintenance)" |
-| Subcategory | "More specific tag filtered by category - multi-select allowed" |
-| Serving Time | "When this item is typically available - select multiple if needed" |
-| Item Type | "Classification affecting inventory and preparation workflow" |
-| Unit | "Base measurement unit for tracking and recipes" |
-| Storage Type | "Required storage conditions - affects warehouse organization" |
-| Category/Group | "Grouping for purchasing and inventory reports" |
+### Phase 2: Category & Items (Priority: HIGH)
+1. CategoryBar.tsx with horizontal scroll
+2. ItemGrid.tsx with responsive columns
+3. ItemCard.tsx (simple + customizable variants)
+4. usePOSItems.ts and usePOSCategories.ts hooks
+5. ItemImage.tsx with lazy loading + placeholder
+
+### Phase 3: Cart Functionality (Priority: HIGH)
+1. usePOSCart.ts context/hook
+2. CartPanel.tsx layout
+3. CartItem.tsx with quantity controls
+4. CartTotals.tsx with VAT calculation
+5. PayButton.tsx sticky footer
+
+### Phase 4: Customization (Priority: MEDIUM)
+1. CustomizeDrawer.tsx using vaul
+2. IngredientSection.tsx with toggle logic
+3. ReplacementSection.tsx with radio behavior
+4. PriceSummary.tsx live calculation
+5. Hash generation for customization matching
+
+### Phase 5: Checkout (Priority: MEDIUM)
+1. CheckoutDrawer.tsx full-screen modal
+2. OrderSummary.tsx review list
+3. OrderTypeSelector.tsx tab group
+4. CustomerForm.tsx mobile + name
+5. PaymentOptions.tsx pay now/later
+6. Order creation API integration
+
+### Phase 6: Polish (Priority: LOW)
+1. Favorites filtering
+2. Search functionality
+3. Order history view
+4. Receipt printing integration
+5. Offline support (PWA)
 
 ---
 
-## Summary of Changes
+## Translation Keys to Add
 
-| File | Action |
-|------|--------|
-| `src/pages/ItemsAdd.tsx` | Replace 3 hardcoded arrays with hooks, use SearchableSelect/MultiSelect, add cascading logic, add toggle confirmations |
-| `src/pages/ItemsEdit.tsx` | Same as ItemsAdd.tsx |
-| `src/pages/inventory/IngredientMasterAdd.tsx` | Replace 3 hardcoded arrays (keep type static), use SearchableSelect/MultiSelect |
-| `src/pages/inventory/IngredientMasterEdit.tsx` | Same as IngredientMasterAdd.tsx |
-| `src/lib/i18n/translations.ts` | Add confirmation modal messages and ingredient type labels |
+```typescript
+pos: {
+  title: "Point of Sale",
+  addToCart: "Add to Cart",
+  customize: "Customize",
+  cart: "Cart",
+  emptyCart: "Your cart is empty",
+  subtotal: "Subtotal",
+  vat: "VAT",
+  total: "Total",
+  pay: "Pay",
+  remove: "Remove",
+  extra: "Extra",
+  replacement: "Replace",
+  checkout: "Checkout",
+  orderType: "Order Type",
+  payOrder: "Pay & Order",
+  delivery: "Delivery",
+  takeaway: "Take Away",
+  dineIn: "Dine-In",
+  customerMobile: "Mobile Number",
+  customerName: "Customer Name",
+  payNow: "Pay Now",
+  payLater: "Pay Later",
+  orderTakenBy: "Order Taken By",
+  placeOrder: "Place Order",
+  quantity: "Qty",
+  favorites: "Favorites",
+  customized: "Customized",
+  basePrice: "Base Price",
+  extras: "Extras",
+  itemTotal: "Item Total",
+}
+```
 
 ---
 
-## Expected Behavior After Implementation
+## Performance Considerations
 
-1. **Category dropdown** shows live data from `maintenance_categories` table
-2. **Subcategory dropdown** filters based on selected Category
-3. **Serving Times** uses multi-select from `serving_times` table
-4. **Item Type** uses searchable dropdown from `item_types` table
-5. **Unit/Storage Type** in ingredients use live data
-6. **Toggling "Is Combo"** shows confirmation modal
-7. **Toggling Status to inactive** shows warning modal
-8. All dropdowns have **search functionality**
-9. All dropdowns show **loading skeletons** while fetching
-10. Changes in maintenance (e.g., "Vegetarian" → "Vegetarian1") **reflect immediately**
+1. **Lazy Loading Images**: Use `loading="lazy"` and intersection observer
+2. **Virtualized Lists**: Consider react-virtual for long item grids
+3. **Optimistic Updates**: Update cart UI immediately, sync in background
+4. **Memoization**: useMemo for filtered items, useCallback for handlers
+5. **Code Splitting**: Dynamic imports for customization drawer
+
+---
+
+## Summary of Files to Create
+
+| Category | Files | Count |
+|----------|-------|-------|
+| Pages | POSMain.tsx, POSCheckout.tsx | 2 |
+| Layout Components | POSLayout.tsx, SplitPanelContainer.tsx | 2 |
+| Category Components | CategoryBar.tsx, CategoryPill.tsx | 2 |
+| Item Components | ItemGrid.tsx, ItemCard.tsx, SimpleItemCard.tsx, CustomizableItemCard.tsx | 4 |
+| Cart Components | CartPanel.tsx, CartHeader.tsx, CartItemList.tsx, CartItem.tsx, CartTotals.tsx, PayButton.tsx | 6 |
+| Customization Components | CustomizeDrawer.tsx, DrawerHeader.tsx, IngredientSection.tsx, IngredientCard.tsx, ReplacementSection.tsx, ReplacementCard.tsx, PriceSummary.tsx | 7 |
+| Checkout Components | CheckoutDrawer.tsx, OrderSummary.tsx, OrderTypeSelector.tsx, CustomerForm.tsx, PaymentOptions.tsx, OrderTakenBy.tsx | 6 |
+| Shared Components | TouchButton.tsx, ItemImage.tsx | 2 |
+| Hooks | usePOSCart.ts, usePOSItems.ts, usePOSCategories.ts, useCustomization.ts, useCheckout.ts | 5 |
+| Utilities | cartUtils.ts, priceCalculations.ts, types.ts | 3 |
+| **Total** | | **39 files** |
+
+### Database Migrations
+- 5 new tables with RLS policies
+- Seed data for testing
+
+### Route Updates
+- App.tsx routing modifications
+- Translation additions
