@@ -50,6 +50,7 @@ import ClassificationTypesPage from "@/pages/maintenance/ClassificationTypes";
 import UnitsPage from "@/pages/maintenance/Units";
 import StorageTypesPage from "@/pages/maintenance/StorageTypes";
 import IngredientGroupsPage from "@/pages/maintenance/IngredientGroups";
+ import Users from "@/pages/Users";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -112,6 +113,7 @@ const App = () => (
                       <Route path="/maintenance/units" element={<UnitsPage />} />
                       <Route path="/maintenance/storage-types" element={<StorageTypesPage />} />
                       <Route path="/maintenance/ingredient-groups" element={<IngredientGroupsPage />} />
+                       <Route path="/users" element={<Users />} />
                       {/* Catch-all for 404 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
