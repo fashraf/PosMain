@@ -50,7 +50,10 @@ import ClassificationTypesPage from "@/pages/maintenance/ClassificationTypes";
 import UnitsPage from "@/pages/maintenance/Units";
 import StorageTypesPage from "@/pages/maintenance/StorageTypes";
 import IngredientGroupsPage from "@/pages/maintenance/IngredientGroups";
- import Users from "@/pages/Users";
+import Users from "@/pages/Users";
+// POS Module
+import { POSMain } from "@/pages/pos";
+import { POSLayout } from "@/components/pos/layout";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -63,6 +66,18 @@ const App = () => (
           <Routes>
             {/* Public route */}
             <Route path="/login" element={<Login />} />
+            
+            {/* POS Module - separate layout */}
+            <Route
+              path="/pos"
+              element={
+                <ProtectedRoute>
+                  <POSLayout>
+                    <POSMain />
+                  </POSLayout>
+                </ProtectedRoute>
+              }
+            />
             
             {/* Protected routes with AdminLayout */}
             <Route
