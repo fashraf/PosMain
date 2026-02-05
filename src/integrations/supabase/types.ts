@@ -173,6 +173,77 @@ export type Database = {
         }
         Relationships: []
       }
+      items: {
+        Row: {
+          base_cost: number
+          category_id: string | null
+          created_at: string
+          description_ar: string | null
+          description_en: string | null
+          description_ur: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_combo: boolean
+          is_customizable: boolean
+          is_favorite: boolean
+          item_type: string | null
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          base_cost?: number
+          category_id?: string | null
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          description_ur?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_combo?: boolean
+          is_customizable?: boolean
+          is_favorite?: boolean
+          item_type?: string | null
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          base_cost?: number
+          category_id?: string | null
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string | null
+          description_ur?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_combo?: boolean
+          is_customizable?: boolean
+          is_favorite?: boolean
+          item_type?: string | null
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_categories: {
         Row: {
           created_at: string

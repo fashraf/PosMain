@@ -19,8 +19,8 @@ export function CategoryPill({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex shrink-0 snap-start items-center gap-2 rounded-full px-5 py-2.5",
-        "min-h-[44px] text-sm font-medium",
+      "flex shrink-0 snap-start items-center gap-2 rounded-full px-6 py-3",
+      "min-h-[56px] text-base font-semibold",
         "touch-manipulation transition-colors",
         "active:scale-95",
         isSelected

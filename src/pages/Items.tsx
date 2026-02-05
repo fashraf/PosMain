@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { ItemTable, type Item } from "@/components/items/ItemTable";
@@ -9,31 +10,8 @@ import { StatusBadge, YesNoBadge, TypeBadge } from "@/components/shared/StatusBa
 import { GridFilters, type FilterConfig } from "@/components/shared/GridFilters";
 import { GridPagination } from "@/components/shared/GridPagination";
 import { useToast } from "@/components/ui/use-toast";
-import { Plus, ShoppingBag, DollarSign } from "lucide-react";
-
-// Mock data - expanded for pagination demo
-const initialItems: Item[] = [
-  { id: "1", name_en: "Margherita Pizza", name_ar: "بيتزا مارغريتا", name_ur: "مارگریٹا پیزا", description_en: "Classic pizza with tomato and mozzarella", description_ar: "بيتزا كلاسيكية مع الطماطم والموزاريلا", description_ur: "ٹماٹر اور موزاریلا کے ساتھ کلاسک پیزا", item_type: "edible", base_cost: 12.99, is_combo: false, image_url: null, is_active: true },
-  { id: "2", name_en: "Chicken Burger", name_ar: "برجر دجاج", name_ur: "چکن برگر", description_en: "Juicy chicken patty with fresh vegetables", description_ar: "قطعة دجاج عصيرية مع خضروات طازجة", description_ur: "تازہ سبزیوں کے ساتھ رسیلی چکن پیٹی", item_type: "edible", base_cost: 8.99, is_combo: false, image_url: null, is_active: true },
-  { id: "3", name_en: "Family Meal Combo", name_ar: "كومبو وجبة عائلية", name_ur: "فیملی میل کومبو", description_en: "2 pizzas, 4 burgers, and drinks", description_ar: "2 بيتزا، 4 برجر، ومشروبات", description_ur: "2 پیزا، 4 برگر، اور مشروبات", item_type: "edible", base_cost: 45.99, is_combo: true, image_url: null, is_active: true },
-  { id: "4", name_en: "Paper Napkins", name_ar: "مناديل ورقية", name_ur: "کاغذی نیپکن", description_en: "Pack of 100 napkins", description_ar: "عبوة من 100 منديل", description_ur: "100 نیپکن کا پیک", item_type: "non_edible", base_cost: 2.99, is_combo: false, image_url: null, is_active: false },
-  { id: "5", name_en: "Pepperoni Pizza", name_ar: "بيتزا بيبروني", name_ur: "پیپرونی پیزا", description_en: "Pizza with pepperoni and cheese", description_ar: "بيتزا مع بيبروني وجبن", description_ur: "پیپرونی اور پنیر کے ساتھ پیزا", item_type: "edible", base_cost: 14.99, is_combo: false, image_url: null, is_active: true },
-  { id: "6", name_en: "Beef Burger", name_ar: "برجر لحم", name_ur: "بیف برگر", description_en: "Premium beef patty with sauce", description_ar: "قطعة لحم فاخرة مع صلصة", description_ur: "سوس کے ساتھ پریمیم بیف پیٹی", item_type: "edible", base_cost: 11.99, is_combo: false, image_url: null, is_active: true },
-  { id: "7", name_en: "Caesar Salad", name_ar: "سلطة سيزر", name_ur: "سیزر سلاد", description_en: "Fresh romaine with Caesar dressing", description_ar: "خس طازج مع صلصة سيزر", description_ur: "سیزر ڈریسنگ کے ساتھ تازہ رومین", item_type: "edible", base_cost: 7.99, is_combo: false, image_url: null, is_active: true },
-  { id: "8", name_en: "French Fries", name_ar: "بطاطس مقلية", name_ur: "فرینچ فرائز", description_en: "Crispy golden fries", description_ar: "بطاطس مقلية مقرمشة", description_ur: "کرسپی گولڈن فرائز", item_type: "edible", base_cost: 4.99, is_combo: false, image_url: null, is_active: true },
-  { id: "9", name_en: "Chocolate Cake", name_ar: "كعكة شوكولاتة", name_ur: "چاکلیٹ کیک", description_en: "Rich chocolate layer cake", description_ar: "كعكة شوكولاتة غنية", description_ur: "امیر چاکلیٹ لیئر کیک", item_type: "edible", base_cost: 6.99, is_combo: false, image_url: null, is_active: true },
-  { id: "10", name_en: "Cola Drink", name_ar: "مشروب كولا", name_ur: "کولا ڈرنک", description_en: "Refreshing cola beverage", description_ar: "مشروب كولا منعش", description_ur: "تازگی بخش کولا مشروب", item_type: "edible", base_cost: 2.49, is_combo: false, image_url: null, is_active: true },
-  { id: "11", name_en: "BBQ Wings", name_ar: "أجنحة باربكيو", name_ur: "بی بی کیو ونگز", description_en: "Spicy BBQ chicken wings", description_ar: "أجنحة دجاج باربكيو حارة", description_ur: "مسالہ دار بی بی کیو چکن ونگز", item_type: "edible", base_cost: 9.99, is_combo: false, image_url: null, is_active: true },
-  { id: "12", name_en: "Garlic Bread", name_ar: "خبز بالثوم", name_ur: "گارلک بریڈ", description_en: "Toasted bread with garlic butter", description_ar: "خبز محمص بزبدة الثوم", description_ur: "لہسن مکھن کے ساتھ ٹوسٹ روٹی", item_type: "edible", base_cost: 3.99, is_combo: false, image_url: null, is_active: true },
-  { id: "13", name_en: "Veggie Supreme Pizza", name_ar: "بيتزا الخضار", name_ur: "ویجی سپریم پیزا", description_en: "Loaded with fresh vegetables", description_ar: "محملة بالخضروات الطازجة", description_ur: "تازہ سبزیوں سے بھری ہوئی", item_type: "edible", base_cost: 13.99, is_combo: false, image_url: null, is_active: true },
-  { id: "14", name_en: "Fish & Chips", name_ar: "سمك وبطاطس", name_ur: "فش اینڈ چپس", description_en: "Crispy fish with fries", description_ar: "سمك مقرمش مع البطاطس", description_ur: "فرائز کے ساتھ کرسپی مچھلی", item_type: "edible", base_cost: 15.99, is_combo: false, image_url: null, is_active: true },
-  { id: "15", name_en: "Chicken Wrap", name_ar: "راب دجاج", name_ur: "چکن ریپ", description_en: "Grilled chicken in tortilla", description_ar: "دجاج مشوي في تورتيلا", description_ur: "ٹورٹیلا میں گرلڈ چکن", item_type: "edible", base_cost: 8.49, is_combo: false, image_url: null, is_active: true },
-  { id: "16", name_en: "Mozzarella Sticks", name_ar: "أصابع موزاريلا", name_ur: "موزاریلا سٹکس", description_en: "Fried mozzarella cheese sticks", description_ar: "أصابع جبن موزاريلا مقلية", description_ur: "تلی ہوئی موزاریلا پنیر سٹکس", item_type: "edible", base_cost: 5.99, is_combo: false, image_url: null, is_active: true },
-  { id: "17", name_en: "Party Platter", name_ar: "طبق الحفلات", name_ur: "پارٹی پلیٹر", description_en: "Assorted appetizers for sharing", description_ar: "مقبلات متنوعة للمشاركة", description_ur: "بانٹنے کے لیے مختلف ایپیٹائزرز", item_type: "edible", base_cost: 55.99, is_combo: true, image_url: null, is_active: true },
-  { id: "18", name_en: "Ice Cream Sundae", name_ar: "صنداي آيس كريم", name_ur: "آئس کریم سنڈے", description_en: "Vanilla ice cream with toppings", description_ar: "آيس كريم فانيلا مع إضافات", description_ur: "ٹاپنگز کے ساتھ ونیلا آئس کریم", item_type: "edible", base_cost: 4.49, is_combo: false, image_url: null, is_active: true },
-  { id: "19", name_en: "Plastic Forks", name_ar: "شوك بلاستيكية", name_ur: "پلاسٹک فورکس", description_en: "Pack of 50 disposable forks", description_ar: "عبوة من 50 شوكة للاستخدام مرة واحدة", description_ur: "50 ڈسپوزایبل فورکس کا پیک", item_type: "non_edible", base_cost: 1.99, is_combo: false, image_url: null, is_active: true },
-  { id: "20", name_en: "Take-out Boxes", name_ar: "صناديق التوصيل", name_ur: "ٹیک آؤٹ باکسز", description_en: "Eco-friendly packaging boxes", description_ar: "صناديق تغليف صديقة للبيئة", description_ur: "ماحول دوست پیکیجنگ باکسز", item_type: "non_edible", base_cost: 0.49, is_combo: false, image_url: null, is_active: true },
-];
+import { Plus, ShoppingBag, DollarSign, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 15;
 
@@ -42,7 +20,34 @@ export default function Items() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [items, setItems] = useState<Item[]>(initialItems);
+  // Fetch items from database
+  const { data: items = [], isLoading, refetch } = useQuery({
+    queryKey: ["items-master"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("items")
+        .select("*")
+        .order("sort_order", { ascending: true });
+      
+      if (error) throw error;
+      
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        name_en: item.name_en,
+        name_ar: item.name_ar,
+        name_ur: item.name_ur,
+        description_en: item.description_en,
+        description_ar: item.description_ar,
+        description_ur: item.description_ur,
+        item_type: item.item_type || "edible",
+        base_cost: Number(item.base_cost),
+        is_combo: item.is_combo,
+        image_url: item.image_url,
+        is_active: item.is_active,
+      })) as Item[];
+    },
+  });
+
   const [viewingItem, setViewingItem] = useState<Item | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -170,10 +175,22 @@ export default function Items() {
     navigate(`/items/${item.id}/edit`);
   };
 
-  const handleToggleStatus = (item: Item) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, is_active: !i.is_active } : i))
-    );
+  const handleToggleStatus = async (item: Item) => {
+    const { error } = await supabase
+      .from("items")
+      .update({ is_active: !item.is_active })
+      .eq("id", item.id);
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    refetch();
     toast({
       title: item.is_active ? t("common.deactivate") : t("common.activate"),
       description: `${item.name_en} has been ${item.is_active ? "deactivated" : "activated"}.`,
@@ -217,6 +234,14 @@ export default function Items() {
       ],
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
