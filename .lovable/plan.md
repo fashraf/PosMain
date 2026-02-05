@@ -1,432 +1,161 @@
 
+# Fix Plan: RLS Policy Violation on Maintenance Tables
 
-# Implementation Plan: Maintenance Pages for Master Data
+## Problem Summary
 
-## Overview
+All maintenance pages (Categories, Subcategories, Allergens, etc.) fail on **INSERT, UPDATE, and DELETE** operations with:
+> "new row violates row-level security policy for table..."
 
-Create a complete set of **9 maintenance pages** for centralized management of enumerable data used across the system. Each page follows a consistent **single-table + modal CRUD** pattern matching existing project standards.
-
----
-
-## Architecture Decision
-
-| Approach | Single-Table + Modal CRUD |
-|----------|---------------------------|
-| Pattern | List page with inline toggle + modal for Add/Edit |
-| Navigation | All pages accessible via sidebar under "Maintenance" submenu |
-| Components | Reuse existing `Dialog`, `Table`, `Switch`, `StatusBadge`, `CompactMultiLanguageInput`, `ConfirmActionModal` |
-| Styling | Tailwind + shadcn/ui, dotted borders on modals, 13px text, lavender hover effects |
-
----
-
-## Sidebar Navigation Update
-
-Add new "Maintenance" collapsible menu in `AppSidebar.tsx`:
-
-```text
-📂 Maintenance
-  ├── Categories
-  ├── Subcategories
-  ├── Serving Times
-  ├── Allergens
-  ├── Item Types
-  ├── Classification Types
-  ├── Units
-  ├── Storage Types
-  └── Ingredient Groups
-```
-
----
-
-## Database Tables Required
-
-| Table | Key Fields |
+| Issue | Root Cause |
 |-------|------------|
-| `maintenance_categories` | id, name_en, name_ar, name_ur, description, icon_class, sort_order, is_active |
-| `maintenance_subcategories` | id, name_en, name_ar, name_ur, parent_category_id (FK), description, is_active |
-| `serving_times` | id, name_en, name_ar, name_ur, sort_order, icon_class, is_active |
-| `allergens` | id, name_en, name_ar, name_ur, icon_class, severity (low/medium/high), is_active |
-| `item_types` | id, name_en, name_ar, name_ur, description, is_active |
-| `classification_types` | id, name_en, name_ar, name_ur, is_active |
-| `units` | id, name_en, name_ar, name_ur, symbol, conversion_factor, is_active |
-| `storage_types` | id, name_en, name_ar, name_ur, icon_class, temp_range, is_active |
-| `ingredient_groups` | id, name_en, name_ar, name_ur, description, is_active |
+| Current auth system | Uses hardcoded credentials + localStorage (NOT Supabase Auth) |
+| RLS policies | Require `auth.uid()` for authenticated check and `is_admin()` for write access |
+| Result | `auth.uid()` returns NULL since no real Supabase session exists |
 
 ---
 
-## Shared Components to Create
+## Solution Options
 
-### 1. MaintenanceDialog Component
-Reusable modal for Add/Edit with:
-- Dotted border styling (`border-2 border-dotted`)
-- 13px font, Title Case labels
-- CompactMultiLanguageInput for EN/AR/UR
-- Status toggle
-- Validation with focus-on-error
-- Confirmation modal on save
+### Option A: Proper Supabase Authentication (Recommended)
+Replace the fake auth system with real Supabase Auth:
+- Create admin user in Supabase
+- Implement proper login with `supabase.auth.signInWithPassword()`
+- Assign admin role in `user_roles` table
+- All RLS policies will work correctly
 
-### 2. MaintenanceTable Component
-Standardized table with:
-- 42px row height
-- Zebra striping (#F9FAFB/white)
-- Lavender hover (#F3F0FF)
-- Inline status toggle
-- Actions: View, Edit
-- Auto-incrementing serial numbers
+**Pros:** Secure, production-ready, follows best practices
+**Cons:** Requires more implementation effort
 
-### 3. DeleteConfirmModal
-Styled confirmation modal:
-- Warning icon
-- Impact message ("This may affect X items")
-- Soft delete option
+### Option B: Temporary Bypass for Development
+Allow public write access temporarily (INSECURE - only for development):
+- Add permissive policies that allow unauthenticated writes
+- Remove these before production
+
+**Pros:** Quick fix for testing
+**Cons:** Major security vulnerability, not recommended
 
 ---
 
-## Page-by-Page Specification
+## Recommended Implementation: Option A
 
-### 1. Categories (/maintenance/categories)
+### Phase 1: Update Auth System
 
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Description | Textarea | No |
-| Icon Class | Input (e.g., `utensils`, `cup-straw`) | No |
-| Sort Order | Number | No |
-| Status | Toggle | Yes (default: Active) |
+**File: `src/hooks/useAuth.tsx`**
 
-**Mock Data:**
-- Vegetarian, Non-Vegetarian, Drinks, Sheesha, Desserts
+Replace hardcoded auth with Supabase Auth:
 
-**Table Columns:**
-| # | Name | Icon | Sort | Status | Actions |
+```typescript
+import { supabase } from "@/integrations/supabase/client";
 
----
+export const AuthProvider = ({ children }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-### 2. Subcategories (/maintenance/subcategories)
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+    });
 
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Parent Category | SearchableSelect | Yes |
-| Description | Textarea | No |
-| Status | Toggle | Yes |
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => setSession(session)
+    );
 
-**Mock Data:**
-- Sea Food, Pan Cake, Pizza, Soft Drinks, Tea and Coffee, BBQ, Shawarma, Smoking Zone
+    return () => subscription.unsubscribe();
+  }, []);
 
-**Table Columns:**
-| # | Name | Parent Category | Status | Actions |
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
+  };
 
----
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
 
-### 3. Serving Times (/maintenance/serving-times)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Time Range | Input (e.g., "6:00 - 11:00") | No |
-| Sort Order | Number | No |
-| Icon Class | Input | No |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Breakfast (6:00 - 11:00), Lunch Specials (11:00 - 16:00), Dinner (16:00 - 23:00), Snacks (All Day)
-
-**Table Columns:**
-| # | Name | Time Range | Sort | Status | Actions |
-
----
-
-### 4. Allergens (/maintenance/allergens)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Icon Class | Input | No |
-| Severity | Select (Low/Medium/High) | Yes |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Nuts (High), Dairy (Medium), Gluten (Medium), Eggs (Low), Soy (Low), Shellfish (High), Wheat (Medium)
-
-**Table Columns:**
-| # | Name | Icon | Severity | Status | Actions |
-
-**Special:** Severity badge with color coding:
-- High: Red pill
-- Medium: Yellow pill
-- Low: Gray pill
-
----
-
-### 5. Item Types (/maintenance/item-types)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Description | Textarea | No |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Edible, Drink, Sheesha, Accessory
-
-**Table Columns:**
-| # | Name | Description | Status | Actions |
-
----
-
-### 6. Classification Types (/maintenance/classification-types)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Food, Beverage, Consumable, Accessory
-
-**Table Columns:**
-| # | Name | Status | Actions |
-
----
-
-### 7. Units (/maintenance/units)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Symbol | Input (e.g., kg, g, L) | Yes |
-| Base Unit | Select (reference to another unit or "self") | No |
-| Conversion Factor | Number (e.g., 1000 for g→kg) | No |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Kilogram (kg, base), Gram (g, 0.001 kg), Liter (L, base), Milliliter (mL, 0.001 L), Piece (pcs), Pack, Box
-
-**Table Columns:**
-| # | Name | Symbol | Conversion | Status | Actions |
-
----
-
-### 8. Storage Types (/maintenance/storage-types)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Icon Class | Input (e.g., `snowflake`, `thermometer`) | No |
-| Temperature Range | Input (e.g., "-18°C", "0-4°C") | No |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Freezer (-18°C), Fridge/Chiller (0-4°C), Dry/Ambient (15-25°C), Room Temp
-
-**Table Columns:**
-| # | Name | Icon | Temp Range | Status | Actions |
-
----
-
-### 9. Ingredient Groups (/maintenance/ingredient-groups)
-
-**Fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| Name (EN/AR/UR) | MultiLanguage Input | EN required |
-| Description | Textarea | No |
-| Status | Toggle | Yes |
-
-**Mock Data:**
-- Meat & Poultry, Dairy, Produce/Vegetables, Spices & Herbs, Dry Goods, Oils & Fats, Beverages/Base, Seafood, Bakery Items, Packaging
-
-**Table Columns:**
-| # | Name | Description | Status | Actions |
-
----
-
-## Files to Create
-
-```text
-src/pages/maintenance/
-├── Categories.tsx
-├── Subcategories.tsx
-├── ServingTimes.tsx
-├── Allergens.tsx
-├── ItemTypes.tsx
-├── ClassificationTypes.tsx
-├── Units.tsx
-├── StorageTypes.tsx
-└── IngredientGroups.tsx
-
-src/components/maintenance/
-├── MaintenanceDialog.tsx        # Reusable Add/Edit modal
-├── MaintenanceTable.tsx         # Standardized table component
-├── DeleteConfirmModal.tsx       # Deletion confirmation
-└── SeverityBadge.tsx            # For allergens severity display
+  // ...rest of provider
+};
 ```
+
+### Phase 2: Create Admin User
+
+**Database Migration:**
+
+```sql
+-- 1. First, sign up user via Supabase Auth dashboard or API
+-- 2. Then assign admin role (replace USER_ID with actual auth.users id):
+
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('USER_ID_HERE', 'admin');
+```
+
+### Phase 3: Update Login Page
+
+**File: `src/pages/Login.tsx`**
+
+Update to use Supabase sign-in:
+
+```typescript
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (!error) {
+    toast({ title: "Welcome back!" });
+    navigate("/", { replace: true });
+  } else {
+    toast({ 
+      title: "Invalid credentials", 
+      description: error.message,
+      variant: "destructive" 
+    });
+  }
+
+  setIsLoading(false);
+};
+```
+
+---
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/App.tsx` | Add routes for all 9 maintenance pages |
-| `src/components/AppSidebar.tsx` | Add "Maintenance" collapsible menu |
-| `src/lib/i18n/translations.ts` | Add translation keys for maintenance pages |
-| Database migrations | Create 9 new tables with RLS policies |
+| `src/hooks/useAuth.tsx` | Replace localStorage auth with Supabase Auth |
+| `src/pages/Login.tsx` | Use `supabase.auth.signInWithPassword()` |
+| `src/components/ProtectedRoute.tsx` | Check Supabase session instead of context |
+| Database | Create admin user + add role assignment |
 
 ---
 
-## UI Pattern for Each Page
+## Affected CRUD Operations
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ Maintenance - [Page Title]                    [+ Add Button] │
-├─────────────────────────────────────────────────────────────┤
-│ 🔍 Search...          [Status Filter ▼]                      │
-├─────────────────────────────────────────────────────────────┤
-│ # │ Name        │ [Other Cols]  │ Status  │ Actions          │
-├───┼─────────────┼───────────────┼─────────┼──────────────────┤
-│ 1 │ Vegetarian  │ ...           │ 🟢 Active │ 👁 ✏           │
-│ 2 │ Non-Veg     │ ...           │ ⚪ Inactive│ 👁 ✏          │
-└───┴─────────────┴───────────────┴─────────┴──────────────────┘
-│                    ← 1 2 3 ... →  (15 per page)              │
-└─────────────────────────────────────────────────────────────┘
-```
+Once fixed, these will all work correctly:
 
----
-
-## Modal Design
-
-```text
-┌─────────────────────────────────────────┐
-│ ╭╴Add/Edit [Entity Name]╶╮   [✕ Close] │  ← Dotted border
-├─────────────────────────────────────────┤
-│ Name *                                  │
-│ ┌────────────────────────────────────┐  │
-│ │ [EN] [AR] [UR]                     │  │  ← Tab switcher
-│ │ ┌────────────────────────────────┐ │  │
-│ │ │ Enter name...                  │ │  │
-│ │ └────────────────────────────────┘ │  │
-│ └────────────────────────────────────┘  │
-│                                         │
-│ [Other Fields...]                       │
-│                                         │
-│ Status        ○ Active  ● Inactive      │
-├─────────────────────────────────────────┤
-│                    [Cancel] [Save]      │  ← 13px, Title Case
-└─────────────────────────────────────────┘
-```
+| Page | INSERT | UPDATE | DELETE | TOGGLE STATUS |
+|------|--------|--------|--------|---------------|
+| Categories | ✓ | ✓ | ✓ | ✓ |
+| Subcategories | ✓ | ✓ | ✓ | ✓ |
+| Serving Times | ✓ | ✓ | ✓ | ✓ |
+| Allergens | ✓ | ✓ | ✓ | ✓ |
+| Item Types | ✓ | ✓ | ✓ | ✓ |
+| Classification Types | ✓ | ✓ | ✓ | ✓ |
+| Units | ✓ | ✓ | ✓ | ✓ |
+| Storage Types | ✓ | ✓ | ✓ | ✓ |
+| Ingredient Groups | ✓ | ✓ | ✓ | ✓ |
 
 ---
 
-## Confirmation Modal Pattern
+## Security Notes
 
-On Save click, show confirmation:
-
-```text
-┌─────────────────────────────────────────┐
-│         ✓ Ready to save?                │
-├─────────────────────────────────────────┤
-│  You are about to add "Vegetarian"      │
-│  as a new category.                     │
-│                                         │
-│  This will be available immediately     │
-│  across all item forms.                 │
-├─────────────────────────────────────────┤
-│              [Cancel]  [Confirm & Save] │
-└─────────────────────────────────────────┘
-```
-
----
-
-## Translation Keys to Add
-
-```typescript
-maintenance: {
-  title: "Maintenance",
-  categories: "Categories",
-  subcategories: "Subcategories",
-  servingTimes: "Serving Times",
-  allergens: "Allergens",
-  itemTypes: "Item Types",
-  classificationTypes: "Classification Types",
-  units: "Units",
-  storageTypes: "Storage Types",
-  ingredientGroups: "Ingredient Groups",
-  addNew: "Add New",
-  editEntry: "Edit Entry",
-  deleteConfirm: "Are you sure you want to delete this entry?",
-  deleteWarning: "This action cannot be undone. Existing items using this may be affected.",
-  parentCategory: "Parent Category",
-  iconClass: "Icon Class",
-  sortOrder: "Sort Order",
-  symbol: "Symbol",
-  conversionFactor: "Conversion Factor",
-  temperatureRange: "Temperature Range",
-  severity: "Severity",
-  severityLow: "Low",
-  severityMedium: "Medium",
-  severityHigh: "High",
-  timeRange: "Time Range",
-  noData: "No entries found",
-  addFirst: "Add your first entry to get started",
-}
-```
-
----
-
-## Best Practice Checklist
-
-| Requirement | Implementation |
-|-------------|----------------|
-| ✅ Multilingual EN/AR/UR | CompactMultiLanguageInput with 12px indicators |
-| ✅ Status Toggle | Inline Switch + StatusBadge |
-| ✅ Confirmation Modal | Before save/delete with friendly messaging |
-| ✅ Loading Overlay | LoadingOverlay on save operations |
-| ✅ Validation | Required field check, focus-on-first-error |
-| ✅ Search/Filter | Debounced search + status dropdown |
-| ✅ Pagination | 15 rows per page, DataTablePagination |
-| ✅ Tooltips | On icon fields and complex inputs |
-| ✅ Consistent Colors | Soft greens/purples, lavender hover |
-| ✅ Dotted Borders | `border-2 border-dotted` on modals |
-| ✅ 13px Typography | Sharp, clear text throughout |
-| ✅ Single-Table Design | All CRUD in modal, no separate pages |
-| ✅ Reusability | Shared MaintenanceDialog component |
-| ✅ RTL Support | Existing useLanguage hook handles this |
-
----
-
-## Implementation Order
-
-1. **Phase 1: Infrastructure**
-   - Create database migrations for all 9 tables
-   - Create shared components (MaintenanceDialog, MaintenanceTable)
-   - Update sidebar navigation
-   - Add translation keys
-
-2. **Phase 2: Core Pages** (used in /items/add)
-   - Categories
-   - Subcategories
-   - Serving Times
-   - Allergens
-
-3. **Phase 3: Supporting Pages**
-   - Item Types
-   - Classification Types
-   - Units
-
-4. **Phase 4: Inventory Pages**
-   - Storage Types
-   - Ingredient Groups
-
-5. **Phase 5: Integration**
-   - Update ItemsAdd.tsx to fetch from maintenance tables
-   - Replace hardcoded arrays with API calls
-   - Test end-to-end flow
-
+- Never store roles in localStorage
+- Always validate admin status server-side via RLS
+- The existing `is_admin()` function correctly checks `user_roles` table
+- No changes needed to RLS policies - they are correctly configured
