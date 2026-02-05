@@ -1,421 +1,329 @@
 
-# User Management Module - Implementation Plan
+
+# Implementation Plan: Dynamic Dropdowns, Tooltips, and Navigation Enhancement
 
 ## Overview
 
-Create a complete **User Management module** with CRUD operations for users, role assignment, and shift scheduling. The module will follow existing project patterns (maintenance pages design, modal-based dialogs, Premium Grid standards) while adding restaurant-specific features like shift scheduling with cross-midnight support.
+This plan addresses the comprehensive update to replace hardcoded dropdown values with dynamic data from maintenance tables, add helpful tooltips throughout forms, and reorganize navigation for better accessibility.
 
 ---
 
-## Architecture Decision
+## Current State Analysis
 
-| Component | Approach |
-|-----------|----------|
-| **User List** | Single-table view with search, filters, pagination (15 rows/page) |
-| **Add/Edit User** | Modal-based dialog (modal-lg) following MaintenanceDialog pattern |
-| **Shift Management** | Tabbed section within user modal or separate expandable card |
-| **Authentication** | Uses Supabase Auth for secure password hashing |
-| **Role Storage** | Existing `user_roles` table (NEVER in profiles/users) |
-
----
-
-## Database Schema Updates
-
-### 1. Extend `app_role` Enum
-Current: `'admin' | 'manager' | 'cashier'`
-New: `'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'kiosk'`
-
-### 2. Extend `profiles` Table
-Add columns:
-- `phone` (text, nullable)
-- `is_active` (boolean, default true)
-- `last_login_at` (timestamp, nullable)
-- `employee_code` (text, nullable, unique)
-
-### 3. New `user_shifts` Table
-
-```text
-user_shifts
-├── id (uuid, PK)
-├── user_id (uuid, FK -> auth.users)
-├── branch_id (uuid, FK -> branches, nullable)
-├── start_datetime (timestamptz)
-├── end_datetime (timestamptz)
-├── is_recurring (boolean, default false)
-├── recurring_days (text[], nullable) -- e.g., ['monday', 'tuesday']
-├── created_at (timestamptz)
-├── updated_at (timestamptz)
-├── created_by (uuid, FK -> auth.users, nullable)
-```
-
-### 4. New `user_activity_log` Table (Audit Trail)
-
-```text
-user_activity_log
-├── id (uuid, PK)
-├── target_user_id (uuid, FK -> auth.users)
-├── action (text) -- 'created', 'updated', 'role_changed', 'status_changed', 'password_reset'
-├── performed_by (uuid, FK -> auth.users)
-├── details (jsonb, nullable)
-├── created_at (timestamptz)
-```
+| Component | Current State | Target State |
+|-----------|---------------|--------------|
+| Category dropdown | Hardcoded array `CATEGORIES` in ItemsAdd.tsx | Dynamic from `maintenance_categories` table |
+| Subcategory dropdown | Hardcoded array `SUBCATEGORIES` | Dynamic from `maintenance_subcategories`, filtered by selected Category |
+| Serving Time | Hardcoded array `SERVING_TIMES` | Dynamic from `serving_times` table |
+| Unit dropdown | Hardcoded array `UNITS` | Dynamic from `units` table |
+| Storage Type | Hardcoded array `STORAGE_TYPES` | Dynamic from `storage_types` table |
+| Allergens | Hardcoded array `ALLERGENS` in AllergenPicker | Dynamic from `allergens` table |
+| Item Types | Hardcoded `edible/non_edible` | Dynamic from `item_types` table |
+| Ingredient Groups | Hardcoded `INGREDIENT_CATEGORIES` | Dynamic from `ingredient_groups` table |
+| Navigation | Ingredient Master under Inventory submenu | Add as top-level "Ingredients" menu item |
+| Tooltips | Minimal usage | Comprehensive tooltips on all fields |
 
 ---
 
-## Role Definitions & Colors
+## Solution Architecture
 
-| Role | Color | Badge Class | Description |
-|------|-------|-------------|-------------|
-| Admin | Purple | `bg-purple-100 text-purple-800` | Full system access |
-| Manager | Blue | `bg-blue-100 text-blue-800` | Branch management, reports |
-| Cashier | Green | `bg-green-100 text-green-800` | POS & payments |
-| Waiter | Orange | `bg-orange-100 text-orange-800` | Order taking |
-| Kitchen | Yellow | `bg-yellow-100 text-yellow-800` | Kitchen display |
-| Kiosk | Gray | `bg-gray-100 text-gray-800` | Self-service terminal |
+### 1. Create Reusable Data Hooks
 
----
+Create custom hooks to fetch and cache maintenance data using TanStack Query:
 
-## Component Structure
-
-### Files to Create
-
+**New Files:**
 ```text
-src/pages/
-├── Users.tsx                    # User list page
-├── UsersAdd.tsx                 # Add user page (optional, can use modal)
-└── UsersEdit.tsx                # Edit user page (optional, can use modal)
-
-src/components/users/
-├── UserDialog.tsx               # Add/Edit modal (modal-lg)
-├── UserTable.tsx                # Users table with Premium Grid styling
-├── UserRoleBadge.tsx            # Colored role badge component
-├── UserShiftSection.tsx         # Shift management section
-├── ShiftRow.tsx                 # Individual shift row with time pickers
-├── ShiftCalendarView.tsx        # Weekly calendar/timeline view
-├── PasswordResetModal.tsx       # Password reset confirmation
-├── UserDeleteModal.tsx          # Delete confirmation with warning
-└── index.ts                     # Exports
+src/hooks/
+├── useMaintenanceData.ts          # Main hook with all maintenance queries
 ```
 
-### Files to Modify
+**Hook Structure:**
+```typescript
+// useMaintenanceData.ts
+export function useCategories() {
+  return useQuery({
+    queryKey: ['maintenance_categories'],
+    queryFn: () => supabase.from('maintenance_categories')
+      .select('id, name_en, name_ar, name_ur')
+      .eq('is_active', true)
+      .order('sort_order'),
+  });
+}
 
-| File | Changes |
-|------|---------|
-| `src/App.tsx` | Add routes: `/users`, `/users/add`, `/users/:id/edit` |
-| `src/components/AppSidebar.tsx` | Add "Users" menu item with `Users` icon |
-| `src/lib/i18n/translations.ts` | Add user management translation keys |
-| Database migrations | Create tables, extend enum, add RLS policies |
+export function useSubcategories(categoryId?: string) {
+  return useQuery({
+    queryKey: ['maintenance_subcategories', categoryId],
+    queryFn: () => {
+      let query = supabase.from('maintenance_subcategories')
+        .select('id, name_en, name_ar, name_ur, parent_category_id')
+        .eq('is_active', true);
+      if (categoryId) query = query.eq('parent_category_id', categoryId);
+      return query.order('name_en');
+    },
+    enabled: !categoryId || categoryId.length > 0,
+  });
+}
 
----
-
-## UI Specifications
-
-### 1. Users List Page (`/users`)
-
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│ User Management                                        [+ Add New User]  │
-├─────────────────────────────────────────────────────────────────────────┤
-│ 🔍 Search by name or email...   [Role Filter ▼]  [Status Filter ▼]       │
-├────┬────────────────┬─────────────────────┬──────────┬─────────┬────────┤
-│ #  │ User           │ Email               │ Role     │ Status  │Actions │
-├────┼────────────────┼─────────────────────┼──────────┼─────────┼────────┤
-│ 1  │ 👤 Fahad Ashraf│ fhd.ashraf@gmail... │ 🟣 Admin │ 🟢 Active│ 👁 ✏ 🔑│
-│ 2  │ 👤 John Smith  │ john@example.com    │ 🟢Cashier│ 🟢 Active│ 👁 ✏ 🔑│
-│ 3  │ 👤 Sara Ali    │ sara@kitchen.com    │ 🟠Kitchen│ ⚪Inactiv│ 👁 ✏ 🔑│
-├────┴────────────────┴─────────────────────┴──────────┴─────────┴────────┤
-│                            ← 1 2 3 ... →  (15 per page)                  │
-└─────────────────────────────────────────────────────────────────────────┘
-
-Actions:
-- 👁 View (opens view modal)
-- ✏ Edit (opens edit modal)
-- 🔑 Reset Password (opens confirmation)
+// Similar for: useServingTimes, useUnits, useStorageTypes, useAllergens, useItemTypes, useIngredientGroups
 ```
 
-### 2. Add/Edit User Modal
+### 2. Enhance SearchableSelect Component
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│ ╭╴Add New User╶╮                                             [✕ Close] │
-├─────────────────────────────────────────────────────────────────────────┤
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │  ┌──────────┐                                                       │ │
-│ │  │  Avatar  │   120px circle, click to upload (optional)            │ │
-│ │  │ Placeholder│                                                     │ │
-│ │  └──────────┘                                                       │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                         │
-│ ┌─────────────────────────┐  ┌─────────────────────────┐               │
-│ │ Full Name *             │  │ Employee Code           │               │
-│ │ [Fahad Ashraf________]  │  │ [EMP-001______________] │               │
-│ └─────────────────────────┘  └─────────────────────────┘               │
-│                                                                         │
-│ ┌─────────────────────────┐  ┌─────────────────────────┐               │
-│ │ Email *                 │  │ Phone                   │               │
-│ │ [fhd.ashraf@gmail.com]  │  │ [+966 50 123 4567_____] │               │
-│ └─────────────────────────┘  └─────────────────────────┘               │
-│                                                                         │
-│ ┌─────────────────────────┐  ┌─────────────────────────┐               │
-│ │ Password *              │  │ Confirm Password *      │               │
-│ │ [••••••••••••] 👁       │  │ [••••••••••••] 👁       │               │
-│ └─────────────────────────┘  └─────────────────────────┘               │
-│ ⚠️ Min 8 chars, 1 uppercase, 1 number                                   │
-│                                                                         │
-│ ┌─────────────────────────┐  ┌─────────────────────────┐               │
-│ │ Role *                  │  │ Branch                  │               │
-│ │ [🟣 Admin           ▼]  │  │ [Main Branch        ▼]  │               │
-│ └─────────────────────────┘  └─────────────────────────┘               │
-│                                                                         │
-│ ℹ️ Admin: Full access | Cashier: POS & payments | Waiter: Order taking  │
-│    Kitchen: Kitchen display | Kiosk: Self-service                       │
-│                                                                         │
-│ ────────────────────────────────────────────────────────────────────── │
-│ 📅 Shift Assignments (Optional)                           [+ Add Shift] │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ Date/Days          │ Start      │ End        │ Branch    │ Remove   │ │
-│ ├────────────────────┼────────────┼────────────┼───────────┼──────────┤ │
-│ │ ☑ Mon ☑ Tue ☐ Wed  │ 10:00 PM   │ 01:00 AM   │ Main      │   🗑     │ │
-│ │                    │            │ (next day) │           │          │ │
-│ ├────────────────────┼────────────┼────────────┼───────────┼──────────┤ │
-│ │ [📅 2026-02-10___] │ 09:00 AM   │ 05:00 PM   │ Downtown  │   🗑     │ │
-│ │                    │            │ (8h shift) │           │          │ │
-│ └────────────────────┴────────────┴────────────┴───────────┴──────────┘ │
-│ 💡 Cross-midnight shifts are fully supported!                           │
-│                                                                         │
-│ ────────────────────────────────────────────────────────────────────── │
-│ 🔮 Future Features (Placeholders)                                       │
-│ ☐ Enable Fingerprint Attendance   [View Attendance Logs →]              │
-│                                                                         │
-│ Status        [🟢 Active ○────● ]                                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                            [Cancel]  [Save User]        │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+Update `SearchableSelect` to support:
+- Loading state
+- Dynamic options refresh
+- Multi-language label display
 
-### 3. Shift Row Component
-
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│ ☐ Recurring Weekly                                                      │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ [☑ Mon] [☑ Tue] [☐ Wed] [☐ Thu] [☐ Fri] [☐ Sat] [☐ Sun]             │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│ OR                                                                      │
-│ ┌─────────────────────────────────────────────────────────────────────┐ │
-│ │ 📅 Specific Date: [2026-02-10]                                      │ │
-│ └─────────────────────────────────────────────────────────────────────┘ │
-│                                                                         │
-│ ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐         │
-│ │ Start Time   │  │ End Time     │  │ Duration               │         │
-│ │ [10:00 PM ▼] │  │ [01:00 AM ▼] │  │ 3h 0m                  │         │
-│ └──────────────┘  └──────────────┘  │ 🌙 Ends next day       │         │
-│                                     └────────────────────────┘         │
-│ ┌───────────────────────────────┐                                      │
-│ │ Branch                        │                    [🗑 Remove]       │
-│ │ [Main Branch              ▼]  │                                      │
-│ └───────────────────────────────┘                                      │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## User Creation Flow (via Supabase)
-
-```text
-1. Admin fills form in modal
-2. Validate all fields (email format, password strength, required fields)
-3. Show confirmation modal: "Ready to add Fahad Ashraf as Admin?"
-4. On confirm:
-   a. Call supabase.auth.admin.createUser() via Edge Function
-   b. Create profile record in profiles table
-   c. Assign role in user_roles table
-   d. Create user_branches record if branch selected
-   e. Create user_shifts records if shifts defined
-   f. Log activity in user_activity_log
-5. Show success toast
-6. Refresh user list
-```
-
-### Edge Function Required: `create-user`
-
-Since Supabase client-side auth cannot create users with custom passwords (without sending verification emails), we need an edge function:
+**Modified File:** `src/components/shared/SearchableSelect.tsx`
 
 ```typescript
-// supabase/functions/create-user/index.ts
-// Uses service_role key to create user with specific password
-// Returns user ID for profile/role creation
-```
-
----
-
-## RLS Policies
-
-### `profiles` Table (Extended)
-- SELECT: Users can view their own profile, Admins can view all
-- UPDATE: Users can update their own profile (except is_active), Admins can update all
-- INSERT: Handled by trigger on auth.users creation
-- DELETE: Not allowed (soft delete via is_active)
-
-### `user_shifts` Table
-- SELECT: Users can view their own shifts, Admins/Managers can view all
-- INSERT: Admins only
-- UPDATE: Admins only
-- DELETE: Admins only
-
-### `user_activity_log` Table
-- SELECT: Admins only
-- INSERT: System/trigger only
-- UPDATE: Not allowed
-- DELETE: Not allowed
-
----
-
-## Translation Keys to Add
-
-```typescript
-users: {
-  title: "User Management",
-  addUser: "Add New User",
-  editUser: "Edit User",
-  fullName: "Full Name",
-  email: "Email",
-  phone: "Phone",
-  employeeCode: "Employee Code",
-  password: "Password",
-  confirmPassword: "Confirm Password",
-  passwordMismatch: "Passwords do not match",
-  passwordRequirements: "Min 8 characters, 1 uppercase, 1 number",
-  role: "Role",
-  branch: "Branch",
-  lastLogin: "Last Login",
-  neverLoggedIn: "Never",
-  resetPassword: "Reset Password",
-  resetPasswordConfirm: "Send password reset email to this user?",
-  deleteUser: "Delete User",
-  deleteUserConfirm: "Remove {{name}}? This cannot be undone.",
-  userCreated: "User created successfully",
-  userUpdated: "User updated successfully",
-  noUsers: "No users found",
-  addFirstUser: "Add your first user to get started",
-  // Roles
-  roleAdmin: "Admin",
-  roleManager: "Manager",
-  roleCashier: "Cashier",
-  roleWaiter: "Waiter",
-  roleKitchen: "Kitchen",
-  roleKiosk: "Kiosk",
-  roleDescription: "Admin: Full access | Cashier: POS & payments | Waiter: Order taking | Kitchen: Kitchen display | Kiosk: Self-service",
-  // Shifts
-  shifts: "Shifts",
-  addShift: "Add Shift",
-  shiftDate: "Date",
-  shiftStartTime: "Start Time",
-  shiftEndTime: "End Time",
-  recurringWeekly: "Recurring Weekly",
-  crossMidnight: "Ends next day",
-  shiftDuration: "Duration",
-  noShifts: "No shifts assigned",
-  crossMidnightTooltip: "Cross-midnight shifts are fully supported!",
-  // Future features
-  enableFingerprint: "Enable Fingerprint Attendance",
-  viewAttendanceLogs: "View Attendance Logs",
-  // Audit
-  lastUpdatedBy: "Last updated by {{name}} on {{date}}",
+interface SearchableSelectProps {
+  // ... existing props
+  isLoading?: boolean;  // NEW: Show loading spinner
+  onRefresh?: () => void;  // NEW: Refresh button callback
 }
 ```
 
----
+### 3. Create SearchableMultiSelect Component
 
-## Implementation Order
+For multi-select dropdowns (Subcategory, Serving Times, Allergens):
 
-### Phase 1: Database & Infrastructure
-1. Create database migration:
-   - Extend `app_role` enum with new roles
-   - Add columns to `profiles` table
-   - Create `user_shifts` table
-   - Create `user_activity_log` table
-   - Add RLS policies
-2. Create `create-user` edge function
-3. Create `reset-password` edge function
+**New File:** `src/components/shared/SearchableMultiSelect.tsx`
 
-### Phase 2: Core Components
-1. Create `UserRoleBadge.tsx` component
-2. Create `UserTable.tsx` component
-3. Create `UserDialog.tsx` modal
-4. Create `PasswordResetModal.tsx`
-5. Create `UserDeleteModal.tsx`
-
-### Phase 3: User List Page
-1. Create `Users.tsx` page
-2. Add route to `App.tsx`
-3. Add sidebar navigation
-4. Add translation keys
-
-### Phase 4: Shift Management
-1. Create `ShiftRow.tsx` component
-2. Create `UserShiftSection.tsx` section
-3. Add shift CRUD operations
-4. Create `ShiftCalendarView.tsx` (optional timeline view)
-
-### Phase 5: Integration & Demo User
-1. Create demo admin user (Fahad Ashraf)
-2. Test all CRUD operations
-3. Test shift scheduling with cross-midnight
-4. Verify RLS policies work correctly
+Features:
+- Searchable dropdown with checkboxes
+- Badge display for selected items
+- Remove individual selections
+- Loading state support
 
 ---
 
-## Security Considerations
+## Files to Modify
 
-| Concern | Solution |
-|---------|----------|
-| Password storage | Handled by Supabase Auth (bcrypt) |
-| Role verification | Server-side via `is_admin()` function, never client-side |
-| Email uniqueness | Enforced by Supabase Auth + DB constraint |
-| Rate limiting | Supabase Auth built-in rate limiting |
-| Audit trail | All changes logged to `user_activity_log` |
-| Soft deletes | Users are deactivated, not deleted |
+### Forms - Replace Hardcoded Arrays
+
+| File | Changes |
+|------|---------|
+| `src/pages/ItemsAdd.tsx` | Replace CATEGORIES, SUBCATEGORIES, SERVING_TIMES with hooks; add cascading logic; add tooltips |
+| `src/pages/ItemsEdit.tsx` | Same as ItemsAdd.tsx |
+| `src/pages/inventory/IngredientMasterAdd.tsx` | Replace INGREDIENT_TYPES, UNITS, STORAGE_TYPES, INGREDIENT_CATEGORIES with hooks; add tooltips |
+| `src/pages/inventory/IngredientMasterEdit.tsx` | Same as IngredientMasterAdd.tsx |
+| `src/pages/inventory/ItemMasterAdd.tsx` | Replace hardcoded categories, storageTypes, units arrays with hooks |
+| `src/pages/inventory/ItemMasterEdit.tsx` | Same as ItemMasterAdd.tsx |
+| `src/components/shared/AllergenPicker.tsx` | Fetch from `allergens` table instead of hardcoded array |
+
+### Navigation
+
+| File | Changes |
+|------|---------|
+| `src/components/AppSidebar.tsx` | Add top-level "Ingredients" menu with Carrot icon pointing to `/inventory/ingredients` |
+
+### Shared Components
+
+| File | Changes |
+|------|---------|
+| `src/components/shared/SearchableSelect.tsx` | Add loading state, refresh button |
+| `src/components/shared/TooltipInfo.tsx` | Already exists, ensure consistent styling |
+| `src/components/shared/FormField.tsx` | Already supports tooltip prop |
+
+### Translations
+
+| File | Changes |
+|------|---------|
+| `src/lib/i18n/translations.ts` | Add comprehensive tooltip translations |
 
 ---
 
-## Future Extension Points
+## Tooltip Additions
 
-| Feature | Placeholder |
-|---------|-------------|
-| Fingerprint attendance | Toggle + tooltip: "Enable Fingerprint Attendance" |
-| Attendance logs | Link: "View Attendance Logs" (disabled for now) |
-| Password reset email | Button triggers `reset-password` edge function |
-| Biometric integration | Field in modal for device ID |
-| Shift reports | Can extend `ShiftCalendarView` component |
+### Item Form Tooltips
+
+| Field | Tooltip Text |
+|-------|-------------|
+| Item Name | "Primary name shown on POS, menu boards, and receipts (English required)" |
+| Category | "Main grouping used for filtering, reports, and kitchen routing (from maintenance)" |
+| Subcategory | "More specific tag (e.g., Pizza under Vegetarian) - multi-select allowed, filtered by category" |
+| Serving Time | "When this item is typically available - select multiple time slots if needed" |
+| Is Combo | "Bundle multiple items at special price - enables sub-items mapping section" |
+| Item Type | "Classification affecting inventory and preparation workflow (from maintenance)" |
+| Base Cost | "Cost to produce this item - used for profit margin calculations" |
+| Preparation Time | "Estimated minutes to prepare in kitchen - used for KDS and delivery ETA" |
+| Calories | "Optional nutritional info for health-conscious customers" |
+| Allergens | "Select allergens present - shown for customer safety on menu and receipts" |
+| Highlights | "Comma-separated tags like 'Spicy', 'Best Seller', 'Chef Special'" |
+| Current Stock | "Available inventory count - updated by stock operations" |
+| Low Stock Threshold | "Triggers low-stock warning when quantity falls below this value" |
+| Image | "Square image (PNG/JPG, max 2MB) - shown on POS grid and customer menu" |
+
+### Ingredient Form Tooltips
+
+| Field | Tooltip Text |
+|-------|-------------|
+| Ingredient Name | "Name used in recipes and inventory reports (English required)" |
+| Ingredient Type | "Physical form affecting storage and handling requirements" |
+| Unit | "Base measurement unit for tracking and recipes (from maintenance)" |
+| Storage Type | "Required storage conditions - affects warehouse organization and FIFO" |
+| Category/Group | "Grouping for purchasing and inventory reports (multi-select)" |
+| Min Stock Alert | "Triggers low-stock notification when quantity falls below this level" |
+| Shelf Life Days | "Typical days before expiry/spoilage - helps with FIFO rotation" |
+| PAR Level | "Ideal minimum quantity to maintain - triggers reorder when reached" |
+| Cost Price | "Latest purchase cost per unit - used for recipe costing" |
+| Selling Price | "Optional direct sale price if ingredient is sold individually" |
+| Yield % | "Usable portion after prep/trimming (e.g., 85% for chicken after bones)" |
+| Can Purchase | "Available for purchase orders to suppliers" |
+| Return on Cancel | "Can this ingredient be returned/credited if order is canceled?" |
+| Allergen Flags | "Select allergens present - automatically reflected in items using this ingredient" |
+| Supplier | "Preferred vendor for this ingredient" |
 
 ---
 
-## Technical Notes
+## Cascading Dropdown Logic
 
-### Cross-Midnight Shift Calculation
+### Category -> Subcategory Flow
 
 ```typescript
-// If end_time < start_time, shift crosses midnight
-const calculateShiftDuration = (start: string, end: string) => {
-  const startMinutes = parseTimeToMinutes(start);
-  const endMinutes = parseTimeToMinutes(end);
-  
-  if (endMinutes < startMinutes) {
-    // Crosses midnight: add 24 hours to end
-    return (endMinutes + 1440) - startMinutes;
-  }
-  return endMinutes - startMinutes;
-};
+// In ItemsAdd.tsx
+const [selectedCategory, setSelectedCategory] = useState<string>("");
+const { data: subcategories, isLoading: subcatLoading } = useSubcategories(selectedCategory);
 
-const crossesMidnight = (start: string, end: string) => {
-  return parseTimeToMinutes(end) < parseTimeToMinutes(start);
+// When category changes, reset subcategory selection
+useEffect(() => {
+  if (selectedCategory) {
+    setFormData(prev => ({ ...prev, subcategories: [] }));
+  }
+}, [selectedCategory]);
+
+// Subcategory dropdown shows filtered results
+<SearchableMultiSelect
+  options={subcategories?.map(s => ({ id: s.id, label: s.name_en })) || []}
+  isLoading={subcatLoading}
+  disabled={!selectedCategory}
+  placeholder={selectedCategory ? "Select subcategories..." : "Select category first"}
+/>
+```
+
+---
+
+## Navigation Update
+
+### Add Top-Level Ingredients Menu
+
+**In `src/components/AppSidebar.tsx`:**
+
+```typescript
+const mainNavItems = [
+  { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
+  { titleKey: "nav.salesChannels", url: "/sales-channels", icon: Store },
+  { titleKey: "nav.ingredients", url: "/inventory/ingredients", icon: Carrot },  // NEW
+];
+```
+
+The Ingredients page already exists at `/inventory/ingredients` with Add/Edit routes. This simply adds a prominent top-level shortcut.
+
+---
+
+## Implementation Phases
+
+### Phase 1: Create Data Hooks
+1. Create `src/hooks/useMaintenanceData.ts` with all maintenance queries
+2. Export individual hooks: `useCategories`, `useSubcategories`, `useServingTimes`, `useUnits`, `useStorageTypes`, `useAllergens`, `useItemTypes`, `useIngredientGroups`
+
+### Phase 2: Update Shared Components
+1. Add loading state to `SearchableSelect`
+2. Create `SearchableMultiSelect` component for multi-select fields
+3. Update `AllergenPicker` to use `useAllergens()` hook
+
+### Phase 3: Update Item Forms
+1. Replace hardcoded arrays in `ItemsAdd.tsx` and `ItemsEdit.tsx`
+2. Implement cascading Category -> Subcategory logic
+3. Add comprehensive tooltips to all fields
+
+### Phase 4: Update Ingredient Forms
+1. Replace hardcoded arrays in `IngredientMasterAdd.tsx` and `IngredientMasterEdit.tsx`
+2. Replace hardcoded arrays in `ItemMasterAdd.tsx` and `ItemMasterEdit.tsx`
+3. Add comprehensive tooltips to all fields
+
+### Phase 5: Navigation & Translations
+1. Add top-level "Ingredients" menu item to sidebar
+2. Add all tooltip translations to `translations.ts` (EN, AR, UR)
+
+---
+
+## Technical Details
+
+### Query Key Structure for Cache
+
+```typescript
+// Standardized query keys for consistent caching
+const QUERY_KEYS = {
+  categories: ['maintenance', 'categories'],
+  subcategories: (categoryId?: string) => ['maintenance', 'subcategories', categoryId],
+  servingTimes: ['maintenance', 'serving_times'],
+  units: ['maintenance', 'units'],
+  storageTypes: ['maintenance', 'storage_types'],
+  allergens: ['maintenance', 'allergens'],
+  itemTypes: ['maintenance', 'item_types'],
+  ingredientGroups: ['maintenance', 'ingredient_groups'],
 };
 ```
 
-### User Creation via Edge Function
+### Loading States
 
-Required because:
-- Client-side `supabase.auth.signUp()` requires email verification
-- Admin should be able to set initial password
-- Edge function uses service_role key for admin operations
+All dropdowns will show:
+- Skeleton/spinner while loading
+- Empty state if no data
+- Error toast if fetch fails
+
+### Multi-Language Label Display
+
+When displaying options, use current language:
+```typescript
+const { currentLanguage } = useLanguage();
+
+const getLocalizedLabel = (item: { name_en: string; name_ar?: string; name_ur?: string }) => {
+  const key = `name_${currentLanguage}` as keyof typeof item;
+  return (item[key] as string) || item.name_en;
+};
+```
+
+---
+
+## Files Summary
+
+### New Files
+| File | Purpose |
+|------|---------|
+| `src/hooks/useMaintenanceData.ts` | Centralized maintenance data hooks |
+| `src/components/shared/SearchableMultiSelect.tsx` | Multi-select searchable dropdown |
+
+### Modified Files
+| File | Purpose |
+|------|---------|
+| `src/pages/ItemsAdd.tsx` | Dynamic dropdowns + tooltips |
+| `src/pages/ItemsEdit.tsx` | Dynamic dropdowns + tooltips |
+| `src/pages/inventory/IngredientMasterAdd.tsx` | Dynamic dropdowns + tooltips |
+| `src/pages/inventory/IngredientMasterEdit.tsx` | Dynamic dropdowns + tooltips |
+| `src/pages/inventory/ItemMasterAdd.tsx` | Dynamic dropdowns + tooltips |
+| `src/pages/inventory/ItemMasterEdit.tsx` | Dynamic dropdowns + tooltips |
+| `src/components/shared/SearchableSelect.tsx` | Loading state support |
+| `src/components/shared/AllergenPicker.tsx` | Dynamic allergens from DB |
+| `src/components/AppSidebar.tsx` | Top-level Ingredients menu |
+| `src/lib/i18n/translations.ts` | Tooltip translations (EN/AR/UR) |
+
+---
+
+## Tooltip Location Summary
+
+| Form Section | Fields with Tooltips |
+|--------------|---------------------|
+| Item Basics | Item Name, Image Upload, Description |
+| Item Type & Cost | Item Type, Base Cost, Is Combo |
+| Classification | Category, Subcategory, Serving Time |
+| Details | Prep Time, Calories, Allergens, Highlights |
+| Inventory | Current Stock, Low Stock Threshold |
+| Ingredient Basics | Ingredient Name, Description |
+| Ingredient Classification | Type, Unit, Storage Type, Category/Group |
+| Ingredient Inventory | Min Stock Alert, Shelf Life, PAR Level, Current Stock |
+| Ingredient Pricing | Cost Price, Selling Price, Can Purchase, Return on Cancel |
+| Ingredient Details | Yield %, Allergens, Supplier |
+
