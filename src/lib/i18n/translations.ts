@@ -656,6 +656,12 @@ export const translations = {
       readyToSave: "Ready to save this item?",
       noGoBack: "No, Go Back",
       yesSave: "Yes, Save!",
+      selectCategoryFirst: "Select category first",
+      enableComboTitle: "Enable Combo?",
+      enableComboMessage: "Enabling combo allows sub-item mapping. This will change how this item is configured. Continue?",
+      deactivateItemTitle: "Deactivate Item?",
+      deactivateItemMessage: "Deactivating this item will remove it from POS and menu display. It can be reactivated later.",
+      noResults: "No results found",
     },
     // Item Ingredients Mapping (Legacy - keeping for nav)
     itemIngredients: {
