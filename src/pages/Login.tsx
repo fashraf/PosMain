@@ -1,7 +1,7 @@
-import { useState } from "react";
+ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Menu } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,39 +9,50 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
-const Login = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  const { toast } = useToast();
+ const Login = () => {
+   const navigate = useNavigate();
+   const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const success = await login(email, password);
-
-    if (success) {
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
-      navigate("/", { replace: true });
-    } else {
-      toast({
-        title: "Invalid credentials",
-        description: "Please check your email and password.",
-        variant: "destructive",
-      });
-    }
-
-    setIsLoading(false);
-  };
+ 
+   // Redirect if already logged in
+   useEffect(() => {
+     supabase.auth.getSession().then(({ data: { session } }) => {
+       if (session) {
+         navigate("/", { replace: true });
+       }
+     });
+   }, [navigate]);
+ 
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+     setIsLoading(true);
+ 
+     const { error } = await supabase.auth.signInWithPassword({
+       email,
+       password,
+     });
+ 
+     if (!error) {
+       toast({
+         title: "Welcome back!",
+         description: "You have successfully signed in.",
+       });
+       navigate("/", { replace: true });
+     } else {
+       toast({
+         title: "Invalid credentials",
+         description: error.message || "Please check your email and password.",
+         variant: "destructive",
+       });
+     }
+ 
+     setIsLoading(false);
+   };
 
   return (
     <div className="min-h-screen flex bg-[#0D0D0D] p-4 md:p-6">

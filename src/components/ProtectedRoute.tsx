@@ -1,12 +1,12 @@
-import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+ import { Navigate } from "react-router-dom";
+ import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+   const { isAuthenticated, isLoading, session } = useAuth();
 
   if (isLoading) {
     return (
@@ -16,7 +16,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!isAuthenticated) {
+   if (!isAuthenticated || !session) {
     return <Navigate to="/login" replace />;
   }
 
