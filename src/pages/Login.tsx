@@ -101,24 +101,17 @@ import { cn } from "@/lib/utils";
      }
  
      if (data.user) {
-       // Assign admin role to the first user
-       const { error: roleError } = await supabase
-         .from('user_roles')
-         .insert({ user_id: data.user.id, role: 'admin' });
- 
-       if (roleError) {
-         console.error('Role assignment error:', roleError);
-       }
- 
-       // Update profile
+        // Update profile with full name
        await supabase
          .from('profiles')
          .update({ full_name: fullName })
          .eq('user_id', data.user.id);
+        
+        // Note: Admin role assignment for first user is handled by database trigger
  
        toast({
          title: "Account created!",
-         description: "Please check your email to verify your account, then sign in.",
+          description: "Please check your email to verify your account, then sign in. First user is automatically assigned admin role.",
        });
        setActiveTab("signin");
      }
