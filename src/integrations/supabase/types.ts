@@ -256,6 +256,285 @@ export type Database = {
           },
         ]
       }
+      pos_item_ingredients: {
+        Row: {
+          created_at: string
+          extra_price: number | null
+          id: string
+          ingredient_name_ar: string | null
+          ingredient_name_en: string
+          ingredient_name_ur: string | null
+          is_default_included: boolean | null
+          is_removable: boolean | null
+          menu_item_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          extra_price?: number | null
+          id?: string
+          ingredient_name_ar?: string | null
+          ingredient_name_en: string
+          ingredient_name_ur?: string | null
+          is_default_included?: boolean | null
+          is_removable?: boolean | null
+          menu_item_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          extra_price?: number | null
+          id?: string
+          ingredient_name_ar?: string | null
+          ingredient_name_en?: string
+          ingredient_name_ur?: string | null
+          is_default_included?: boolean | null
+          is_removable?: boolean | null
+          menu_item_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_item_ingredients_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "pos_menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_item_replacements: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          menu_item_id: string
+          price_difference: number | null
+          replacement_group: string
+          replacement_name_ar: string | null
+          replacement_name_en: string
+          replacement_name_ur: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          menu_item_id: string
+          price_difference?: number | null
+          replacement_group: string
+          replacement_name_ar?: string | null
+          replacement_name_en: string
+          replacement_name_ur?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          menu_item_id?: string
+          price_difference?: number | null
+          replacement_group?: string
+          replacement_name_ar?: string | null
+          replacement_name_en?: string
+          replacement_name_ur?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_item_replacements_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "pos_menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_menu_items: {
+        Row: {
+          base_price: number
+          category_id: string | null
+          created_at: string
+          description_en: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          is_customizable: boolean | null
+          is_favorite: boolean | null
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          category_id?: string | null
+          created_at?: string
+          description_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          is_customizable?: boolean | null
+          is_favorite?: boolean | null
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          category_id?: string | null
+          created_at?: string
+          description_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          is_customizable?: boolean | null
+          is_favorite?: boolean | null
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_order_items: {
+        Row: {
+          created_at: string
+          customization_hash: string | null
+          customization_json: Json | null
+          id: string
+          item_name: string
+          line_total: number
+          menu_item_id: string | null
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          customization_hash?: string | null
+          customization_json?: Json | null
+          id?: string
+          item_name: string
+          line_total: number
+          menu_item_id?: string | null
+          order_id: string
+          quantity?: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          customization_hash?: string | null
+          customization_json?: Json | null
+          id?: string
+          item_name?: string
+          line_total?: number
+          menu_item_id?: string | null
+          order_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "pos_menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_orders: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          customer_mobile: string | null
+          customer_name: string | null
+          id: string
+          notes: string | null
+          order_number: number
+          order_type: string
+          payment_method: string | null
+          payment_status: string
+          subtotal: number
+          taken_by: string | null
+          total_amount: number
+          updated_at: string
+          vat_amount: number
+          vat_rate: number
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          customer_mobile?: string | null
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: number
+          order_type: string
+          payment_method?: string | null
+          payment_status?: string
+          subtotal: number
+          taken_by?: string | null
+          total_amount: number
+          updated_at?: string
+          vat_amount: number
+          vat_rate?: number
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          customer_mobile?: string | null
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: number
+          order_type?: string
+          payment_method?: string | null
+          payment_status?: string
+          subtotal?: number
+          taken_by?: string | null
+          total_amount?: number
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_orders_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_orders_taken_by_fkey"
+            columns: ["taken_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
