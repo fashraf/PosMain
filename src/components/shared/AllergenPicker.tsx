@@ -1,21 +1,12 @@
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { TooltipInfo } from "./TooltipInfo";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
-import { Wheat, Milk, Egg, Fish, Nut, Leaf } from "lucide-react";
+ import { useAllergens, useLocalizedLabel } from "@/hooks/useMaintenanceData";
+ import { Skeleton } from "@/components/ui/skeleton";
+ import { AlertTriangle } from "lucide-react";
 
-const ALLERGENS = [
-  { id: "nuts", icon: Nut },
-  { id: "dairy", icon: Milk },
-  { id: "gluten", icon: Wheat },
-  { id: "eggs", icon: Egg },
-  { id: "soy", icon: Leaf },
-  { id: "shellfish", icon: Fish },
-  { id: "wheat", icon: Wheat },
-] as const;
-
-export type AllergenType = typeof ALLERGENS[number]["id"];
+ export type AllergenType = string;
 
 interface AllergenPickerProps {
   label?: string;
@@ -33,8 +24,10 @@ export function AllergenPicker({
   className,
 }: AllergenPickerProps) {
   const { t } = useLanguage();
+   const { data: allergens, isLoading, error } = useAllergens();
+   const getLabel = useLocalizedLabel();
 
-  const handleChange = (allergenId: AllergenType, checked: boolean) => {
+   const handleChange = (allergenId: string, checked: boolean) => {
     if (checked) {
       onChange([...value, allergenId]);
     } else {
@@ -42,6 +35,21 @@ export function AllergenPicker({
     }
   };
 
+   // Severity colors
+   const getSeverityColor = (severity: string, isSelected: boolean) => {
+     if (!isSelected) return "";
+     switch (severity) {
+       case "high":
+         return "bg-destructive text-destructive-foreground border-destructive";
+       case "medium":
+         return "bg-amber-500 text-white border-amber-500";
+       case "low":
+         return "bg-primary text-primary-foreground border-primary";
+       default:
+         return "bg-primary text-primary-foreground border-primary";
+     }
+   };
+ 
   return (
     <div className={cn("space-y-2", className)}>
       {label && (
@@ -50,28 +58,39 @@ export function AllergenPicker({
           {tooltip && <TooltipInfo content={tooltip} />}
         </div>
       )}
-      <div className="flex flex-wrap gap-2">
-        {ALLERGENS.map((allergen) => {
-          const isSelected = value.includes(allergen.id);
-          const Icon = allergen.icon;
-          return (
-            <button
-              key={allergen.id}
-              type="button"
-              onClick={() => handleChange(allergen.id, !isSelected)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-sm transition-colors",
-                isSelected
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background border-border hover:bg-muted"
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {t(`items.${allergen.id}` as any)}
-            </button>
-          );
-        })}
-      </div>
+       {isLoading ? (
+         <div className="flex flex-wrap gap-2">
+           {[1, 2, 3, 4].map((i) => (
+             <Skeleton key={i} className="h-8 w-20" />
+           ))}
+         </div>
+       ) : error ? (
+         <div className="flex items-center gap-2 text-destructive text-sm">
+           <AlertTriangle className="h-4 w-4" />
+           <span>{t("common.error")}</span>
+         </div>
+       ) : (
+         <div className="flex flex-wrap gap-2">
+           {allergens?.map((allergen) => {
+             const isSelected = value.includes(allergen.id);
+             return (
+               <button
+                 key={allergen.id}
+                 type="button"
+                 onClick={() => handleChange(allergen.id, !isSelected)}
+                 className={cn(
+                   "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-sm transition-colors",
+                   isSelected
+                     ? getSeverityColor(allergen.severity, true)
+                     : "bg-background border-border hover:bg-muted"
+                 )}
+               >
+                 {getLabel(allergen)}
+               </button>
+             );
+           })}
+         </div>
+       )}
     </div>
   );
 }
