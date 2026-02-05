@@ -3,6 +3,7 @@ export const translations = {
     // Navigation
     nav: {
       dashboard: "Dashboard",
+      order: "Order",
       salesChannels: "Sales Channels",
       ingredients: "Ingredients",
       items: "Items",
@@ -19,7 +20,7 @@ export const translations = {
       stockAdjustment: "Adjustment",
       batchExpiry: "Batch & Expiry",
       reportsAlerts: "Reports & Alerts",
-       users: "Users",
+      users: "Users",
     },
     // Maintenance
     maintenance: {
@@ -833,6 +834,7 @@ export const translations = {
     // Navigation
     nav: {
       dashboard: "لوحة التحكم",
+      order: "طلب",
       salesChannels: "قنوات البيع",
       ingredients: "المكونات",
       items: "الأصناف",
@@ -840,7 +842,7 @@ export const translations = {
       itemIngredients: "مكونات الأصناف",
       categories: "الفئات",
       settings: "الإعدادات",
-       users: "المستخدمون",
+      users: "المستخدمون",
     },
     // Common
     common: {
@@ -1181,6 +1183,7 @@ export const translations = {
     // Navigation
     nav: {
       dashboard: "ڈیش بورڈ",
+      order: "آرڈر",
       salesChannels: "سیلز چینلز",
       ingredients: "اجزاء",
       items: "اشیاء",
@@ -1188,7 +1191,7 @@ export const translations = {
       itemIngredients: "اشیاء کے اجزاء",
       categories: "زمرے",
       settings: "سیٹنگز",
-       users: "صارفین",
+      users: "صارفین",
     },
     // Common
     common: {
