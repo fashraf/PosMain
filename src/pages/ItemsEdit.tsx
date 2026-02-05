@@ -605,83 +605,51 @@ export default function ItemsEdit() {
         onBack={handleCancel}
       />
 
-      <div className="space-y-6 pt-4">
-        {/* Basics Section */}
-        <div ref={sectionRefs.basics} id="basics">
+      <div className="flex flex-col lg:flex-row gap-6 pt-4">
+        {/* Left Column - 33% (Sticky Sidebar) */}
+        <aside className="w-full lg:w-1/3 space-y-4 lg:sticky lg:top-20 lg:self-start">
+          {/* Image Upload */}
           <DashedSectionCard
-            title={t("items.basicInformation")}
+            title={t("items.image")}
             icon={FileText}
             variant="purple"
-            isComplete={isBasicsComplete}
           >
-            <div className="space-y-4">
-              <div ref={nameInputRef}>
-                <MultiLanguageInputWithIndicators
-                  label={t("items.itemName")}
-                  values={{
-                    en: formData.name_en,
-                    ar: formData.name_ar,
-                    ur: formData.name_ur,
-                  }}
-                  onChange={handleNameChange}
-                  required
-                />
-              </div>
-
-              <MultiLanguageInputWithIndicators
-                label={t("common.description")}
-                values={{
-                  en: formData.description_en,
-                  ar: formData.description_ar,
-                  ur: formData.description_ur,
-                }}
-                onChange={handleDescriptionChange}
-                multiline
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t("items.baseCost")} *</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.base_cost}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        base_cost: parseFloat(e.target.value) || 0,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("items.itemType")}</Label>
-                  <SearchableSelect
-                    value={formData.item_type}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        item_type: value as "edible" | "non_edible",
-                      }))
-                    }
-                    options={[
-                      { id: "edible", label: t("items.edible") },
-                      { id: "non_edible", label: t("items.nonEdible") },
-                    ]}
-                    placeholder={t("common.select")}
-                    searchPlaceholder={t("common.search")}
-                  />
-                </div>
-              </div>
-
+            <div className="flex justify-center">
               <ImageUploadHero
                 value={formData.image_url}
                 onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
                 onFileChange={(file) => setImageFile(file)}
+                size={120}
               />
+            </div>
+          </DashedSectionCard>
 
-              <div className="flex items-center justify-between pt-2 border-t">
+          {/* Inventory Progress */}
+          <div ref={sectionRefs.inventory} id="inventory">
+            <DashedSectionCard
+              title={t("items.inventory")}
+              icon={BarChart3}
+              variant="amber"
+              isComplete={isInventoryComplete}
+            >
+              <InventoryProgressCard
+                currentStock={formData.current_stock}
+                maxStock={100}
+                lowStockThreshold={formData.low_stock_threshold}
+                onCurrentStockChange={(val) => setFormData((prev) => ({ ...prev, current_stock: val }))}
+                onThresholdChange={(val) => setFormData((prev) => ({ ...prev, low_stock_threshold: val }))}
+              />
+            </DashedSectionCard>
+          </div>
+
+          {/* Status Section */}
+          <DashedSectionCard
+            title={t("common.status")}
+            icon={Tags}
+            variant="muted"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="isCombo">{t("items.isCombo")}</Label>
                   <TooltipInfo content={t("items.comboTooltip")} />
@@ -694,7 +662,7 @@ export default function ItemsEdit() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="status">{t("common.status")}</Label>
+                <Label htmlFor="status">{t("common.active")}</Label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">
                     {formData.is_active ? t("common.active") : t("common.inactive")}
@@ -708,241 +676,298 @@ export default function ItemsEdit() {
               </div>
             </div>
           </DashedSectionCard>
-        </div>
+        </aside>
 
-        {/* Classification Section */}
-        <div ref={sectionRefs.classification} id="classification">
-          <DashedSectionCard
-            title={t("items.classification")}
-            icon={Tags}
-            variant="green"
-            isComplete={isClassificationComplete}
-          >
-            <div className="space-y-4">
-              <div ref={categoryRef} className="space-y-2">
-                <Label>{t("items.category")}</Label>
-                <SearchableSelect
-                  value={formData.category}
-                  onChange={(value) =>
-                    setFormData((prev) => ({ ...prev, category: value }))
-                  }
-                  options={categoryOptions}
-                  placeholder={t("common.select")}
-                  searchPlaceholder={t("common.search")}
-                  isLoading={categoriesLoading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t("items.subcategories")}</Label>
-                <SearchableMultiSelect
-                  value={formData.subcategories}
-                  onChange={(value) =>
-                    setFormData((prev) => ({ ...prev, subcategories: value }))
-                  }
-                  options={subcategoryOptions}
-                  placeholder={t("common.select")}
-                  searchPlaceholder={t("common.search")}
-                  isLoading={subcategoriesLoading}
-                />
-              </div>
-
-              <div ref={servingTimeRef} className="space-y-2">
-                <Label>{t("items.servingTimes")}</Label>
-                <div className="flex flex-wrap gap-2">
-                  {servingTimeOptions.map((time) => (
-                    <div
-                      key={time.id}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer transition-colors",
-                        formData.serving_times.includes(time.id)
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "hover:bg-muted"
-                      )}
-                      onClick={() => handleServingTimeToggle(time.id)}
-                    >
-                      <Checkbox
-                        checked={formData.serving_times.includes(time.id)}
-                        className="pointer-events-none"
-                      />
-                      <span className="text-sm">{time.label}</span>
-                    </div>
-                  ))}
+        {/* Right Column - 67% (Scrollable Sections) */}
+        <main className="w-full lg:w-2/3 space-y-6">
+          {/* Basics Section */}
+          <div ref={sectionRefs.basics} id="basics">
+            <DashedSectionCard
+              title={t("items.basicInformation")}
+              icon={FileText}
+              variant="purple"
+              isComplete={isBasicsComplete}
+            >
+              <div className="space-y-4">
+                <div ref={nameInputRef}>
+                  <MultiLanguageInputWithIndicators
+                    label={t("items.itemName")}
+                    values={{
+                      en: formData.name_en,
+                      ar: formData.name_ar,
+                      ur: formData.name_ur,
+                    }}
+                    onChange={handleNameChange}
+                    required
+                  />
                 </div>
-              </div>
-            </div>
-          </DashedSectionCard>
-        </div>
 
-        {/* Details Section */}
-        <div ref={sectionRefs.details} id="details">
-          <DashedSectionCard
-            title={t("items.details")}
-            icon={Clock}
-            variant="blue"
-            isComplete={isDetailsComplete}
-          >
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t("items.preparationTime")}</Label>
-                  <div className="flex items-center gap-2">
+                <MultiLanguageInputWithIndicators
+                  label={t("common.description")}
+                  values={{
+                    en: formData.description_en,
+                    ar: formData.description_ar,
+                    ur: formData.description_ur,
+                  }}
+                  onChange={handleDescriptionChange}
+                  multiline
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("items.baseCost")} *</Label>
                     <Input
                       type="number"
                       min="0"
-                      value={formData.preparation_time_minutes}
+                      step="0.01"
+                      value={formData.base_cost}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          preparation_time_minutes: parseInt(e.target.value) || 0,
+                          base_cost: parseFloat(e.target.value) || 0,
                         }))
                       }
                     />
-                    <span className="text-sm text-muted-foreground">min</span>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("items.itemType")}</Label>
+                    <SearchableSelect
+                      value={formData.item_type}
+                      onChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          item_type: value as "edible" | "non_edible",
+                        }))
+                      }
+                      options={[
+                        { id: "edible", label: t("items.edible") },
+                        { id: "non_edible", label: t("items.nonEdible") },
+                      ]}
+                      placeholder={t("common.select")}
+                      searchPlaceholder={t("common.search")}
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t("items.calories")}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={formData.calories || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        calories: e.target.value ? parseInt(e.target.value) : null,
-                      }))
+              </div>
+            </DashedSectionCard>
+          </div>
+
+          {/* Classification Section */}
+          <div ref={sectionRefs.classification} id="classification">
+            <DashedSectionCard
+              title={t("items.classification")}
+              icon={Tags}
+              variant="green"
+              isComplete={isClassificationComplete}
+            >
+              <div className="space-y-4">
+                <div ref={categoryRef} className="space-y-2">
+                  <Label>{t("items.category")} *</Label>
+                  <SearchableSelect
+                    value={formData.category}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, category: value }))
                     }
-                    placeholder={t("common.optional")}
+                    options={categoryOptions}
+                    placeholder={t("common.select")}
+                    searchPlaceholder={t("common.search")}
+                    isLoading={categoriesLoading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("items.subcategories")}</Label>
+                  <SearchableMultiSelect
+                    value={formData.subcategories}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, subcategories: value }))
+                    }
+                    options={subcategoryOptions}
+                    placeholder={t("common.select")}
+                    searchPlaceholder={t("common.search")}
+                    isLoading={subcategoriesLoading}
+                  />
+                </div>
+
+                <div ref={servingTimeRef} className="space-y-2">
+                  <Label>{t("items.servingTimes")} *</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {servingTimeOptions.map((time) => (
+                      <div
+                        key={time.id}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer transition-colors",
+                          formData.serving_times.includes(time.id)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => handleServingTimeToggle(time.id)}
+                      >
+                        <Checkbox
+                          checked={formData.serving_times.includes(time.id)}
+                          className="pointer-events-none"
+                        />
+                        <span className="text-sm">{time.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </DashedSectionCard>
+          </div>
+
+          {/* Details Section */}
+          <div ref={sectionRefs.details} id="details">
+            <DashedSectionCard
+              title={t("items.details")}
+              icon={Clock}
+              variant="blue"
+              isComplete={isDetailsComplete}
+            >
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("items.preparationTime")}</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={formData.preparation_time_minutes}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            preparation_time_minutes: parseInt(e.target.value) || 0,
+                          }))
+                        }
+                      />
+                      <span className="text-sm text-muted-foreground">min</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("items.calories")}</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.calories || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          calories: e.target.value ? parseInt(e.target.value) : null,
+                        }))
+                      }
+                      placeholder={t("common.optional")}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("items.allergens")}</Label>
+                  <AllergenPicker
+                    value={formData.allergens}
+                    onChange={(allergens) =>
+                      setFormData((prev) => ({ ...prev, allergens }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("items.highlights")}</Label>
+                  <Input
+                    value={formData.highlights}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, highlights: e.target.value }))
+                    }
+                    placeholder="e.g., Crispy, Fresh, Authentic"
                   />
                 </div>
               </div>
+            </DashedSectionCard>
+          </div>
 
-              <div className="space-y-2">
-                <Label>{t("items.allergens")}</Label>
-                <AllergenPicker
-                  value={formData.allergens}
-                  onChange={(allergens) =>
-                    setFormData((prev) => ({ ...prev, allergens }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t("items.highlights")}</Label>
-                <Input
-                  value={formData.highlights}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, highlights: e.target.value }))
-                  }
-                  placeholder="e.g., Crispy, Fresh, Authentic"
-                />
-              </div>
-            </div>
-          </DashedSectionCard>
-        </div>
-
-        {/* Inventory Section */}
-        <div ref={sectionRefs.inventory} id="inventory">
-          <DashedSectionCard
-            title={t("items.inventory")}
-            icon={BarChart3}
-            variant="amber"
-            isComplete={isInventoryComplete}
-          >
-            <InventoryProgressCard
-              currentStock={formData.current_stock}
-              maxStock={100}
-              lowStockThreshold={formData.low_stock_threshold}
-              onCurrentStockChange={(val) => setFormData((prev) => ({ ...prev, current_stock: val }))}
-              onThresholdChange={(val) => setFormData((prev) => ({ ...prev, low_stock_threshold: val }))}
-            />
-          </DashedSectionCard>
-        </div>
-
-        {/* Ingredients Section */}
-        <div ref={sectionRefs.ingredients} id="ingredients">
-          <DashedSectionCard
-            title={t("itemMapping.ingredients")}
-            icon={Carrot}
-            variant="muted"
-            isComplete={isIngredientsComplete}
-            rightBadge={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddIngredientModal(true)}
-                className="gap-1"
-              >
-                <Plus className="h-4 w-4" />
-                {t("itemMapping.addIngredient")}
-              </Button>
-            }
-          >
-            <IngredientMappingList
-              mappings={ingredientMappings}
-              onChange={handleIngredientMappingsChange}
-              onRemove={handleIngredientRemove}
-            />
-            
-            {ingredientMappings.length > 0 && (
-              <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">
-                  {t("itemMapping.totalIngredientCost")}
-                </span>
-                <span className="font-medium">SAR {totalIngredientCost.toFixed(2)}</span>
-              </div>
-            )}
-          </DashedSectionCard>
-        </div>
-
-        {/* Sub-Items Section */}
-        {formData.is_combo && (
-          <div ref={sectionRefs.items} id="items">
+          {/* Ingredients Section */}
+          <div ref={sectionRefs.ingredients} id="ingredients">
             <DashedSectionCard
-              title={t("itemMapping.items")}
-              icon={Package}
+              title={t("itemMapping.ingredients")}
+              icon={Carrot}
               variant="muted"
-              isComplete={isItemsComplete}
+              isComplete={isIngredientsComplete}
               rightBadge={
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowAddItemModal(true)}
+                  onClick={() => setShowAddIngredientModal(true)}
                   className="gap-1"
                 >
                   <Plus className="h-4 w-4" />
-                  {t("itemMapping.addItem")}
+                  {t("itemMapping.addIngredient")}
                 </Button>
               }
             >
-              <ItemTable
-                mappings={subItemMappings}
-                onQuantityChange={handleItemQuantityChange}
-                onRemove={(id) => {
-                  const mapping = subItemMappings.find((m) => m.id === id);
-                  if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
-                }}
-                onAdd={() => setShowAddItemModal(true)}
-                onReplacement={handleOpenReplacementModal}
-                onRemoveReplacement={handleRemoveReplacement}
-                onViewReplacement={handleViewReplacement}
-                totalCost={totalSubItemCost}
-                totalComboPrice={totalSubItemCost}
-                isCombo={formData.is_combo}
+              <IngredientMappingList
+                mappings={ingredientMappings}
+                onChange={handleIngredientMappingsChange}
+                onRemove={handleIngredientRemove}
               />
               
-              {subItemMappings.length > 0 && (
+              {ingredientMappings.length > 0 && (
                 <div className="mt-4 pt-4 border-t flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">
-                    {t("itemMapping.totalSubItemCost")}
+                    {t("itemMapping.totalIngredientCost")}
                   </span>
-                  <span className="font-medium">SAR {totalSubItemCost.toFixed(2)}</span>
+                  <span className="font-medium">SAR {totalIngredientCost.toFixed(2)}</span>
                 </div>
               )}
             </DashedSectionCard>
           </div>
-        )}
+
+          {/* Sub-Items Section (for combos) */}
+          {formData.is_combo && (
+            <div ref={sectionRefs.items} id="items">
+              <DashedSectionCard
+                title={t("itemMapping.items")}
+                icon={Package}
+                variant="muted"
+                isComplete={isItemsComplete}
+                rightBadge={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddItemModal(true)}
+                    className="gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t("itemMapping.addItem")}
+                  </Button>
+                }
+              >
+                <ItemTable
+                  mappings={subItemMappings}
+                  onQuantityChange={handleItemQuantityChange}
+                  onRemove={(id) => {
+                    const mapping = subItemMappings.find((m) => m.id === id);
+                    if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+                  }}
+                  onAdd={() => setShowAddItemModal(true)}
+                  onReplacement={handleOpenReplacementModal}
+                  onRemoveReplacement={handleRemoveReplacement}
+                  onViewReplacement={handleViewReplacement}
+                  totalCost={totalSubItemCost}
+                  totalComboPrice={totalSubItemCost}
+                  isCombo={formData.is_combo}
+                />
+                
+                {subItemMappings.length > 0 && (
+                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">
+                      {t("itemMapping.totalSubItemCost")}
+                    </span>
+                    <span className="font-medium">SAR {totalSubItemCost.toFixed(2)}</span>
+                  </div>
+                )}
+              </DashedSectionCard>
+            </div>
+          )}
+        </main>
       </div>
 
       {/* Footer */}
