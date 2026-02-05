@@ -1,115 +1,133 @@
 
-# Plan: Restore Two-Column Layout for Item Master Forms
+# Plan: Fix Item Master Data Display Issues
 
-## Problem Identified
+## Issues Identified
 
-The Item Master Add/Edit pages (`/items/add` and `/items/:id/edit`) currently use a **single-column stacked layout**, but you expected a **col-4 / col-8 (33% / 67%) two-column split layout**:
+### Issue 1: Item List Shows Empty
+**Root Cause**: The RLS policy on `items` table restricts SELECT to only rows where `is_active = true`. However, the network request from `/items` page returned an empty array `[]` despite your item being active.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  SectionNavigationBar                                        │
-├────────────────────┬────────────────────────────────────────┤
-│   LEFT (col-4)     │   RIGHT (col-8)                        │
-│   ≈33% width       │   ≈67% width                           │
-│                    │                                         │
-│  ┌──────────────┐  │  ┌──────────────────────────────────┐  │
-│  │ Image Upload │  │  │ Basics Section                   │  │
-│  │ (compact)    │  │  │ • Name (EN/AR/UR)                │  │
-│  └──────────────┘  │  │ • Description                    │  │
-│                    │  │ • Base Cost, Item Type           │  │
-│  ┌──────────────┐  │  │ • Combo Toggle                   │  │
-│  │ Inventory    │  │  └──────────────────────────────────┘  │
-│  │ Progress     │  │                                         │
-│  │ Card         │  │  ┌──────────────────────────────────┐  │
-│  └──────────────┘  │  │ Classification Section           │  │
-│                    │  │ • Category, Subcategories        │  │
-│  ┌──────────────┐  │  │ • Serving Times                  │  │
-│  │ Status       │  │  └──────────────────────────────────┘  │
-│  │ Active/      │  │                                         │
-│  │ Inactive     │  │  ┌──────────────────────────────────┐  │
-│  └──────────────┘  │  │ Details Section                  │  │
-│                    │  │ • Prep Time, Calories            │  │
-│                    │  │ • Allergens, Highlights          │  │
-│                    │  └──────────────────────────────────┘  │
-│                    │                                         │
-│                    │  ┌──────────────────────────────────┐  │
-│                    │  │ Ingredients Section              │  │
-│                    │  └──────────────────────────────────┘  │
-│                    │                                         │
-│                    │  ┌──────────────────────────────────┐  │
-│                    │  │ Items Section (if combo)         │  │
-│                    │  └──────────────────────────────────┘  │
-├────────────────────┴────────────────────────────────────────┤
-│  Fixed Footer: Cancel | Save                                 │
-└─────────────────────────────────────────────────────────────┘
+Looking at the network logs, the query at `/items` returns `[]` while a direct database query confirms the item exists with `is_active = true`. The issue is that the Items list page (`src/pages/Items.tsx`) queries **all items** without the `is_active` filter, but the RLS policy **only allows selecting active items** for non-admin authenticated users.
+
+The current RLS policy:
+```sql
+Policy: "Authenticated users can view active items"
+FOR SELECT USING (is_active = true)
 ```
+
+This is intentional for POS (customers should only see active items), but for the **admin Item Master list**, admins need to see ALL items (both active and inactive) to manage them.
+
+**Fix**: The RLS policy for `items` already has "Admins can manage items" with `ALL` permission using `is_admin(auth.uid())`. However, the SELECT-specific policy may be overriding it for non-admin queries. We need to update the RLS to allow admins to see all items.
+
+### Issue 2: Modal Shows IDs Instead of Names
+**Root Cause**: In `ItemsEdit.tsx` lines 1047-1048, the modal receives:
+```javascript
+subcategories: formData.subcategories,  // Array of UUIDs
+serving_times: formData.serving_times,   // Array of UUIDs
+```
+
+The `ItemSaveConfirmModal` displays these directly as chips without resolving the UUIDs to their human-readable names.
+
+**Fix**: Before passing to the modal, map the UUID arrays to their corresponding localized names using the already-loaded `subcategories` and `servingTimes` data.
+
+### Issue 3: Ingredients Not Shown in Add Ingredient Modal
+**Root Cause**: The `ingredients` table is empty (no data). Users need to first add ingredients via the Ingredient Master (`/inventory/ingredients`) before they can map them to items.
+
+**Additional Issue**: Even when ingredients exist, the `ingredients` RLS policy only allows SELECT for `is_active = true`, which is correct.
+
+**Fix**: This is expected behavior - the modal is correctly showing "No data" because there are no ingredients in the database. Users need to populate the Ingredient Master first.
+
+### Issue 4: Items Not Shown in Add Item Modal (Combo)
+**Root Cause**: In `ItemsEdit.tsx` lines 52-57 and 1006, the `AddItemModal` is passed `mockAvailableItems` (hardcoded array) instead of real database items:
+```javascript
+const mockAvailableItems: AvailableItem[] = [
+  { id: "101", name_en: "Margherita Pizza", ... },
+  ...
+];
+...
+<AddItemModal
+  items={mockAvailableItems}  // Should be real data
+  ...
+/>
+```
+
+**Fix**: Replace `mockAvailableItems` with a real query to fetch items from the database.
 
 ---
 
-## What Will Be Changed
+## Implementation Plan
 
-### 1. Restructure Layout in ItemsAdd.tsx
+### Step 1: Fix Items RLS Policy for Admin Visibility
+**Database Migration**:
+- Update the `items` SELECT policy to allow admins to see all items OR authenticated users to see only active items.
 
-**Current structure (single column):**
-```jsx
-<div className="space-y-6">
-  <DashedSectionCard title="Basics">...</DashedSectionCard>
-  <DashedSectionCard title="Classification">...</DashedSectionCard>
-  <DashedSectionCard title="Details">...</DashedSectionCard>
-  <DashedSectionCard title="Inventory">...</DashedSectionCard>
-  <DashedSectionCard title="Ingredients">...</DashedSectionCard>
-</div>
+```sql
+DROP POLICY IF EXISTS "Authenticated users can view active items" ON public.items;
+CREATE POLICY "Users can view items based on role"
+ON public.items FOR SELECT
+USING (
+  is_admin(auth.uid()) OR is_active = true
+);
 ```
 
-**New structure (two columns):**
-```jsx
-<div className="flex flex-col lg:flex-row gap-6">
-  {/* Left Column - 33% */}
-  <aside className="w-full lg:w-1/3 space-y-4 lg:sticky lg:top-16 lg:self-start">
-    <DashedSectionCard title="Image">
-      <ImageUploadHero />
-    </DashedSectionCard>
-    <DashedSectionCard title="Inventory">
-      <InventoryProgressCard />
-    </DashedSectionCard>
-    <DashedSectionCard title="Status">
-      <Switch /> Active/Inactive
-      <Switch /> Is Combo
-    </DashedSectionCard>
-  </aside>
+### Step 2: Fix Modal Showing UUIDs Instead of Names
+**File**: `src/pages/ItemsEdit.tsx`
+**Changes**:
+- Map `formData.subcategories` (UUID array) to localized names using the `subcategories` data
+- Map `formData.serving_times` (UUID array) to localized names using the `servingTimes` data
 
-  {/* Right Column - 67% */}
-  <main className="w-full lg:w-2/3 space-y-6">
-    <DashedSectionCard title="Basics">...</DashedSectionCard>
-    <DashedSectionCard title="Classification">...</DashedSectionCard>
-    <DashedSectionCard title="Details">...</DashedSectionCard>
-    <DashedSectionCard title="Ingredients">...</DashedSectionCard>
-    <DashedSectionCard title="Items">...</DashedSectionCard>
-  </main>
-</div>
+```javascript
+// In ItemSaveConfirmModal props:
+subcategories: formData.subcategories.map(id => {
+  const sub = subcategories?.find(s => s.id === id);
+  return sub ? getLocalizedLabel(sub) : id;
+}),
+serving_times: formData.serving_times.map(id => {
+  const st = servingTimes?.find(s => s.id === id);
+  return st ? getLocalizedLabel(st) : id;
+}),
 ```
 
-### 2. Apply Same Layout to ItemsEdit.tsx
+**File**: `src/pages/ItemsAdd.tsx`
+**Same changes** to maintain consistency.
 
-The same two-column structure will be applied to the edit page.
+### Step 3: Replace Mock Items with Real Database Query in Add Item Modal
+**File**: `src/pages/ItemsEdit.tsx`
+**Changes**:
+1. Remove `mockAvailableItems` constant
+2. Add a React Query hook to fetch items from database
+3. Pass the fetched items to `AddItemModal`
 
-### 3. Left Column Contents (Sticky Sidebar)
+```javascript
+// Add query for available items
+const { data: dbItems = [] } = useQuery({
+  queryKey: ["items-for-combo"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("items")
+      .select("*")
+      .eq("is_active", true)
+      .order("name_en");
+    if (error) throw error;
+    return (data || []).map(item => ({
+      id: item.id,
+      name_en: item.name_en,
+      name_ar: item.name_ar || "",
+      name_ur: item.name_ur || "",
+      base_cost: Number(item.base_cost),
+      is_combo: item.is_combo,
+    }));
+  },
+});
 
-The left column will contain:
-- **Image Upload** (compact 100px square as per memory)
-- **Inventory Progress Card** (stock level, threshold inputs)
-- **Status Section** (Active/Inactive toggle, Is Combo toggle)
+// Pass to modal
+<AddItemModal
+  items={dbItems}
+  ...
+/>
+```
 
-The left column will be `sticky` so it stays visible while scrolling through the right column sections.
-
-### 4. Right Column Contents (Scrollable Sections)
-
-The right column will contain the scrollable form sections:
-- Basics (Name, Description, Base Cost, Item Type)
-- Classification (Category, Subcategories, Serving Times)
-- Details (Prep Time, Calories, Allergens, Highlights)
-- Ingredients (Mapping table with add/remove)
-- Items (Sub-items for combos)
+**File**: `src/pages/ItemsAdd.tsx`
+**Same changes**.
 
 ---
 
@@ -117,20 +135,24 @@ The right column will contain the scrollable form sections:
 
 | File | Changes |
 |------|---------|
-| `src/pages/ItemsAdd.tsx` | Restructure to col-4/col-8 layout, move Image/Inventory/Status to left sidebar |
-| `src/pages/ItemsEdit.tsx` | Same restructure as ItemsAdd.tsx |
+| SQL Migration | Update RLS policy for items to allow admins to see all items |
+| `src/pages/ItemsEdit.tsx` | 1. Map subcategory/serving time IDs to names for modal<br>2. Replace mockAvailableItems with real DB query |
+| `src/pages/ItemsAdd.tsx` | Same changes as ItemsEdit.tsx |
 
 ---
 
-## Note About Empty Items List
+## Expected Results After Implementation
 
-The items table in the database currently has **0 rows**. The previous "items" you saw were mock/hardcoded data that has now been replaced with real database queries. After this layout fix is implemented, you will need to add items using the form to see them in the list.
+1. **Item List**: Will show all items (active and inactive) for admin users
+2. **Save Confirmation Modal**: Will display proper names for subcategories and serving times instead of UUIDs
+3. **Add Item Modal (Combo)**: Will show real items from the database instead of hardcoded mock data
+4. **Add Ingredient Modal**: Will work correctly once ingredients are added to the Ingredient Master
 
 ---
 
-## Technical Details
+## Note on Empty Data
 
-- **CSS Classes**: `flex flex-col lg:flex-row gap-6` for the main container
-- **Left column**: `w-full lg:w-1/3 lg:sticky lg:top-16 lg:self-start`
-- **Right column**: `w-full lg:w-2/3 space-y-6`
-- **Responsive**: Stacks vertically on mobile/tablet, splits on desktop (lg breakpoint)
+The Ingredient Master (`/inventory/ingredients`) and Items database are currently empty. After these fixes are applied, you will need to:
+1. Add ingredients via `/inventory/ingredients`
+2. Add items via `/items/add`
+3. Then you can test the combo item mapping with real data
