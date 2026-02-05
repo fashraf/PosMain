@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+ import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+ import { Skeleton } from "@/components/ui/skeleton";
 
 export interface SearchableSelectOption {
   id: string;
@@ -30,6 +31,7 @@ interface SearchableSelectProps {
   emptyText?: string;
   className?: string;
   disabled?: boolean;
+   isLoading?: boolean;
 }
 
 export function SearchableSelect({
@@ -41,11 +43,16 @@ export function SearchableSelect({
   emptyText = "No results found.",
   className,
   disabled = false,
+   isLoading = false,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
 
   const selectedOption = options.find((opt) => opt.id === value);
 
+   if (isLoading) {
+     return <Skeleton className="h-10 w-full" />;
+   }
+ 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -61,7 +68,7 @@ export function SearchableSelect({
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
@@ -81,7 +88,7 @@ export function SearchableSelect({
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                       "me-2 h-4 w-4",
                       value === option.id ? "opacity-100" : "opacity-0"
                     )}
                   />
