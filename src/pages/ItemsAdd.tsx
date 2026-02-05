@@ -48,13 +48,7 @@ import {
 import { Save, X, FileText, Tags, Clock, BarChart3, Carrot, Package, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Mock available items for combo (will be replaced with real data later)
-const mockAvailableItems: AvailableItem[] = [
-  { id: "101", name_en: "Margherita Pizza", name_ar: "بيتزا مارغريتا", name_ur: "مارگریٹا پیزا", base_cost: 12.99, is_combo: false },
-  { id: "102", name_en: "Chicken Burger", name_ar: "برجر دجاج", name_ur: "چکن برگر", base_cost: 8.99, is_combo: false },
-  { id: "103", name_en: "Soft Drink", name_ar: "مشروب غازي", name_ur: "سافٹ ڈرنک", base_cost: 2.50, is_combo: false },
-  { id: "104", name_en: "French Fries", name_ar: "بطاطس مقلية", name_ur: "فرنچ فرائز", base_cost: 3.99, is_combo: false },
-];
+// Query for available items moved inside component to use React Query
 
 export default function ItemsAdd() {
   const { t, isRTL, currentLanguage } = useLanguage();
@@ -83,6 +77,28 @@ export default function ItemsAdd() {
         min_stock: 10,
         reorder_level: 25,
       })) as AvailableIngredient[];
+    },
+  });
+
+  // Fetch available items for combo sub-items (exclude combos)
+  const { data: availableItems = [] } = useQuery({
+    queryKey: ["items-for-combo"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("items")
+        .select("*")
+        .eq("is_active", true)
+        .eq("is_combo", false)
+        .order("name_en");
+      if (error) throw error;
+      return (data || []).map((item) => ({
+        id: item.id,
+        name_en: item.name_en,
+        name_ar: item.name_ar || "",
+        name_ur: item.name_ur || "",
+        base_cost: Number(item.base_cost),
+        is_combo: item.is_combo,
+      })) as AvailableItem[];
     },
   });
 
@@ -956,7 +972,7 @@ export default function ItemsAdd() {
         open={showAddItemModal}
         onOpenChange={setShowAddItemModal}
         onConfirm={(item, qty) => handleAddItem(item, qty)}
-        items={mockAvailableItems}
+        items={availableItems}
         mappedIds={mappedSubItemIds}
         currentItemId=""
         currentLanguage={currentLanguage}
@@ -979,7 +995,7 @@ export default function ItemsAdd() {
         parentItemId={replacementModalState.mappingId}
         replacements={currentReplacements}
         onReplacementsChange={handleReplacementsChange}
-        availableItems={mockAvailableItems}
+        availableItems={availableItems}
         currentLanguage={currentLanguage}
       />
 
@@ -995,8 +1011,14 @@ export default function ItemsAdd() {
           description_en: formData.description_en,
           item_type: formData.item_type,
           category: formData.category ? categories?.find((c) => c.id === formData.category)?.name_en || "" : "",
-          subcategories: formData.subcategories,
-          serving_times: formData.serving_times,
+          subcategories: formData.subcategories.map(id => {
+            const sub = subcategories?.find(s => s.id === id);
+            return sub ? getLocalizedLabel(sub) : id;
+          }),
+          serving_times: formData.serving_times.map(id => {
+            const st = servingTimes?.find(s => s.id === id);
+            return st ? getLocalizedLabel(st) : id;
+          }),
           is_active: formData.is_active,
           is_combo: formData.is_combo,
           base_cost: formData.base_cost,
