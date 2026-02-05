@@ -23,46 +23,23 @@ import { MultiLanguageInputWithIndicators } from "@/components/shared/MultiLangu
 import { AllergenPicker, type AllergenType } from "@/components/shared/AllergenPicker";
 import { StockAvailabilityBadge } from "@/components/shared/StockAvailabilityBadge";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { SearchableMultiSelect } from "@/components/shared/SearchableMultiSelect";
 import { IngredientSaveConfirmModal } from "@/components/ingredients/IngredientSaveConfirmModal";
+import {
+  useUnits,
+  useStorageTypes,
+  useIngredientGroups,
+  useLocalizedLabel,
+} from "@/hooks/useMaintenanceData";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 
-// Dropdown options
+// Ingredient types are static (standard classification)
 const INGREDIENT_TYPES = [
   { id: "solid", label: "Solid" },
   { id: "liquid", label: "Liquid" },
   { id: "powder", label: "Powder" },
   { id: "other", label: "Other" },
-];
-
-const UNITS = [
-  { id: "kg", label: "Kilogram (KG)" },
-  { id: "g", label: "Gram (G)" },
-  { id: "l", label: "Liter (L)" },
-  { id: "ml", label: "Milliliter (ML)" },
-  { id: "piece", label: "Piece" },
-  { id: "pack", label: "Pack" },
-  { id: "box", label: "Box" },
-  { id: "dozen", label: "Dozen" },
-];
-
-const STORAGE_TYPES = [
-  { id: "freezer", label: "Freezer (-18°C)" },
-  { id: "fridge", label: "Fridge/Chiller (0-4°C)" },
-  { id: "dry", label: "Dry/Ambient" },
-  { id: "room_temp", label: "Room Temperature" },
-];
-
-const INGREDIENT_CATEGORIES = [
-  { id: "meat_poultry", label: "Meat & Poultry" },
-  { id: "dairy", label: "Dairy" },
-  { id: "produce", label: "Produce/Vegetables" },
-  { id: "spices", label: "Spices & Herbs" },
-  { id: "dry_goods", label: "Dry Goods" },
-  { id: "oils_fats", label: "Oils & Fats" },
-  { id: "beverages", label: "Beverages/Base" },
-  { id: "packaging", label: "Packaging" },
-  { id: "seafood", label: "Seafood" },
-  { id: "bakery", label: "Bakery Items" },
 ];
 
 export default function IngredientMasterEdit() {
@@ -73,6 +50,12 @@ export default function IngredientMasterEdit() {
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Dynamic data hooks
+  const { data: units, isLoading: unitsLoading } = useUnits();
+  const { data: storageTypes, isLoading: storageTypesLoading } = useStorageTypes();
+  const { data: ingredientGroups, isLoading: groupsLoading } = useIngredientGroups();
+  const getLocalizedLabel = useLocalizedLabel();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -111,6 +94,28 @@ export default function IngredientMasterEdit() {
     // Status
     is_active: true,
   });
+
+  // Transform data for dropdowns
+  const unitOptions = useMemo(() => 
+    (units || []).map(u => ({ 
+      id: u.id, 
+      label: `${getLocalizedLabel(u)} (${u.symbol})` 
+    })), 
+    [units, getLocalizedLabel]
+  );
+
+  const storageTypeOptions = useMemo(() => 
+    (storageTypes || []).map(s => ({ 
+      id: s.id, 
+      label: `${getLocalizedLabel(s)}${s.temp_range ? ` (${s.temp_range})` : ''}` 
+    })), 
+    [storageTypes, getLocalizedLabel]
+  );
+
+  const ingredientGroupOptions = useMemo(() => 
+    (ingredientGroups || []).map(g => ({ id: g.id, label: getLocalizedLabel(g) })), 
+    [ingredientGroups, getLocalizedLabel]
+  );
 
   // Load mock data for editing (replace with Supabase fetch later)
   useEffect(() => {
@@ -199,11 +204,11 @@ export default function IngredientMasterEdit() {
   // Summary for confirmation modal
   const ingredientSummary = {
     name: formData.name_en,
-    type: INGREDIENT_TYPES.find((t) => t.id === formData.ingredient_type)?.label || "",
-    unit: UNITS.find((u) => u.id === formData.unit)?.label || "",
-    storageType: STORAGE_TYPES.find((s) => s.id === formData.storage_type)?.label || "",
+    type: INGREDIENT_TYPES.find((it) => it.id === formData.ingredient_type)?.label || "",
+    unit: units?.find((u) => u.id === formData.unit)?.name_en || "",
+    storageType: storageTypes?.find((s) => s.id === formData.storage_type)?.name_en || "",
     categories: formData.categories.map(
-      (cId) => INGREDIENT_CATEGORIES.find((c) => c.id === cId)?.label || cId
+      (cId) => ingredientGroups?.find((g) => g.id === cId)?.name_en || cId
     ),
     costPrice: formData.cost_price,
   };
@@ -263,10 +268,11 @@ export default function IngredientMasterEdit() {
             <SearchableSelect
               value={formData.unit}
               onChange={(value) => setFormData((prev) => ({ ...prev, unit: value }))}
-              options={UNITS}
+              options={unitOptions}
               placeholder={t("common.select")}
               searchPlaceholder={t("common.search")}
               emptyText={t("common.noResults") || "No results found"}
+              isLoading={unitsLoading}
             />
           </FormField>
 
@@ -274,61 +280,25 @@ export default function IngredientMasterEdit() {
             <SearchableSelect
               value={formData.storage_type}
               onChange={(value) => setFormData((prev) => ({ ...prev, storage_type: value }))}
-              options={STORAGE_TYPES}
+              options={storageTypeOptions}
               placeholder={t("common.select")}
               searchPlaceholder={t("common.search")}
               emptyText={t("common.noResults") || "No results found"}
+              isLoading={storageTypesLoading}
             />
           </FormField>
 
           <FormField label={t("ingredients.categoryGroup") || "Category/Group"}>
-            <div className="flex flex-wrap gap-1.5 min-h-[40px] p-2 border rounded-md bg-background">
-              {formData.categories.length === 0 ? (
-                <span className="text-muted-foreground text-sm">{t("common.select")}</span>
-              ) : (
-                formData.categories.map((catId) => {
-                  const cat = INGREDIENT_CATEGORIES.find((c) => c.id === catId);
-                  return (
-                    <span
-                      key={catId}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full"
-                    >
-                      {cat?.label}
-                      <button
-                        type="button"
-                        onClick={() => handleCategoryToggle(catId)}
-                        className="hover:text-green-900"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })
-              )}
-            </div>
+            <SearchableMultiSelect
+              value={formData.categories}
+              onChange={(value) => setFormData((prev) => ({ ...prev, categories: value }))}
+              options={ingredientGroupOptions}
+              placeholder={t("common.select")}
+              searchPlaceholder={t("common.search")}
+              emptyText={t("common.noResults") || "No results found"}
+              isLoading={groupsLoading}
+            />
           </FormField>
-        </div>
-
-        {/* Category selection chips */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {INGREDIENT_CATEGORIES.map((cat) => {
-            const isSelected = formData.categories.includes(cat.id);
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => handleCategoryToggle(cat.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
-                  isSelected
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-background border-border hover:bg-muted"
-                )}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
         </div>
       </DashedSectionCard>
 

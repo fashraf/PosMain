@@ -6,17 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
 import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
-import { MultiSelectBadges } from "@/components/shared/MultiSelectBadges";
 import { MultiLanguageInputWithIndicators } from "@/components/shared/MultiLanguageInputWithIndicators";
 import { InventoryProgressCard } from "@/components/shared/InventoryProgressCard";
 import { AllergenPicker, type AllergenType } from "@/components/shared/AllergenPicker";
@@ -24,6 +16,16 @@ import { ItemSaveConfirmModal } from "@/components/items/ItemSaveConfirmModal";
 import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { SectionNavigationBar, type SectionNavItem } from "@/components/shared/SectionNavigationBar";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { SearchableMultiSelect } from "@/components/shared/SearchableMultiSelect";
+import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
+import {
+  useCategories,
+  useSubcategories,
+  useServingTimes,
+  useItemTypes,
+  useLocalizedLabel,
+} from "@/hooks/useMaintenanceData";
 import {
   ReplacementModal,
   type ReplacementItem,
@@ -41,35 +43,6 @@ import {
 } from "@/components/item-mapping";
 import { Save, X, FileText, Tags, Clock, BarChart3, Carrot, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Category options
-const CATEGORIES = [
-  { id: "vegetarian", label: "Vegetarian" },
-  { id: "non_vegetarian", label: "Non-Vegetarian" },
-  { id: "drinks", label: "Drinks" },
-  { id: "sheesha", label: "Sheesha" },
-  { id: "desserts", label: "Desserts" },
-];
-
-// Subcategory options
-const SUBCATEGORIES = [
-  { id: "seafood", label: "Sea Food" },
-  { id: "pancake", label: "Pan Cake" },
-  { id: "pizza", label: "Pizza" },
-  { id: "soft_drinks", label: "Soft Drinks" },
-  { id: "tea_coffee", label: "Tea and Coffee" },
-  { id: "bbq", label: "BBQ" },
-  { id: "shawarma", label: "Shawarma" },
-  { id: "smoking_zone", label: "Smoking Zone" },
-];
-
-// Serving time options
-const SERVING_TIMES = [
-  { id: "breakfast", label: "Breakfast" },
-  { id: "lunch", label: "Lunch Specials" },
-  { id: "dinner", label: "Dinner" },
-  { id: "snacks", label: "Snacks" },
-];
 
 // Mock available ingredients
 const mockAvailableIngredients: AvailableIngredient[] = [
@@ -95,6 +68,13 @@ export default function ItemsAdd() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Dynamic data hooks
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: subcategories, isLoading: subcategoriesLoading } = useSubcategories(undefined);
+  const { data: servingTimes, isLoading: servingTimesLoading } = useServingTimes();
+  const { data: itemTypes, isLoading: itemTypesLoading } = useItemTypes();
+  const getLocalizedLabel = useLocalizedLabel();
+
   const [formData, setFormData] = useState({
     name_en: "",
     name_ar: "",
@@ -117,6 +97,10 @@ export default function ItemsAdd() {
     current_stock: 100,
     low_stock_threshold: 10,
   });
+
+  // Confirmation modal states
+  const [comboConfirm, setComboConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
+  const [statusConfirm, setStatusConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -148,6 +132,38 @@ export default function ItemsAdd() {
   const nameInputRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
   const servingTimeRef = useRef<HTMLDivElement>(null);
+
+  // Transform dynamic data for dropdowns
+  const categoryOptions = useMemo(() => 
+    (categories || []).map(c => ({ id: c.id, label: getLocalizedLabel(c) })), 
+    [categories, getLocalizedLabel]
+  );
+
+  const subcategoryOptions = useMemo(() => {
+    const filtered = formData.category 
+      ? (subcategories || []).filter(s => s.parent_category_id === formData.category)
+      : (subcategories || []);
+    return filtered.map(s => ({ id: s.id, label: getLocalizedLabel(s) }));
+  }, [subcategories, formData.category, getLocalizedLabel]);
+
+  const servingTimeOptions = useMemo(() => 
+    (servingTimes || []).map(s => ({ id: s.id, label: getLocalizedLabel(s) })), 
+    [servingTimes, getLocalizedLabel]
+  );
+
+  const itemTypeOptions = useMemo(() => 
+    (itemTypes || []).map(i => ({ id: i.id, label: getLocalizedLabel(i) })), 
+    [itemTypes, getLocalizedLabel]
+  );
+
+  // Reset subcategories when category changes
+  const prevCategoryRef = useRef(formData.category);
+  useEffect(() => {
+    if (prevCategoryRef.current !== formData.category && prevCategoryRef.current !== "") {
+      setFormData(prev => ({ ...prev, subcategories: [] }));
+    }
+    prevCategoryRef.current = formData.category;
+  }, [formData.category]);
 
   // Completion logic
   const isBasicsComplete = !!formData.name_en;
@@ -221,6 +237,33 @@ export default function ItemsAdd() {
         ? prev.serving_times.filter((t) => t !== timeId)
         : [...prev.serving_times, timeId],
     }));
+  };
+
+  // Toggle confirmation handlers
+  const handleComboToggle = (checked: boolean) => {
+    if (checked) {
+      setComboConfirm({ open: true, newValue: true });
+    } else {
+      setFormData((prev) => ({ ...prev, is_combo: false }));
+    }
+  };
+
+  const confirmComboChange = () => {
+    setFormData((prev) => ({ ...prev, is_combo: comboConfirm.newValue }));
+    setComboConfirm({ open: false, newValue: false });
+  };
+
+  const handleStatusToggle = (checked: boolean) => {
+    if (!checked) {
+      setStatusConfirm({ open: true, newValue: false });
+    } else {
+      setFormData((prev) => ({ ...prev, is_active: true }));
+    }
+  };
+
+  const confirmStatusChange = () => {
+    setFormData((prev) => ({ ...prev, is_active: statusConfirm.newValue }));
+    setStatusConfirm({ open: false, newValue: false });
   };
 
   // Ingredient mapping handlers
@@ -417,10 +460,10 @@ export default function ItemsAdd() {
     image_url: formData.image_url,
 
     // Classification
-    item_type: formData.item_type,
-    category: CATEGORIES.find((c) => c.id === formData.category)?.label || "",
-    subcategories: formData.subcategories.map((id) => SUBCATEGORIES.find((s) => s.id === id)?.label || ""),
-    serving_times: formData.serving_times.map((id) => SERVING_TIMES.find((s) => s.id === id)?.label || ""),
+    item_type: itemTypes?.find((i) => i.id === formData.item_type)?.name_en || formData.item_type,
+    category: categories?.find((c) => c.id === formData.category)?.name_en || "",
+    subcategories: formData.subcategories.map((id) => subcategories?.find((s) => s.id === id)?.name_en || "").filter(Boolean),
+    serving_times: formData.serving_times.map((id) => servingTimes?.find((s) => s.id === id)?.name_en || "").filter(Boolean),
     
     // Status
     is_active: formData.is_active,
@@ -444,7 +487,7 @@ export default function ItemsAdd() {
     itemMappings: subItemMappings,
     ingredientTotalCost: totalIngredientCost,
     itemTotalCost: totalSubItemCost,
-  }), [formData, ingredientMappings, subItemMappings, totalIngredientCost, totalSubItemCost]);
+  }), [formData, ingredientMappings, subItemMappings, totalIngredientCost, totalSubItemCost, categories, subcategories, servingTimes, itemTypes]);
 
   return (
     <>
@@ -535,21 +578,19 @@ export default function ItemsAdd() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-sm font-medium mb-1 block">{t("items.itemType")}</Label>
-                        <Select
+                        <Label className="text-sm font-medium mb-1 flex items-center gap-1">
+                          {t("items.itemType")}
+                          <TooltipInfo content={t("tooltips.itemType")} />
+                        </Label>
+                        <SearchableSelect
                           value={formData.item_type}
-                          onValueChange={(value: "edible" | "non_edible") =>
-                            setFormData((prev) => ({ ...prev, item_type: value }))
-                          }
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="edible">{t("items.edible")}</SelectItem>
-                            <SelectItem value="non_edible">{t("items.nonEdible")}</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          onChange={(value) => setFormData((prev) => ({ ...prev, item_type: value as "edible" | "non_edible" }))}
+                          options={itemTypeOptions}
+                          placeholder={t("common.select")}
+                          searchPlaceholder={t("common.search")}
+                          emptyText={t("common.noResults") || "No results"}
+                          isLoading={itemTypesLoading}
+                        />
                       </div>
                       <div>
                         <Label className="text-sm font-medium mb-1 block">{t("items.baseCost")} (SAR)</Label>
@@ -569,7 +610,7 @@ export default function ItemsAdd() {
                         <Switch
                           id="isCombo"
                           checked={formData.is_combo}
-                          onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_combo: checked }))}
+                          onCheckedChange={handleComboToggle}
                         />
                         <Label htmlFor="isCombo" className="text-sm font-normal flex items-center gap-1">
                           {t("items.isCombo")}
@@ -580,7 +621,7 @@ export default function ItemsAdd() {
                         <Switch
                           id="status"
                           checked={formData.is_active}
-                          onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
+                          onCheckedChange={handleStatusToggle}
                         />
                         <Label htmlFor="status" className="text-sm font-normal">
                           {formData.is_active ? t("common.active") : t("common.inactive")}
@@ -602,42 +643,47 @@ export default function ItemsAdd() {
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div ref={categoryRef}>
-                          <Label className="text-sm font-medium mb-1 block">
+                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
                             {t("items.category")} <span className="text-destructive">*</span>
+                            <TooltipInfo content={t("tooltips.category")} />
                           </Label>
-                          <Select
+                          <SearchableSelect
                             value={formData.category}
-                            onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder={t("items.selectCategory")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CATEGORIES.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id}>
-                                  {cat.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            onChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+                            options={categoryOptions}
+                            placeholder={t("items.selectCategory")}
+                            searchPlaceholder={t("common.search")}
+                            emptyText={t("common.noResults") || "No results"}
+                            isLoading={categoriesLoading}
+                          />
                         </div>
                         <div>
-                          <Label className="text-sm font-medium mb-1 block">{t("items.subcategory")}</Label>
-                          <MultiSelectBadges
-                            options={SUBCATEGORIES}
+                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
+                            {t("items.subcategory")}
+                            <TooltipInfo content={t("tooltips.subcategory")} />
+                          </Label>
+                          <SearchableMultiSelect
                             value={formData.subcategories}
                             onChange={(value) => setFormData((prev) => ({ ...prev, subcategories: value }))}
-                            placeholder={t("items.selectSubcategories")}
+                            options={subcategoryOptions}
+                            placeholder={formData.category ? t("items.selectSubcategories") : t("items.selectCategoryFirst")}
+                            searchPlaceholder={t("common.search")}
+                            emptyText={t("common.noResults") || "No results"}
+                            isLoading={subcategoriesLoading}
+                            disabled={!formData.category}
                           />
                         </div>
                       </div>
 
                       <div ref={servingTimeRef}>
-                        <Label className="text-sm font-medium mb-1.5 block">
+                        <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
                           {t("items.servingTime")} <span className="text-destructive">*</span>
+                          <TooltipInfo content={t("tooltips.servingTime")} />
                         </Label>
-                        <div className="flex flex-wrap gap-4">
-                          {SERVING_TIMES.map((time) => (
+                        <div className="flex flex-wrap gap-4 min-h-[32px]">
+                          {servingTimesLoading ? (
+                            <span className="text-muted-foreground text-sm">{t("common.loading")}</span>
+                          ) : (servingTimes || []).map((time) => (
                             <div key={time.id} className="flex items-center gap-2">
                               <Checkbox
                                 id={`serving-${time.id}`}
@@ -645,7 +691,7 @@ export default function ItemsAdd() {
                                 onCheckedChange={() => handleServingTimeToggle(time.id)}
                               />
                               <Label htmlFor={`serving-${time.id}`} className="text-sm font-normal cursor-pointer">
-                                {time.label}
+                                {getLocalizedLabel(time)}
                               </Label>
                             </div>
                           ))}
@@ -847,6 +893,26 @@ export default function ItemsAdd() {
           currentLanguage={currentLanguage}
         />
       </div>
+
+      {/* Confirmation Modals */}
+      <ConfirmActionModal
+        open={comboConfirm.open}
+        onOpenChange={(open) => !open && setComboConfirm({ open: false, newValue: false })}
+        onConfirm={confirmComboChange}
+        title={t("items.enableComboTitle") || "Enable Combo?"}
+        message={t("items.enableComboMessage") || "Enabling combo allows sub-item mapping. Continue?"}
+        confirmLabel={t("common.confirm")}
+      />
+
+      <ConfirmActionModal
+        open={statusConfirm.open}
+        onOpenChange={(open) => !open && setStatusConfirm({ open: false, newValue: false })}
+        onConfirm={confirmStatusChange}
+        title={t("items.deactivateItemTitle") || "Deactivate Item?"}
+        message={t("items.deactivateItemMessage") || "Deactivating this item will remove it from POS. Continue?"}
+        confirmLabel={t("common.confirm")}
+        variant="destructive"
+      />
     </>
   );
 }
