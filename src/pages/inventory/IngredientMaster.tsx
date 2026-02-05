@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Carrot, Eye, Pencil, AlertTriangle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, Search, Carrot, Eye, Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,63 +24,30 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-// Mock data for UI prototype
-const mockIngredients = [
-  {
-    id: "1",
-    name_en: "Diced Tomatoes",
-    name_ar: "طماطم مقطعة",
-    name_ur: "کٹے ہوئے ٹماٹر",
-    linked_item_code: "STK001",
-    linked_item_name: "Tomatoes",
-    default_unit: "Kg",
-    preparation_type: "raw",
-    yield_percentage: 85,
-    wastage_percentage: 5,
-    calculated_cost: 5.88,
-    is_active: true,
-  },
-  {
-    id: "2",
-    name_en: "Sliced Onions",
-    name_ar: "بصل مقطع",
-    name_ur: "کٹی ہوئی پیاز",
-    linked_item_code: null,
-    linked_item_name: null,
-    default_unit: "Kg",
-    preparation_type: "raw",
-    yield_percentage: 90,
-    wastage_percentage: 3,
-    calculated_cost: null,
-    is_active: true,
-  },
-  {
-    id: "3",
-    name_en: "Grilled Chicken",
-    name_ar: "دجاج مشوي",
-    name_ur: "گرلڈ چکن",
-    linked_item_code: "STK003",
-    linked_item_name: "Chicken",
-    default_unit: "Kg",
-    preparation_type: "cooked",
-    yield_percentage: 75,
-    wastage_percentage: 10,
-    calculated_cost: 12.50,
-    is_active: true,
-  },
-];
+import { useToast } from "@/hooks/use-toast";
 
 export default function IngredientMaster() {
   const { t, currentLanguage } = useLanguage();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const [prepTypeFilter, setPrepTypeFilter] = useState("all");
-  const [linkedFilter, setLinkedFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const getIngredientName = (item: typeof mockIngredients[0]) => {
+  // Fetch ingredients from database
+  const { data: ingredients = [], isLoading } = useQuery({
+    queryKey: ["ingredients-master-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("*, units(symbol, name_en)")
+        .order("name_en");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const getIngredientName = (item: typeof ingredients[0]) => {
     switch (currentLanguage) {
       case "ar":
         return item.name_ar || item.name_en;
@@ -89,17 +58,21 @@ export default function IngredientMaster() {
     }
   };
 
-  const filteredIngredients = mockIngredients.filter((item) => {
+  const filteredIngredients = ingredients.filter((item) => {
     const matchesSearch = getIngredientName(item).toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPrepType = prepTypeFilter === "all" || item.preparation_type === prepTypeFilter;
-    const matchesLinked =
-      linkedFilter === "all" ||
-      (linkedFilter === "linked" && item.linked_item_code) ||
-      (linkedFilter === "unlinked" && !item.linked_item_code);
-    return matchesSearch && matchesPrepType && matchesLinked;
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && item.is_active) ||
+      (statusFilter === "inactive" && !item.is_active);
+    return matchesSearch && matchesStatus;
   });
 
-  const unlinkedCount = mockIngredients.filter((i) => !i.linked_item_code).length;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -115,16 +88,6 @@ export default function IngredientMaster() {
         </Button>
       </div>
 
-      {/* Warning for unlinked ingredients */}
-      {unlinkedCount > 0 && (
-        <Alert variant="destructive" className="border-warning bg-warning/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {t("inventory.unlinkedWarning", { count: unlinkedCount })}
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
@@ -136,25 +99,14 @@ export default function IngredientMaster() {
             className="pl-9"
           />
         </div>
-        <Select value={prepTypeFilter} onValueChange={setPrepTypeFilter}>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder={t("inventory.preparationType")} />
+            <SelectValue placeholder={t("common.status")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("common.allBranches")}</SelectItem>
-            <SelectItem value="raw">{t("inventory.prepRaw")}</SelectItem>
-            <SelectItem value="cooked">{t("inventory.prepCooked")}</SelectItem>
-            <SelectItem value="marinated">{t("inventory.prepMarinated")}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={linkedFilter} onValueChange={setLinkedFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder={t("inventory.linkedItem")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common.allBranches")}</SelectItem>
-            <SelectItem value="linked">{t("inventory.linked")}</SelectItem>
-            <SelectItem value="unlinked">{t("inventory.unlinked")}</SelectItem>
+            <SelectItem value="active">{t("common.active")}</SelectItem>
+            <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -177,42 +129,21 @@ export default function IngredientMaster() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>#</TableHead>
                 <TableHead>{t("common.name")}</TableHead>
-                <TableHead>{t("inventory.linkedItem")}</TableHead>
                 <TableHead>{t("common.unit")}</TableHead>
-                <TableHead>{t("inventory.yieldPercentage")}</TableHead>
-                <TableHead>{t("inventory.wastagePercentage")}</TableHead>
-                <TableHead>{t("inventory.trueCost")}</TableHead>
+                <TableHead>{t("ingredients.costPerUnit")}</TableHead>
                 <TableHead>{t("common.status")}</TableHead>
                 <TableHead className="text-right">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredIngredients.map((ingredient) => (
+              {filteredIngredients.map((ingredient, index) => (
                 <TableRow key={ingredient.id}>
+                  <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-medium">{getIngredientName(ingredient)}</TableCell>
-                  <TableCell>
-                    {ingredient.linked_item_code ? (
-                      <span className="text-sm">
-                        {ingredient.linked_item_code} - {ingredient.linked_item_name}
-                      </span>
-                    ) : (
-                      <Badge variant="outline" className="text-warning border-warning">
-                        <AlertTriangle className="h-3 w-3 me-1" />
-                        {t("inventory.noLinkedItem")}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>{ingredient.default_unit}</TableCell>
-                  <TableCell>{ingredient.yield_percentage}%</TableCell>
-                  <TableCell>{ingredient.wastage_percentage}%</TableCell>
-                  <TableCell>
-                    {ingredient.calculated_cost ? (
-                      <span className="font-medium">${ingredient.calculated_cost.toFixed(2)}</span>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
+                  <TableCell>{ingredient.units?.symbol || "—"}</TableCell>
+                  <TableCell>SAR {Number(ingredient.cost_per_unit).toFixed(2)}</TableCell>
                   <TableCell>
                     <StatusBadge isActive={ingredient.is_active} />
                   </TableCell>
