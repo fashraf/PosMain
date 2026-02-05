@@ -8,18 +8,18 @@ interface UsePOSItemsOptions {
 }
 
 /**
- * Fetch POS menu items with optional category filter
+ * Fetch POS menu items from items table with optional category filter
  */
 export function usePOSItems(options: UsePOSItemsOptions = {}) {
   const { categoryId, favoritesOnly } = options;
 
   return useQuery({
-    queryKey: ["pos-menu-items", categoryId, favoritesOnly],
+    queryKey: ["pos-items", categoryId, favoritesOnly],
     queryFn: async (): Promise<POSMenuItem[]> => {
       let query = supabase
-        .from("pos_menu_items")
+        .from("items")
         .select("*")
-        .eq("is_available", true)
+        .eq("is_active", true)
         .order("sort_order", { ascending: true });
 
       if (categoryId) {
@@ -36,9 +36,21 @@ export function usePOSItems(options: UsePOSItemsOptions = {}) {
         throw new Error(`Failed to fetch menu items: ${error.message}`);
       }
 
-      return (data || []).map((item) => ({
-        ...item,
-        base_price: Number(item.base_price),
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        name_en: item.name_en,
+        name_ar: item.name_ar,
+        name_ur: item.name_ur,
+        description_en: item.description_en,
+        category_id: item.category_id,
+        base_price: Number(item.base_cost),
+        image_url: item.image_url,
+        is_customizable: item.is_customizable,
+        is_favorite: item.is_favorite,
+        is_available: item.is_active,
+        sort_order: item.sort_order,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
       }));
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
