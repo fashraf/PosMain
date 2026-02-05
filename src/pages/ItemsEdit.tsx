@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/use-toast";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,29 +33,20 @@ import {
   type ReplacementItem,
 } from "@/components/item-mapping";
 import {
-  IngredientTable,
+  IngredientMappingList,
+  type IngredientMappingItem,
+} from "@/components/item-mapping/IngredientMappingList";
+import {
   ItemTable,
   AddIngredientModal,
   AddItemModal,
   RemoveConfirmModal,
-  type IngredientMappingItem,
   type SubItemMappingItem,
   type AvailableIngredient,
   type AvailableItem,
 } from "@/components/item-mapping";
-import { Save, X, FileText, Tags, Clock, BarChart3, Carrot, Package } from "lucide-react";
+import { Save, X, FileText, Tags, Clock, BarChart3, Carrot, Package, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Mock available ingredients
-const mockAvailableIngredients: AvailableIngredient[] = [
-  { id: "1", name_en: "Tomato", name_ar: "طماطم", name_ur: "ٹماٹر", unit: "Kg", cost_per_unit: 5.00, current_stock: 150, min_stock: 10, reorder_level: 25 },
-  { id: "2", name_en: "Cheese", name_ar: "جبنة", name_ur: "پنیر", unit: "Kg", cost_per_unit: 12.00, current_stock: 25, min_stock: 5, reorder_level: 15 },
-  { id: "3", name_en: "Chicken Breast", name_ar: "صدر دجاج", name_ur: "چکن بریسٹ", unit: "Kg", cost_per_unit: 12.00, current_stock: 5, min_stock: 10, reorder_level: 20 },
-  { id: "4", name_en: "Olive Oil", name_ar: "زيت زيتون", name_ur: "زیتون کا تیل", unit: "L", cost_per_unit: 5.00, current_stock: 20, min_stock: 5, reorder_level: 10 },
-  { id: "5", name_en: "Basil", name_ar: "ريحان", name_ur: "تلسی", unit: "Kg", cost_per_unit: 20.00, current_stock: 8, min_stock: 2, reorder_level: 5 },
-  { id: "6", name_en: "Lettuce", name_ar: "خس", name_ur: "سلاد پتہ", unit: "Pcs", cost_per_unit: 0.15, current_stock: 100, min_stock: 20, reorder_level: 50 },
-  { id: "7", name_en: "Mushrooms", name_ar: "فطر", name_ur: "مشروم", unit: "Kg", cost_per_unit: 8.00, current_stock: 15, min_stock: 5, reorder_level: 10 },
-];
 
 // Mock available items for combo
 const mockAvailableItems: AvailableItem[] = [
@@ -63,71 +56,66 @@ const mockAvailableItems: AvailableItem[] = [
   { id: "104", name_en: "French Fries", name_ar: "بطاطس مقلية", name_ur: "فرنچ فرائز", base_cost: 3.99, is_combo: false },
 ];
 
-// Mock items data
-const mockItems = [
-  { 
-    id: "1", 
-    name_en: "Margherita Pizza", 
-    name_ar: "بيتزا مارغريتا", 
-    name_ur: "مارگریٹا پیزا", 
-    description_en: "Classic pizza with tomato and mozzarella", 
-    description_ar: "بيتزا كلاسيكية", 
-    description_ur: "کلاسک پیزا", 
-    item_type: "edible" as const, 
-    base_cost: 12.99, 
-    is_combo: false, 
-    image_url: null, 
-    is_active: true,
-    category: "non_vegetarian",
-    subcategories: ["pizza"],
-    serving_times: ["lunch", "dinner"],
-    preparation_time_minutes: 20,
-    allergens: ["dairy", "gluten"] as AllergenType[],
-    calories: 850,
-    highlights: "Crispy, Fresh, Authentic",
-    current_stock: 68,
-    low_stock_threshold: 10,
-    ingredientMappings: [
-      { id: "m1", ingredient_id: "1", ingredient_name: "Tomato", quantity: 0.2, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 1.50, sort_order: 1 },
-      { id: "m2", ingredient_id: "2", ingredient_name: "Cheese", quantity: 0.15, unit: "Kg", can_remove: true, can_add_extra: true, extra_cost: 2.00, sort_order: 2 },
-    ] as IngredientMappingItem[],
-    subItemMappings: [] as SubItemMappingItem[],
-  },
-  { 
-    id: "2", 
-    name_en: "Family Combo", 
-    name_ar: "كومبو عائلي", 
-    name_ur: "فیملی کومبو", 
-    description_en: "Perfect for families", 
-    description_ar: "مثالي للعائلات", 
-    description_ur: "خاندان کے لیے بہترین", 
-    item_type: "edible" as const, 
-    base_cost: 45.99, 
-    is_combo: true, 
-    image_url: null, 
-    is_active: true,
-    category: "non_vegetarian",
-    subcategories: ["pizza", "bbq"],
-    serving_times: ["lunch", "dinner"],
-    preparation_time_minutes: 30,
-    allergens: ["dairy", "gluten", "eggs"] as AllergenType[],
-    calories: 2500,
-    highlights: "Value Pack, Family Size",
-    current_stock: 25,
-    low_stock_threshold: 5,
-    ingredientMappings: [] as IngredientMappingItem[],
-    subItemMappings: [
-      { id: "s1", sub_item_id: "101", sub_item_name: "Margherita Pizza", quantity: 2, unit_price: 12.99, sort_order: 1, combo_price: 0, replacements: [] },
-      { id: "s2", sub_item_id: "102", sub_item_name: "Chicken Burger", quantity: 2, unit_price: 8.99, sort_order: 2, combo_price: 0, replacements: [] },
-    ] as SubItemMappingItem[],
-  },
-];
-
 export default function ItemsEdit() {
   const { t, isRTL, currentLanguage } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch item data
+  const { data: itemData, isLoading: itemLoading } = useQuery({
+    queryKey: ["item", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("items")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Fetch item ingredients
+  const { data: itemIngredients = [] } = useQuery({
+    queryKey: ["item-ingredients", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("item_ingredients")
+        .select("*, ingredients(name_en, name_ar, name_ur, units(symbol))")
+        .eq("item_id", id)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  // Fetch available ingredients
+  const { data: availableIngredients = [] } = useQuery({
+    queryKey: ["ingredients-master"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("*, units(symbol)")
+        .eq("is_active", true)
+        .order("name_en");
+      if (error) throw error;
+      return (data || []).map((ing) => ({
+        id: ing.id,
+        name_en: ing.name_en,
+        name_ar: ing.name_ar || "",
+        name_ur: ing.name_ur || "",
+        unit: ing.units?.symbol || "unit",
+        cost_per_unit: Number(ing.cost_per_unit) || 0,
+        current_stock: 100,
+        min_stock: 10,
+        reorder_level: 25,
+      })) as AvailableIngredient[];
+    },
+  });
 
   // Dynamic data hooks
   const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -159,7 +147,52 @@ export default function ItemsEdit() {
     low_stock_threshold: 10,
   });
 
-  // Confirmation modal states
+  // Load item data into form
+  useEffect(() => {
+    if (itemData) {
+      setFormData({
+        name_en: itemData.name_en || "",
+        name_ar: itemData.name_ar || "",
+        name_ur: itemData.name_ur || "",
+        description_en: itemData.description_en || "",
+        description_ar: itemData.description_ar || "",
+        description_ur: itemData.description_ur || "",
+        item_type: (itemData.item_type as "edible" | "non_edible") || "edible",
+        base_cost: Number(itemData.base_cost) || 0,
+        is_combo: itemData.is_combo || false,
+        image_url: itemData.image_url,
+        is_active: itemData.is_active ?? true,
+        category: itemData.category_id || "",
+        subcategories: [],
+        serving_times: [],
+        preparation_time_minutes: 15,
+        allergens: [],
+        calories: null,
+        highlights: "",
+        current_stock: 100,
+        low_stock_threshold: 10,
+      });
+    }
+  }, [itemData]);
+
+  // Load ingredient mappings
+  useEffect(() => {
+    if (itemIngredients.length > 0) {
+      const mappings: IngredientMappingItem[] = itemIngredients.map((m: any) => ({
+        id: m.id,
+        ingredient_id: m.ingredient_id,
+        ingredient_name: m.ingredients?.name_en || "Unknown",
+        quantity: Number(m.quantity) || 1,
+        unit: m.ingredients?.units?.symbol || "unit",
+        can_remove: m.can_remove ?? true,
+        can_add_extra: m.can_add_extra ?? false,
+        extra_cost: m.extra_cost ? Number(m.extra_cost) : null,
+        sort_order: m.sort_order || 0,
+      }));
+      setIngredientMappings(mappings);
+    }
+  }, [itemIngredients]);
+
   const [comboConfirm, setComboConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
   const [statusConfirm, setStatusConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
 
@@ -168,7 +201,6 @@ export default function ItemsEdit() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState("basics");
 
-  // Mapping states
   const [ingredientMappings, setIngredientMappings] = useState<IngredientMappingItem[]>([]);
   const [subItemMappings, setSubItemMappings] = useState<SubItemMappingItem[]>([]);
   const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
@@ -179,38 +211,6 @@ export default function ItemsEdit() {
     type: "ingredient" | "item";
   } | null>(null);
 
-  // Load item data
-  useEffect(() => {
-    const item = mockItems.find((i) => i.id === id);
-    if (item) {
-      setFormData({
-        name_en: item.name_en,
-        name_ar: item.name_ar,
-        name_ur: item.name_ur,
-        description_en: item.description_en || "",
-        description_ar: item.description_ar || "",
-        description_ur: item.description_ur || "",
-        item_type: item.item_type,
-        base_cost: item.base_cost,
-        is_combo: item.is_combo,
-        image_url: item.image_url,
-        is_active: item.is_active,
-        category: item.category,
-        subcategories: item.subcategories,
-        serving_times: item.serving_times,
-        preparation_time_minutes: item.preparation_time_minutes,
-        allergens: item.allergens,
-        calories: item.calories,
-        highlights: item.highlights,
-        current_stock: item.current_stock,
-        low_stock_threshold: item.low_stock_threshold,
-      });
-      setIngredientMappings(item.ingredientMappings || []);
-      setSubItemMappings(item.subItemMappings || []);
-    }
-  }, [id]);
-
-  // Section refs for scrolling
   const sectionRefs = {
     basics: useRef<HTMLDivElement>(null),
     classification: useRef<HTMLDivElement>(null),
@@ -220,12 +220,10 @@ export default function ItemsEdit() {
     items: useRef<HTMLDivElement>(null),
   };
 
-  // Input refs for validation focus
   const nameInputRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
   const servingTimeRef = useRef<HTMLDivElement>(null);
 
-  // Transform dynamic data for dropdowns
   const categoryOptions = useMemo(() => 
     (categories || []).map(c => ({ id: c.id, label: getLocalizedLabel(c) })), 
     [categories, getLocalizedLabel]
@@ -243,12 +241,6 @@ export default function ItemsEdit() {
     [servingTimes, getLocalizedLabel]
   );
 
-  const itemTypeOptions = useMemo(() => 
-    (itemTypes || []).map(i => ({ id: i.id, label: getLocalizedLabel(i) })), 
-    [itemTypes, getLocalizedLabel]
-  );
-
-  // Toggle confirmation handlers
   const handleComboToggle = (checked: boolean) => {
     if (checked) {
       setComboConfirm({ open: true, newValue: true });
@@ -275,15 +267,13 @@ export default function ItemsEdit() {
     setStatusConfirm({ open: false, newValue: false });
   };
 
-  // Completion logic
   const isBasicsComplete = !!formData.name_en;
   const isClassificationComplete = !!formData.category && formData.serving_times.length > 0;
-  const isDetailsComplete = false; // Optional section
-  const isInventoryComplete = false; // Optional section
+  const isDetailsComplete = false;
+  const isInventoryComplete = false;
   const isIngredientsComplete = ingredientMappings.length > 0;
   const isItemsComplete = subItemMappings.length > 0;
 
-  // Navigation sections
   const sections: SectionNavItem[] = useMemo(() => {
     const baseSections: SectionNavItem[] = [
       { id: "basics", label: t("items.basicInformation"), icon: FileText, isComplete: isBasicsComplete },
@@ -308,7 +298,6 @@ export default function ItemsEdit() {
     }
   };
 
-  // Intersection observer for active section
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
     
@@ -349,7 +338,6 @@ export default function ItemsEdit() {
     }));
   };
 
-  // Ingredient mapping handlers
   const getLocalizedName = (obj: { name_en: string; name_ar: string; name_ur: string }) => {
     const key = `name_${currentLanguage}` as keyof typeof obj;
     return obj[key] || obj.name_en;
@@ -365,7 +353,7 @@ export default function ItemsEdit() {
       ingredient_name: getLocalizedName(ingredient),
       quantity,
       unit: ingredient.unit,
-      can_remove: false,
+      can_remove: true,
       can_add_extra: extraCost > 0,
       extra_cost: extraCost > 0 ? extraCost : null,
       sort_order: ingredientMappings.length + 1,
@@ -410,10 +398,15 @@ export default function ItemsEdit() {
     setRemoveConfirm(null);
   };
 
-  const handleIngredientQuantityChange = (mappingId: string, quantity: number) => {
-    setIngredientMappings(
-      ingredientMappings.map((m) => (m.id === mappingId ? { ...m, quantity } : m))
-    );
+  const handleIngredientMappingsChange = (updatedMappings: IngredientMappingItem[]) => {
+    setIngredientMappings(updatedMappings);
+  };
+
+  const handleIngredientRemove = (mappingId: string) => {
+    const mapping = ingredientMappings.find((m) => m.id === mappingId);
+    if (mapping) {
+      handleRequestRemove(mappingId, mapping.ingredient_name, "ingredient");
+    }
   };
 
   const handleItemQuantityChange = (mappingId: string, quantity: number) => {
@@ -422,7 +415,6 @@ export default function ItemsEdit() {
     );
   };
 
-  // Replacement modal state
   const [replacementModalState, setReplacementModalState] = useState({
     open: false,
     mappingId: "",
@@ -474,21 +466,18 @@ export default function ItemsEdit() {
     return mapping?.replacements || [];
   }, [subItemMappings, replacementModalState.mappingId]);
 
-  // Cost calculations
   const totalIngredientCost = useMemo(() => {
     return ingredientMappings.reduce((sum, m) => {
-      const ingredient = mockAvailableIngredients.find((i) => i.id === m.ingredient_id);
+      const ingredient = availableIngredients.find((i) => i.id === m.ingredient_id);
       return sum + (ingredient ? m.quantity * ingredient.cost_per_unit : 0);
     }, 0);
-  }, [ingredientMappings]);
+  }, [ingredientMappings, availableIngredients]);
 
   const totalSubItemCost = useMemo(() => {
     return subItemMappings.reduce((sum, m) => sum + m.quantity * m.unit_price, 0);
   }, [subItemMappings]);
 
-  // Validation with scroll-to-first-error
   const handleSave = () => {
-    // Check name
     if (!formData.name_en) {
       toast({ title: "Validation Error", description: "Please fill Item Name (English)", variant: "destructive" });
       nameInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -499,504 +488,557 @@ export default function ItemsEdit() {
       return;
     }
     
-    // Check category
-    if (!formData.category) {
-      toast({ title: "Validation Error", description: "Please select a Category", variant: "destructive" });
-      categoryRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => {
-        const trigger = categoryRef.current?.querySelector("button");
-        trigger?.focus();
-      }, 400);
-      return;
-    }
-    
-    // Check serving times
-    if (formData.serving_times.length === 0) {
-      toast({ title: "Validation Error", description: "Please select at least one Serving Time", variant: "destructive" });
-      servingTimeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-    
     setShowConfirmModal(true);
   };
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     setIsSaving(true);
     
-    // TODO: Upload imageFile to storage bucket here
-    // const imageUrl = await uploadImage(imageFile);
-    
-    setTimeout(() => {
+    try {
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        const fileName = `${Date.now()}_${imageFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("item-images")
+          .upload(fileName, imageFile);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from("item-images")
+          .getPublicUrl(uploadData.path);
+        
+        imageUrl = publicUrl;
+      }
+
+      const { error: updateError } = await supabase
+        .from("items")
+        .update({
+          name_en: formData.name_en,
+          name_ar: formData.name_ar || null,
+          name_ur: formData.name_ur || null,
+          description_en: formData.description_en || null,
+          description_ar: formData.description_ar || null,
+          description_ur: formData.description_ur || null,
+          item_type: formData.item_type,
+          base_cost: formData.base_cost,
+          is_combo: formData.is_combo,
+          image_url: imageUrl,
+          is_active: formData.is_active,
+          category_id: formData.category || null,
+          is_customizable: ingredientMappings.length > 0,
+        })
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+
+      // Delete existing mappings and re-insert
+      await supabase.from("item_ingredients").delete().eq("item_id", id);
+
+      if (ingredientMappings.length > 0) {
+        const mappingsToInsert = ingredientMappings.map((m, index) => ({
+          item_id: id,
+          ingredient_id: m.ingredient_id,
+          quantity: m.quantity,
+          sort_order: index + 1,
+          can_remove: m.can_remove,
+          can_add_extra: m.can_add_extra,
+          extra_cost: m.extra_cost,
+        }));
+
+        const { error: mappingError } = await supabase
+          .from("item_ingredients")
+          .insert(mappingsToInsert);
+
+        if (mappingError) throw mappingError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["items-master"] });
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: ["item", id] });
+      queryClient.invalidateQueries({ queryKey: ["item-ingredients", id] });
+
       toast({ title: t("items.editItem"), description: `${formData.name_en} has been updated.` });
-      setIsSaving(false);
       setShowConfirmModal(false);
       navigate("/items");
-    }, 800);
+    } catch (error: any) {
+      console.error("Update error:", error);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to update item", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const confirmModalItem = useMemo(() => ({
-    // Identity
-    name_en: formData.name_en,
-    name_ar: formData.name_ar,
-    name_ur: formData.name_ur,
-    description_en: formData.description_en,
-    image_url: formData.image_url,
+  const handleCancel = () => {
+    navigate("/items");
+  };
 
-    // Classification
-    item_type: itemTypes?.find((i) => i.id === formData.item_type)?.name_en || formData.item_type,
-    category: categories?.find((c) => c.id === formData.category)?.name_en || "",
-    subcategories: formData.subcategories.map((subId) => subcategories?.find((s) => s.id === subId)?.name_en || "").filter(Boolean),
-    serving_times: formData.serving_times.map((timeId) => servingTimes?.find((s) => s.id === timeId)?.name_en || "").filter(Boolean),
-    
-    // Status
-    is_active: formData.is_active,
-    is_combo: formData.is_combo,
-    base_cost: formData.base_cost,
+  if (itemLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-    // Details
-    prep_time: formData.preparation_time_minutes,
-    calories: formData.calories,
-    highlights: formData.highlights,
-    allergens: formData.allergens,
-
-    // Inventory
-    current_stock: formData.current_stock,
-    low_stock_threshold: formData.low_stock_threshold,
-
-    // Mappings
-    ingredientCount: ingredientMappings.length,
-    itemCount: subItemMappings.length,
-    ingredientMappings: ingredientMappings,
-    itemMappings: subItemMappings,
-    ingredientTotalCost: totalIngredientCost,
-    itemTotalCost: totalSubItemCost,
-  }), [formData, ingredientMappings, subItemMappings, totalIngredientCost, totalSubItemCost, categories, subcategories, servingTimes, itemTypes]);
+  if (!itemData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-muted-foreground">Item not found</p>
+        <Button onClick={() => navigate("/items")}>Back to Items</Button>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <LoadingOverlay visible={isSaving} message="Updating item..." />
-      
-      <div className="pb-24">
-        <div>
-          {/* Section Navigation Bar with Back button */}
-          <SectionNavigationBar
-            sections={sections}
-            activeSection={activeSection}
-            onNavigate={handleNavigate}
-            onBack={() => navigate("/items")}
-            backLabel="BACK"
-          />
+    <div className="relative pb-24">
+      <LoadingOverlay visible={isSaving} message={t("common.saving")} />
 
-          <div className="space-y-4 pt-3">
-            {/* Two-Column Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left Column - 4/12 */}
-              <div className="lg:col-span-4 space-y-4">
-                {/* Basic Info Left (Image, Name, Description) */}
-                <div ref={sectionRefs.basics}>
-                  <DashedSectionCard 
-                    id="basics"
-                    title={t("items.basicInformation")} 
-                    icon={FileText} 
-                    variant="purple"
-                    isComplete={isBasicsComplete}
-                  >
-                    <div className="space-y-3">
-                      {/* Hero Image Upload - reduced size */}
-                      <ImageUploadHero
-                        value={formData.image_url}
-                        onChange={(url) => setFormData((prev) => ({ ...prev, image_url: url }))}
-                        onFileChange={setImageFile}
-                        size={100}
-                        className="mx-auto"
-                      />
+      <SectionNavigationBar
+        sections={sections}
+        activeSection={activeSection}
+        onNavigate={handleNavigate}
+        onBack={handleCancel}
+      />
 
-                      {/* Item Name with indicators */}
-                      <div ref={nameInputRef}>
-                        <MultiLanguageInputWithIndicators
-                          label={t("items.itemName")}
-                          values={{ en: formData.name_en, ar: formData.name_ar, ur: formData.name_ur }}
-                          onChange={handleNameChange}
-                          required
-                          placeholder="Enter item name..."
-                        />
-                      </div>
-
-                      {/* Description with indicators */}
-                      <MultiLanguageInputWithIndicators
-                        label={t("common.description")}
-                        values={{ en: formData.description_en, ar: formData.description_ar, ur: formData.description_ur }}
-                        onChange={handleDescriptionChange}
-                        multiline
-                        placeholder="Enter description..."
-                      />
-                    </div>
-                  </DashedSectionCard>
-                </div>
-
-                {/* Inventory Section */}
-                <div ref={sectionRefs.inventory}>
-                  <DashedSectionCard 
-                    id="inventory"
-                    title={t("items.inventory")} 
-                    icon={BarChart3} 
-                    variant="amber"
-                    isComplete={isInventoryComplete}
-                  >
-                    <InventoryProgressCard
-                      currentStock={formData.current_stock}
-                      maxStock={100}
-                      lowStockThreshold={formData.low_stock_threshold}
-                      onCurrentStockChange={(value) => setFormData((prev) => ({ ...prev, current_stock: value }))}
-                      onThresholdChange={(value) => setFormData((prev) => ({ ...prev, low_stock_threshold: value }))}
-                    />
-                  </DashedSectionCard>
-                </div>
+      <div className="space-y-6 pt-4">
+        {/* Basics Section */}
+        <div ref={sectionRefs.basics} id="basics">
+          <DashedSectionCard
+            title={t("items.basicInformation")}
+            icon={FileText}
+            variant="purple"
+            isComplete={isBasicsComplete}
+          >
+            <div className="space-y-4">
+              <div ref={nameInputRef}>
+                <MultiLanguageInputWithIndicators
+                  label={t("items.itemName")}
+                  values={{
+                    en: formData.name_en,
+                    ar: formData.name_ar,
+                    ur: formData.name_ur,
+                  }}
+                  onChange={handleNameChange}
+                  required
+                />
               </div>
 
-              {/* Right Column - 8/12 */}
-              <div className="lg:col-span-8 space-y-4">
-                {/* Basic Info Right (Type, Cost, Toggles) */}
-                <DashedSectionCard title={t("items.basicInformation")} icon={FileText} variant="purple">
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-sm font-medium mb-1 flex items-center gap-1">
-                          {t("items.itemType")}
-                          <TooltipInfo content={t("tooltips.itemType")} />
-                        </Label>
-                        <SearchableSelect
-                          value={formData.item_type}
-                          onChange={(value) => setFormData((prev) => ({ ...prev, item_type: value as "edible" | "non_edible" }))}
-                          options={itemTypeOptions}
-                          placeholder={t("common.select")}
-                          searchPlaceholder={t("common.search")}
-                          emptyText={t("common.noResults") || "No results"}
-                          isLoading={itemTypesLoading}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium mb-1 block">{t("items.baseCost")} (SAR)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={formData.base_cost}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, base_cost: parseFloat(e.target.value) || 0 }))}
-                          className="h-9"
-                        />
-                      </div>
-                    </div>
+              <MultiLanguageInputWithIndicators
+                label={t("common.description")}
+                values={{
+                  en: formData.description_en,
+                  ar: formData.description_ar,
+                  ur: formData.description_ur,
+                }}
+                onChange={handleDescriptionChange}
+                multiline
+              />
 
-                    <div className="flex flex-wrap items-center gap-6 pt-2 border-t">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="isCombo"
-                          checked={formData.is_combo}
-                          onCheckedChange={handleComboToggle}
-                        />
-                        <Label htmlFor="isCombo" className="text-sm font-normal flex items-center gap-1">
-                          {t("items.isCombo")}
-                          <TooltipInfo content={t("items.comboTooltip")} />
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="status"
-                          checked={formData.is_active}
-                          onCheckedChange={handleStatusToggle}
-                        />
-                        <Label htmlFor="status" className="text-sm font-normal">
-                          {formData.is_active ? t("common.active") : t("common.inactive")}
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                </DashedSectionCard>
-
-                {/* Classification Section */}
-                <div ref={sectionRefs.classification}>
-                  <DashedSectionCard 
-                    id="classification"
-                    title={t("items.classification")} 
-                    icon={Tags} 
-                    variant="green"
-                    isComplete={isClassificationComplete}
-                  >
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div ref={categoryRef}>
-                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
-                            {t("items.category")} <span className="text-destructive">*</span>
-                            <TooltipInfo content={t("tooltips.category")} />
-                          </Label>
-                          <SearchableSelect
-                            value={formData.category}
-                            onChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
-                            options={categoryOptions}
-                            placeholder={t("items.selectCategory")}
-                            searchPlaceholder={t("common.search")}
-                            emptyText={t("common.noResults") || "No results"}
-                            isLoading={categoriesLoading}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
-                            {t("items.subcategory")}
-                            <TooltipInfo content={t("tooltips.subcategory")} />
-                          </Label>
-                          <SearchableMultiSelect
-                            value={formData.subcategories}
-                            onChange={(value) => setFormData((prev) => ({ ...prev, subcategories: value }))}
-                            options={subcategoryOptions}
-                            placeholder={formData.category ? t("items.selectSubcategories") : t("items.selectCategoryFirst")}
-                            searchPlaceholder={t("common.search")}
-                            emptyText={t("common.noResults") || "No results"}
-                            isLoading={subcategoriesLoading}
-                            disabled={!formData.category}
-                          />
-                        </div>
-                      </div>
-
-                      <div ref={servingTimeRef}>
-                        <Label className="text-sm font-medium mb-1.5 flex items-center gap-1">
-                          {t("items.servingTime")} <span className="text-destructive">*</span>
-                          <TooltipInfo content={t("tooltips.servingTime")} />
-                        </Label>
-                        <div className="flex flex-wrap gap-4 min-h-[32px]">
-                          {servingTimesLoading ? (
-                            <span className="text-muted-foreground text-sm">{t("common.loading")}</span>
-                          ) : (servingTimes || []).map((time) => (
-                            <div key={time.id} className="flex items-center gap-2">
-                              <Checkbox
-                                id={`serving-${time.id}`}
-                                checked={formData.serving_times.includes(time.id)}
-                                onCheckedChange={() => handleServingTimeToggle(time.id)}
-                              />
-                              <Label htmlFor={`serving-${time.id}`} className="text-sm font-normal cursor-pointer">
-                                {getLocalizedLabel(time)}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </DashedSectionCard>
-                </div>
-
-                {/* Details Section */}
-                <div ref={sectionRefs.details}>
-                  <DashedSectionCard 
-                    id="details"
-                    title={t("items.details")} 
-                    icon={Clock} 
-                    variant="blue"
-                    isComplete={isDetailsComplete}
-                  >
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
-                            {t("items.preparationTime")}
-                            <TooltipInfo content={t("items.preparationTimeTooltip")} />
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              min="0"
-                              value={formData.preparation_time_minutes}
-                              onChange={(e) => setFormData((prev) => ({ ...prev, preparation_time_minutes: parseInt(e.target.value) || 0 }))}
-                              className="h-9 pe-10"
-                            />
-                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">min</span>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
-                            {t("items.calories")}
-                            <TooltipInfo content={t("items.caloriesTooltip")} />
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              min="0"
-                              value={formData.calories ?? ""}
-                              onChange={(e) => setFormData((prev) => ({ ...prev, calories: e.target.value ? parseInt(e.target.value) : null }))}
-                              placeholder="Optional"
-                              className="h-9 pe-10"
-                            />
-                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">kcal</span>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium mb-1 flex items-center gap-1">
-                            {t("items.highlights")}
-                            <TooltipInfo content={t("items.highlightsTooltip")} />
-                          </Label>
-                          <Input
-                            type="text"
-                            value={formData.highlights}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, highlights: e.target.value }))}
-                            placeholder={t("items.highlightsPlaceholder")}
-                            className="h-9"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t">
-                        <AllergenPicker
-                          label={t("items.allergens")}
-                          value={formData.allergens}
-                          onChange={(allergens) => setFormData((prev) => ({ ...prev, allergens }))}
-                          tooltip={t("items.allergensTooltip")}
-                        />
-                      </div>
-                    </div>
-                  </DashedSectionCard>
-                </div>
-              </div>
-            </div>
-
-            {/* Ingredient & Item Mapping Section - Full Width */}
-            <div ref={sectionRefs.ingredients}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Ingredients */}
-                <DashedSectionCard
-                  id="ingredients"
-                  title={t("itemMapping.ingredients")}
-                  icon={Carrot}
-                  variant="green"
-                  isComplete={isIngredientsComplete}
-                >
-                  <IngredientTable
-                    mappings={ingredientMappings}
-                    onQuantityChange={handleIngredientQuantityChange}
-                    onRemove={(mappingId) => {
-                      const mapping = ingredientMappings.find((m) => m.id === mappingId);
-                      if (mapping) handleRequestRemove(mappingId, mapping.ingredient_name, "ingredient");
-                    }}
-                    onAdd={() => setShowAddIngredientModal(true)}
-                    totalCost={totalIngredientCost}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("items.baseCost")} *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.base_cost}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        base_cost: parseFloat(e.target.value) || 0,
+                      }))
+                    }
                   />
-                </DashedSectionCard>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("items.itemType")}</Label>
+                  <SearchableSelect
+                    value={formData.item_type}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        item_type: value as "edible" | "non_edible",
+                      }))
+                    }
+                    options={[
+                      { id: "edible", label: t("items.edible") },
+                      { id: "non_edible", label: t("items.nonEdible") },
+                    ]}
+                    placeholder={t("common.select")}
+                    searchPlaceholder={t("common.search")}
+                  />
+                </div>
+              </div>
 
-                {/* Items (only for combo) */}
-                {formData.is_combo && (
-                  <div ref={sectionRefs.items}>
-                    <DashedSectionCard
-                      id="items"
-                      title={t("itemMapping.items")}
-                      icon={Package}
-                      variant="amber"
-                      isComplete={isItemsComplete}
-                    >
-                      <ItemTable
-                        mappings={subItemMappings}
-                        onQuantityChange={handleItemQuantityChange}
-                        onRemove={(mappingId) => {
-                          const mapping = subItemMappings.find((m) => m.id === mappingId);
-                          if (mapping) handleRequestRemove(mappingId, mapping.sub_item_name, "item");
-                        }}
-                        onAdd={() => setShowAddItemModal(true)}
-                        onReplacement={handleOpenReplacementModal}
-                        onRemoveReplacement={handleRemoveReplacement}
-                        onViewReplacement={handleViewReplacement}
-                        totalCost={totalSubItemCost}
-                        totalComboPrice={0}
-                        isCombo={formData.is_combo}
-                      />
-                    </DashedSectionCard>
-                  </div>
-                )}
+              <ImageUploadHero
+                currentImage={formData.image_url}
+                onImageChange={(file) => setImageFile(file)}
+                onImageRemove={() => {
+                  setFormData((prev) => ({ ...prev, image_url: null }));
+                  setImageFile(null);
+                }}
+              />
+
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="isCombo">{t("items.isCombo")}</Label>
+                  <TooltipInfo content={t("items.comboTooltip")} />
+                </div>
+                <Switch
+                  id="isCombo"
+                  checked={formData.is_combo}
+                  onCheckedChange={handleComboToggle}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="status">{t("common.status")}</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {formData.is_active ? t("common.active") : t("common.inactive")}
+                  </span>
+                  <Switch
+                    id="status"
+                    checked={formData.is_active}
+                    onCheckedChange={handleStatusToggle}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </DashedSectionCard>
         </div>
 
-        {/* Sticky Footer - contained within main content area */}
-        <div className="fixed bottom-0 left-[16rem] right-0 bg-background border-t z-10">
-          <div className="py-3 px-4 flex justify-end">
-            <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
-              <Button variant="outline" size="sm" onClick={() => navigate("/items")} disabled={isSaving}>
-                <X className="h-4 w-4 me-1" />
-                {t("common.cancel")}
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                <Save className="h-4 w-4 me-1" />
-                {t("common.save")}
-              </Button>
+        {/* Classification Section */}
+        <div ref={sectionRefs.classification} id="classification">
+          <DashedSectionCard
+            title={t("items.classification")}
+            icon={Tags}
+            variant="green"
+            isComplete={isClassificationComplete}
+          >
+            <div className="space-y-4">
+              <div ref={categoryRef} className="space-y-2">
+                <Label>{t("items.category")}</Label>
+                <SearchableSelect
+                  value={formData.category}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, category: value }))
+                  }
+                  options={categoryOptions}
+                  placeholder={t("common.select")}
+                  searchPlaceholder={t("common.search")}
+                  isLoading={categoriesLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("items.subcategories")}</Label>
+                <SearchableMultiSelect
+                  value={formData.subcategories}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, subcategories: value }))
+                  }
+                  options={subcategoryOptions}
+                  placeholder={t("common.select")}
+                  searchPlaceholder={t("common.search")}
+                  isLoading={subcategoriesLoading}
+                />
+              </div>
+
+              <div ref={servingTimeRef} className="space-y-2">
+                <Label>{t("items.servingTimes")}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {servingTimeOptions.map((time) => (
+                    <div
+                      key={time.id}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer transition-colors",
+                        formData.serving_times.includes(time.id)
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "hover:bg-muted"
+                      )}
+                      onClick={() => handleServingTimeToggle(time.id)}
+                    >
+                      <Checkbox
+                        checked={formData.serving_times.includes(time.id)}
+                        className="pointer-events-none"
+                      />
+                      <span className="text-sm">{time.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          </DashedSectionCard>
         </div>
 
-        {/* Modals */}
-        <AddIngredientModal
-          open={showAddIngredientModal}
-          onOpenChange={setShowAddIngredientModal}
-          onConfirm={handleAddIngredient}
-          ingredients={mockAvailableIngredients}
-          mappedIds={mappedIngredientIds}
-          currentLanguage={currentLanguage}
-        />
+        {/* Details Section */}
+        <div ref={sectionRefs.details} id="details">
+          <DashedSectionCard
+            title={t("items.details")}
+            icon={Clock}
+            variant="blue"
+            isComplete={isDetailsComplete}
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("items.preparationTime")}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.preparation_time_minutes}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          preparation_time_minutes: parseInt(e.target.value) || 0,
+                        }))
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground">min</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("items.calories")}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.calories || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        calories: e.target.value ? parseInt(e.target.value) : null,
+                      }))
+                    }
+                    placeholder={t("common.optional")}
+                  />
+                </div>
+              </div>
 
-        <AddItemModal
-          open={showAddItemModal}
-          onOpenChange={setShowAddItemModal}
-          onConfirm={(item, qty, _extraCost) => handleAddItem(item, qty)}
-          items={mockAvailableItems}
-          mappedIds={mappedSubItemIds}
-          currentItemId={id || ""}
-          currentLanguage={currentLanguage}
-        />
+              <div className="space-y-2">
+                <Label>{t("items.allergens")}</Label>
+                <AllergenPicker
+                  value={formData.allergens}
+                  onChange={(allergens) =>
+                    setFormData((prev) => ({ ...prev, allergens }))
+                  }
+                />
+              </div>
 
-        <RemoveConfirmModal
-          open={!!removeConfirm}
-          onOpenChange={(open) => !open && setRemoveConfirm(null)}
-          onConfirm={confirmRemove}
-          itemName={removeConfirm?.name || ""}
-          itemType={removeConfirm?.type || "ingredient"}
-        />
+              <div className="space-y-2">
+                <Label>{t("items.highlights")}</Label>
+                <Input
+                  value={formData.highlights}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, highlights: e.target.value }))
+                  }
+                  placeholder="e.g., Crispy, Fresh, Authentic"
+                />
+              </div>
+            </div>
+          </DashedSectionCard>
+        </div>
 
-        <ItemSaveConfirmModal
-          open={showConfirmModal}
-          onOpenChange={setShowConfirmModal}
-          onConfirm={handleConfirmSave}
-          item={confirmModalItem}
-          isLoading={isSaving}
-          isEdit
-        />
+        {/* Inventory Section */}
+        <div ref={sectionRefs.inventory} id="inventory">
+          <DashedSectionCard
+            title={t("items.inventory")}
+            icon={BarChart3}
+            variant="amber"
+            isComplete={isInventoryComplete}
+          >
+            <InventoryProgressCard
+              currentStock={formData.current_stock}
+              maxStock={100}
+              lowStockThreshold={formData.low_stock_threshold}
+            />
+          </DashedSectionCard>
+        </div>
 
-        <ReplacementModal
-          open={replacementModalState.open}
-          onOpenChange={(open) => !open && setReplacementModalState(prev => ({ ...prev, open: false }))}
-          parentItemName={replacementModalState.parentName}
-          parentItemId={replacementModalState.mappingId}
-          replacements={currentReplacements}
-          onReplacementsChange={handleReplacementsChange}
-          availableItems={mockAvailableItems}
-          currentLanguage={currentLanguage}
-        />
+        {/* Ingredients Section */}
+        <div ref={sectionRefs.ingredients} id="ingredients">
+          <DashedSectionCard
+            title={t("itemMapping.ingredients")}
+            icon={Carrot}
+            variant="muted"
+            isComplete={isIngredientsComplete}
+            headerAction={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddIngredientModal(true)}
+                className="gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                {t("itemMapping.addIngredient")}
+              </Button>
+            }
+          >
+            <IngredientMappingList
+              mappings={ingredientMappings}
+              onChange={handleIngredientMappingsChange}
+              onRemove={handleIngredientRemove}
+            />
+            
+            {ingredientMappings.length > 0 && (
+              <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">
+                  {t("itemMapping.totalIngredientCost")}
+                </span>
+                <span className="font-medium">SAR {totalIngredientCost.toFixed(2)}</span>
+              </div>
+            )}
+          </DashedSectionCard>
+        </div>
+
+        {/* Sub-Items Section */}
+        {formData.is_combo && (
+          <div ref={sectionRefs.items} id="items">
+            <DashedSectionCard
+              title={t("itemMapping.items")}
+              icon={Package}
+              variant="muted"
+              isComplete={isItemsComplete}
+              headerAction={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddItemModal(true)}
+                  className="gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("itemMapping.addItem")}
+                </Button>
+              }
+            >
+              <ItemTable
+                mappings={subItemMappings}
+                onQuantityChange={handleItemQuantityChange}
+                onRemove={(id) => {
+                  const mapping = subItemMappings.find((m) => m.id === id);
+                  if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+                }}
+                onManageReplacements={handleOpenReplacementModal}
+                onRemoveReplacement={handleRemoveReplacement}
+                onViewReplacement={handleViewReplacement}
+                currentLanguage={currentLanguage}
+              />
+              
+              {subItemMappings.length > 0 && (
+                <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    {t("itemMapping.totalSubItemCost")}
+                  </span>
+                  <span className="font-medium">SAR {totalSubItemCost.toFixed(2)}</span>
+                </div>
+              )}
+            </DashedSectionCard>
+          </div>
+        )}
       </div>
 
-      {/* Confirmation Modals */}
+      {/* Footer */}
+      <div
+        className={cn(
+          "fixed bottom-0 bg-background border-t shadow-lg z-10 px-4 py-3",
+          isRTL ? "left-0 right-64" : "left-64 right-0"
+        )}
+      >
+        <div className="max-w-6xl mx-auto flex justify-end gap-3">
+          <Button variant="outline" onClick={handleCancel} className="gap-2">
+            <X className="h-4 w-4" />
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={handleSave} className="gap-2">
+            <Save className="h-4 w-4" />
+            {t("common.save")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <AddIngredientModal
+        open={showAddIngredientModal}
+        onOpenChange={setShowAddIngredientModal}
+        onConfirm={handleAddIngredient}
+        ingredients={availableIngredients}
+        mappedIds={mappedIngredientIds}
+        currentLanguage={currentLanguage}
+      />
+
+      <AddItemModal
+        open={showAddItemModal}
+        onOpenChange={setShowAddItemModal}
+        onConfirm={(item, qty) => handleAddItem(item, qty)}
+        items={mockAvailableItems}
+        mappedIds={mappedSubItemIds}
+        currentItemId={id || ""}
+        currentLanguage={currentLanguage}
+      />
+
+      <RemoveConfirmModal
+        open={!!removeConfirm}
+        onOpenChange={() => setRemoveConfirm(null)}
+        onConfirm={confirmRemove}
+        itemName={removeConfirm?.name || ""}
+        itemType={removeConfirm?.type || "ingredient"}
+      />
+
+      <ReplacementModal
+        open={replacementModalState.open}
+        onOpenChange={(open) =>
+          setReplacementModalState((prev) => ({ ...prev, open }))
+        }
+        parentItemName={replacementModalState.parentName}
+        parentItemId={replacementModalState.mappingId}
+        replacements={currentReplacements}
+        onReplacementsChange={handleReplacementsChange}
+        availableItems={mockAvailableItems}
+        currentLanguage={currentLanguage}
+      />
+
+      <ItemSaveConfirmModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        onConfirm={handleConfirmSave}
+        isLoading={isSaving}
+        item={{
+          name: formData.name_en,
+          category: categories?.find((c) => c.id === formData.category)?.name_en || "",
+          servingTimes: formData.serving_times
+            .map((id) => servingTimes?.find((s) => s.id === id)?.name_en || id)
+            .join(", "),
+          baseCost: formData.base_cost,
+          isCombo: formData.is_combo,
+          ingredientCount: ingredientMappings.length,
+          subItemCount: subItemMappings.length,
+        }}
+      />
+
       <ConfirmActionModal
         open={comboConfirm.open}
-        onOpenChange={(open) => !open && setComboConfirm({ open: false, newValue: false })}
+        onOpenChange={(open) => setComboConfirm((prev) => ({ ...prev, open }))}
         onConfirm={confirmComboChange}
-        title={t("items.enableComboTitle") || "Enable Combo?"}
-        message={t("items.enableComboMessage") || "Enabling combo allows sub-item mapping. Continue?"}
+        title={t("items.enableComboMode")}
+        description={t("items.comboModeDescription")}
         confirmLabel={t("common.confirm")}
       />
 
       <ConfirmActionModal
         open={statusConfirm.open}
-        onOpenChange={(open) => !open && setStatusConfirm({ open: false, newValue: false })}
+        onOpenChange={(open) => setStatusConfirm((prev) => ({ ...prev, open }))}
         onConfirm={confirmStatusChange}
-        title={t("items.deactivateItemTitle") || "Deactivate Item?"}
-        message={t("items.deactivateItemMessage") || "Deactivating this item will remove it from POS. Continue?"}
+        title={t("items.deactivateItem")}
+        description={t("items.deactivateItemDescription")}
         confirmLabel={t("common.confirm")}
         variant="destructive"
       />
-    </>
+    </div>
   );
 }

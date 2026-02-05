@@ -140,6 +140,104 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredients: {
+        Row: {
+          cost_per_unit: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_ingredients: {
+        Row: {
+          can_add_extra: boolean
+          can_remove: boolean
+          created_at: string
+          extra_cost: number | null
+          id: string
+          ingredient_id: string
+          item_id: string
+          quantity: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          can_add_extra?: boolean
+          can_remove?: boolean
+          created_at?: string
+          extra_cost?: number | null
+          id?: string
+          ingredient_id: string
+          item_id: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          can_add_extra?: boolean
+          can_remove?: boolean
+          created_at?: string
+          extra_cost?: number | null
+          id?: string
+          ingredient_id?: string
+          item_id?: string
+          quantity?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_ingredients_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_types: {
         Row: {
           created_at: string
