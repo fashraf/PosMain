@@ -260,24 +260,36 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          employee_code: string | null
           full_name: string | null
           id: string
+          is_active: boolean
+          last_login_at: string | null
+          phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          employee_code?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          employee_code?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -405,6 +417,33 @@ export type Database = {
           },
         ]
       }
+      user_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          performed_by: string | null
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          performed_by?: string | null
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          performed_by?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       user_branches: {
         Row: {
           branch_id: string
@@ -452,6 +491,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_shifts: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          end_datetime: string
+          id: string
+          is_recurring: boolean
+          recurring_days: string[] | null
+          start_datetime: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_datetime: string
+          id?: string
+          is_recurring?: boolean
+          recurring_days?: string[] | null
+          start_datetime: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_datetime?: string
+          id?: string
+          is_recurring?: boolean
+          recurring_days?: string[] | null
+          start_datetime?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_shifts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -472,7 +558,7 @@ export type Database = {
     }
     Enums: {
       allergen_severity: "low" | "medium" | "high"
-      app_role: "admin" | "manager" | "cashier"
+      app_role: "admin" | "manager" | "cashier" | "waiter" | "kitchen" | "kiosk"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -601,7 +687,7 @@ export const Constants = {
   public: {
     Enums: {
       allergen_severity: ["low", "medium", "high"],
-      app_role: ["admin", "manager", "cashier"],
+      app_role: ["admin", "manager", "cashier", "waiter", "kitchen", "kiosk"],
     },
   },
 } as const
