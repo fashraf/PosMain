@@ -19,6 +19,7 @@ import {
   Calendar,
   BarChart3,
   Wrench,
+   Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -76,6 +77,7 @@ const maintenanceSubItems = [
 ];
 
 const otherNavItems = [
+   { titleKey: "nav.users", url: "/users", icon: Users },
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
   { titleKey: "nav.categories", url: "/categories", icon: Tag },
   { titleKey: "nav.itemIngredients", url: "/item-ingredient-mapping", icon: Link2 },
