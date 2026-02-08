@@ -20,10 +20,43 @@ export default function POSMain() {
   const [editingCartItemIdForModal, setEditingCartItemIdForModal] = useState<string | null>(null);
 
   const [showCheckout, setShowCheckout] = useState(false);
-  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<{ id: string; color: 'green' | 'red'; tick: number } | null>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const cart = usePOSCart();
+
+  const triggerHighlight = useCallback((id: string, color: 'green' | 'red') => {
+    clearTimeout(highlightTimer.current);
+    setHighlight(prev => ({ id, color, tick: (prev?.tick ?? 0) + 1 }));
+    highlightTimer.current = setTimeout(() => setHighlight(null), 2000);
+  }, []);
+
+  const handleAddItem = useCallback((item: POSMenuItem) => {
+    cart.addItem({
+      menuItemId: item.id,
+      name: item.name_en,
+      basePrice: item.base_price,
+      quantity: 1,
+    });
+    const matchingItem = cart.items.find((i) => i.menuItemId === item.id);
+    const idToHighlight = matchingItem?.id ?? item.id;
+    triggerHighlight(idToHighlight, 'green');
+  }, [cart, triggerHighlight]);
+
+  const handleIncrement = useCallback((itemId: string) => {
+    cart.incrementItem(itemId);
+    triggerHighlight(itemId, 'green');
+  }, [cart, triggerHighlight]);
+
+  const handleDecrement = useCallback((itemId: string) => {
+    cart.decrementItem(itemId);
+    triggerHighlight(itemId, 'red');
+  }, [cart, triggerHighlight]);
+
+  const handleRemove = useCallback((itemId: string) => {
+    triggerHighlight(itemId, 'red');
+    setTimeout(() => cart.removeItem(itemId), 300);
+  }, [cart, triggerHighlight]);
 
   const { data: categories, isLoading: categoriesLoading } = usePOSCategories();
   const { data: items, isLoading: itemsLoading } = usePOSItems({
@@ -41,22 +74,6 @@ export default function POSMain() {
     setShowFavorites(true);
     setSelectedCategoryId(null);
   };
-
-  const handleAddItem = useCallback((item: POSMenuItem) => {
-    cart.addItem({
-      menuItemId: item.id,
-      name: item.name_en,
-      basePrice: item.base_price,
-      quantity: 1,
-    });
-    // Find the cart item that matches this menuItemId (after state updates, use the ID pattern)
-    // Since addToCart merges by hash, the matching item will have this menuItemId
-    const matchingItem = cart.items.find((i) => i.menuItemId === item.id);
-    const idToHighlight = matchingItem?.id ?? item.id;
-    clearTimeout(highlightTimer.current);
-    setHighlightedItemId(idToHighlight);
-    highlightTimer.current = setTimeout(() => setHighlightedItemId(null), 2000);
-  }, [cart]);
 
   const handleCustomizeItem = (item: POSMenuItem) => {
     setEditingCartItemIdForModal(null);
@@ -117,14 +134,14 @@ export default function POSMain() {
   const rightPanel = (
     <CartPanel
       items={cart.items}
-      highlightedItemId={highlightedItemId}
+      highlight={highlight}
       subtotal={cart.subtotal}
       vatRate={cart.vatRate}
       vatAmount={cart.vatAmount}
       total={cart.total}
-      onIncrement={cart.incrementItem}
-      onDecrement={cart.decrementItem}
-      onRemove={cart.removeItem}
+      onIncrement={handleIncrement}
+      onDecrement={handleDecrement}
+      onRemove={handleRemove}
       onEditCustomization={handleEditCartItemCustomization}
       onClearAll={cart.clearCart}
       onPay={handlePay}
