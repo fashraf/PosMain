@@ -157,7 +157,7 @@ export function CustomizeModal({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="pos-light max-w-[80vw] w-[80vw] max-h-[75vh] flex flex-col bg-card border-border p-0">
+        <DialogContent className="pos-light max-w-[80vw] w-[80vw] max-h-[80vh] flex flex-col bg-card border-border p-0">
           {/* Header */}
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
             <div className="flex items-center justify-between">
@@ -253,30 +253,35 @@ export function CustomizeModal({
           </div>
 
           {/* Footer: Changes Summary + Price Breakdown + Buttons */}
-          <DialogFooter className="px-5 py-3 border-t border-border flex-col gap-3">
-            {livePrice && itemDetails && (
-              <ChangesSummary
-                ingredients={itemDetails.ingredients}
-                extras={extras}
-                removals={removals}
-                selectedReplacement={selectedReplacement}
-                basePrice={livePrice.basePrice}
-                extrasTotal={livePrice.extrasTotal}
-                replacementDiff={livePrice.replacementDiff}
-                total={livePrice.total}
-              />
-            )}
-            <div className="flex gap-2 w-full">
+          <DialogFooter className="px-5 py-3 border-t border-border flex-row items-stretch gap-4">
+            {/* Left: Changes summary */}
+            <div className="flex-1 min-w-0">
+              {livePrice && itemDetails && (
+                <ChangesSummary
+                  ingredients={itemDetails.ingredients}
+                  extras={extras}
+                  removals={removals}
+                  selectedReplacement={selectedReplacement}
+                  basePrice={livePrice.basePrice}
+                  extrasTotal={livePrice.extrasTotal}
+                  replacementDiff={livePrice.replacementDiff}
+                  total={livePrice.total}
+                />
+              )}
+            </div>
+
+            {/* Right: Buttons stacked */}
+            <div className="flex flex-col gap-2 justify-center min-w-[280px]">
               <button
                 onClick={() => handleOpenChange(false)}
-                className="flex-1 h-12 rounded-lg border border-border text-muted-foreground font-medium text-sm active:scale-95 transition-transform"
+                className="h-11 rounded-lg border border-border text-muted-foreground font-medium text-sm active:scale-95 transition-transform hover:bg-muted/50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddToCart}
                 disabled={isLoading}
-                className="flex-[2] h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+                className="h-12 rounded-lg bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50 shadow-md"
               >
                 <ShoppingCart className="h-4 w-4" />
                 {editingCartItemId ? "UPDATE CART" : "ADD TO CART"}

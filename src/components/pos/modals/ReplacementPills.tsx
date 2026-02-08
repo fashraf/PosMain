@@ -41,10 +41,10 @@ export function ReplacementPills({
               key={rep.id}
               onClick={() => handleSelect(rep)}
               className={cn(
-                "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
+                "w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-150",
                 "active:scale-[0.98] touch-manipulation text-left",
                 isSelected
-                  ? "bg-primary/10 border border-primary/30"
+                  ? "bg-primary/8 border border-primary/25 shadow-sm"
                   : "border border-transparent hover:bg-muted/50"
               )}
             >
