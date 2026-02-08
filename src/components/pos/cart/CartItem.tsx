@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Minus, Plus, Pencil } from "lucide-react";
 import type { CartItem } from "@/lib/pos/types";
-import { hasCustomization } from "@/lib/pos/cartUtils";
+import { hasCustomization, calculateItemPrice } from "@/lib/pos/cartUtils";
 
 interface CartItemRowProps {
   item: CartItem;
@@ -20,20 +20,62 @@ export function CartItemRow({
   onEditCustomization,
 }: CartItemRowProps) {
   const isCustomized = hasCustomization(item.customization);
+  const baseTotal = item.basePrice * item.quantity;
+  const hasExtraCost = isCustomized && item.lineTotal !== baseTotal;
 
   return (
     <div className="rounded-2xl border bg-card p-4 shadow-sm">
-      {/* Top row: name + line total */}
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-base font-bold text-foreground leading-tight">
+      {/* Main row: name, qty controls, pencil, price — all inline */}
+      <div className="flex items-center gap-2">
+        <span className="min-w-0 flex-1 truncate text-base font-bold text-foreground">
           {item.name}
         </span>
-        <span className="text-xl font-bold text-foreground whitespace-nowrap">
-          {item.lineTotal.toFixed(2)}
+
+        {/* Qty controls */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={item.quantity === 1 ? onRemove : onDecrement}
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-xl",
+              "bg-destructive/10 text-destructive",
+              "touch-manipulation active:scale-95 transition-transform"
+            )}
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <span className="w-7 text-center font-semibold text-sm">{item.quantity}</span>
+          <button
+            type="button"
+            onClick={onIncrement}
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-xl",
+              "bg-primary/10 text-primary",
+              "touch-manipulation active:scale-95 transition-transform"
+            )}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Pencil icon */}
+        {isCustomized && (
+          <button
+            type="button"
+            onClick={() => onEditCustomization(item.id)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent touch-manipulation shrink-0"
+          >
+            <Pencil className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Price */}
+        <span className="text-xl font-bold text-foreground whitespace-nowrap shrink-0 min-w-[70px] text-right">
+          {(isCustomized ? baseTotal : item.lineTotal).toFixed(2)}
         </span>
       </div>
 
-      {/* Modification tags */}
+      {/* Modification lines */}
       {isCustomized && (
         <div className="mt-2 space-y-0.5 text-sm">
           {item.customization.removals.map((r) => (
@@ -59,54 +101,15 @@ export function CartItemRow({
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Bottom row: qty controls + pencil */}
-      <div className="mt-3 flex items-center justify-between">
-        {/* Spacer for alignment */}
-        <div className="flex-1" />
-
-        {/* Qty controls */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={item.quantity === 1 ? onRemove : onDecrement}
-            className={cn(
-              "flex h-11 w-11 items-center justify-center rounded-xl",
-              "bg-destructive/10 text-destructive",
-              "touch-manipulation active:scale-95 transition-transform"
-            )}
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-          <span className="w-8 text-center font-semibold text-sm">{item.quantity}</span>
-          <button
-            type="button"
-            onClick={onIncrement}
-            className={cn(
-              "flex h-11 w-11 items-center justify-center rounded-xl",
-              "bg-primary/10 text-primary",
-              "touch-manipulation active:scale-95 transition-transform"
-            )}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Edit pencil */}
-        <div className="w-10 flex justify-end">
-          {isCustomized && (
-            <button
-              type="button"
-              onClick={() => onEditCustomization(item.id)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent touch-manipulation"
-            >
-              <Pencil className="h-5 w-5" />
-            </button>
+          {/* Green-dot adjusted total */}
+          {hasExtraCost && (
+            <div className="flex items-center justify-end gap-1.5 pt-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+              <span>{item.lineTotal.toFixed(2)}</span>
+            </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
