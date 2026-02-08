@@ -1,76 +1,190 @@
 
+# Redesign Ingredient & Item Modals + Grids (UI Prototype)
 
-# Ingredient Master Form -- UI Prototype
+## Overview
 
-This is a UI-only prototype. No database changes yet -- all new fields will use local state with placeholder values. The database migration will be done separately after the UI is approved.
+The current Add Ingredient and Add Item modals are minimal 2x2 grid forms (480px wide). The spec requires larger modals (50%+ screen width) with structured sections, mutually exclusive toggles (Can Add Extra vs Can Remove), auto-fetched read-only prices, tooltips on all fields, and enhanced grid views with additional columns.
 
-## What Will Be Built
+## Current State vs Required
 
-A fully functional 5-section form with all fields, tooltips, conditional logic, and footer actions rendered in the browser. Save actions will be wired to the existing minimal DB columns only; new fields will be visually present but not persisted until the DB migration is approved.
+### Add Ingredient Modal
+| Area | Current | Required |
+|------|---------|----------|
+| Size | 480px | 50%+ screen width (~600px+) |
+| Fields | Ingredient, Unit Price, Quantity, Extra Cost | Ingredient, Unit Price, Default Quantity, Can Add Extra, Extra Cost, Can Remove |
+| Toggle Logic | None | Can Add Extra and Can Remove are mutually exclusive |
+| Tooltips | None | On all fields |
+| Sections | Flat 2x2 grid | Section 1: Ingredient Selection, Section 2: Quantity & Rules |
 
-## Section Layout
+### Add Item Modal
+| Area | Current | Required |
+|------|---------|----------|
+| Size | 480px | 50%+ screen width |
+| Fields | Item, Price, Quantity, Extra Cost | Item, Price, Default Quantity, Can Add Extra, Extra Cost, Can Remove, Replacement Item |
+| Toggle Logic | None | Mutually exclusive Can Add Extra / Can Remove |
+| Replacement | Separate modal | Inline dropdown inside same modal |
+| Tooltips | None | On all fields |
+| Validation | Basic | Cannot replace item with itself |
 
-### Section 1 -- Basic Details (Carrot icon, purple variant)
-Two-column grid with:
-- **Ingredient Name**: MultiLanguageInputWithIndicators (EN/AR/UR), required, with TooltipInfo
-- **Description**: MultiLanguageInputWithIndicators, multiline, with TooltipInfo
-- **Ingredient Group**: SearchableSelect from `useIngredientGroups()`, required, with TooltipInfo
-- **Classification Type**: SearchableSelect from new `useClassificationTypes()` hook, required, with TooltipInfo
-- **Track In Inventory**: Toggle switch, default ON, with TooltipInfo
-- **Can Be Sold**: Toggle switch, default OFF, with TooltipInfo
+### Ingredient Grid (inside Item Master)
+| Area | Current | Required |
+|------|---------|----------|
+| Columns | Name, Quantity, Cost, Delete | Name, Quantity, Can Add, Can Remove, Extra Cost, Edit, Delete |
+| Edit | Inline only | Opens modal pre-filled |
+| Badges | None | Visual badges for Addable, Removable |
 
-### Section 2 -- Measurement & Cost (Scale icon, green variant)
-Two-column grid with:
-- **Base Unit**: SearchableSelect from `useUnits()`, required, with TooltipInfo
-- **Purchase Unit**: SearchableSelect from `useUnits()`, required, with TooltipInfo
-- **Conversion Factor**: Numeric input, required, must be > 0, with TooltipInfo
-- **Cost per Purchase Unit**: Numeric input with SAR prefix, required, with TooltipInfo
-- **Cost per Base Unit**: Read-only calculated field (cost / conversion), displayed in a disabled input with muted background, with TooltipInfo
+### Item Grid (inside Item Master)
+| Area | Current | Required |
+|------|---------|----------|
+| Columns | Name, Replacement, Qty, Combo Price, Actual, Delete | Name, Replacement Item, Qty, Combo Price, Actual Price, Can Add, Can Remove, Edit, Delete |
+| Edit | Not supported | Opens modal pre-filled |
+| Badges | None | Visual badges for Addable, Removable |
 
-### Section 3 -- Inventory & Storage (Warehouse icon, blue variant)
-- All fields inside this section become **disabled/greyed out** when "Track In Inventory" is OFF
-- **Storage Type**: SearchableSelect from `useStorageTypes()`, with TooltipInfo
-- **Min Stock Level**: Numeric input, with TooltipInfo
-- **Max Stock Level**: Numeric input (validated >= min), with TooltipInfo
-- **Shelf Life (Days)**: Numeric input, with TooltipInfo
-- **Expiry Tracking**: Toggle, only active when Track In Inventory = ON, with TooltipInfo
-- **Temperature Sensitive**: Toggle, with TooltipInfo
+---
 
-### Section 4 -- Status & Controls (Settings icon, amber variant)
-Three toggles in a horizontal row:
-- **Purchasable**: Toggle, default ON, with TooltipInfo
-- **Return When Order Is Canceled**: Toggle, default ON, with TooltipInfo
-- **Active**: Toggle, default ON, with TooltipInfo
+## Implementation Details
 
-### Section 5 -- Notes (FileText icon, muted variant)
-- **Internal Notes**: Textarea, max 500 chars, character counter, with TooltipInfo
+### 1. Redesign AddIngredientModal
 
-### Footer (fixed bottom bar)
-Three buttons:
-- **Cancel** (outline) -- navigates back
-- **Save & New** (secondary) -- saves then clears form
-- **Save** (primary) -- saves and navigates to list
+**File**: `src/components/item-mapping/AddIngredientModal.tsx`
 
-## Conditional Logic (all client-side)
-- Track In Inventory = OFF disables Section 3 fields (opacity-50, pointer-events-none)
-- Expiry Tracking toggle only clickable when Track In Inventory = ON
-- Cost per Base Unit recalculates live: `costPerPurchaseUnit / conversionFactor`
-- If conversionFactor is 0 or empty, Cost per Base Unit shows "--"
+**Layout**: Two sections with clear headers inside a larger modal (~sm:max-w-[600px])
 
-## New Hook Required
-Add `useClassificationTypes()` to `src/hooks/useMaintenanceData.ts`, following the same pattern as the existing hooks, querying `classification_types` table.
+**Section 1 -- Ingredient Selection** (two-column row):
+- Ingredient dropdown (Select2 searchable, existing pattern) with TooltipInfo
+- Unit Price (read-only, auto-fetched from selected ingredient's cost_per_unit) with TooltipInfo
+
+**Section 2 -- Quantity & Rules** (two-column layout):
+- Default Quantity (numeric, required, must be > 0) with TooltipInfo
+- Can Add Extra (toggle/checkbox, default OFF) with TooltipInfo
+  - When ON: enables Extra Cost field and forces Can Remove = OFF
+- Extra Cost (numeric, enabled only when Can Add Extra = ON, must be >= 0) with TooltipInfo
+- Can Remove (toggle/checkbox, default OFF) with TooltipInfo
+  - When ON: forces Can Add Extra = OFF
+
+**Mutual Exclusivity Logic**:
+```
+onCanAddExtraChange(checked):
+  if checked: set canRemove = false
+  if !checked: set extraCost = 0, disable extraCost
+
+onCanRemoveChange(checked):
+  if checked: set canAddExtra = false, extraCost = 0
+```
+
+**Footer**: Cancel + Save Ingredient buttons (sticky)
+
+**Updated onConfirm signature**: Pass `canAddExtra`, `canRemove`, and `extraCost` back to parent.
+
+### 2. Redesign AddItemModal
+
+**File**: `src/components/item-mapping/AddItemModal.tsx`
+
+**Layout**: Three sections inside a larger modal (~sm:max-w-[600px])
+
+**Section 1 -- Item Selection** (two-column):
+- Item dropdown (Select2 searchable) with TooltipInfo
+- Item Price (read-only, auto-fetched) with TooltipInfo
+
+**Section 2 -- Quantity & Rules** (two-column):
+- Default Quantity (numeric, required, must be > 0) with TooltipInfo
+- Can Add Extra (toggle, default OFF, mutually exclusive with Can Remove) with TooltipInfo
+- Extra Cost (enabled only when Can Add Extra = ON) with TooltipInfo
+- Can Remove (toggle, default OFF, mutually exclusive with Can Add Extra) with TooltipInfo
+
+**Section 3 -- Replacement Rule** (single field):
+- Replacement Item (Select2 searchable dropdown from Item Master) with TooltipInfo
+- Validation: Replacement Item must not equal Selected Item
+
+**Footer**: Cancel + Save Item buttons (sticky)
+
+**Updated onConfirm signature**: Pass `canAddExtra`, `canRemove`, `extraCost`, and `replacementItem` back to parent.
+
+### 3. Update Ingredient Grid
+
+**File**: `src/components/item-mapping/IngredientTable.tsx`
+
+**New columns** (added after existing Name, Quantity, Cost):
+- Can Add (checkbox icon or Yes/No badge)
+- Can Remove (checkbox icon or Yes/No badge)
+- Extra Cost (shown only if Can Add = Yes, otherwise "--")
+- Actions: Edit (pencil icon, opens AddIngredientModal pre-filled) + Delete (trash icon, confirmation required)
+
+**Visual badges**:
+- "Addable" badge: green pill when can_add_extra = true
+- "Removable" badge: blue pill when can_remove = true
+
+### 4. Update Item Grid
+
+**File**: `src/components/item-mapping/ItemTable.tsx`
+
+**New columns** (added to existing):
+- Can Add (Yes/No badge)
+- Can Remove (Yes/No badge)
+- Actions: Edit (pencil icon) + Delete (trash icon)
+
+### 5. Update Data Types
+
+**File**: `src/components/item-mapping/SubItemMappingList.tsx`
+
+Add to `SubItemMappingItem` interface:
+- `can_add_extra: boolean`
+- `can_remove: boolean`
+- `extra_cost: number`
+- `replacement_item_id?: string`
+- `replacement_item_name?: string`
+
+**File**: `src/components/item-mapping/IngredientMappingList.tsx`
+
+The `IngredientMappingItem` interface already has `can_remove`, `can_add_extra`, `extra_cost` -- no changes needed.
+
+### 6. Update Parent Handlers
+
+**Files**: `src/pages/ItemsAdd.tsx` and `src/pages/ItemsEdit.tsx`
+
+- Update `handleAddIngredient` to accept and store `canAddExtra` and `canRemove` from the new modal signature
+- Update `handleAddItem` to accept and store `canAddExtra`, `canRemove`, `extraCost`, and `replacementItem`
+- Add `handleEditIngredient` and `handleEditItem` handlers for the Edit action in grids
+- Pass edit state (selected mapping) to modals when editing
+
+### 7. Update Modal Callbacks/Interfaces
+
+**Files**: Both modal components
+
+- `AddIngredientModal.onConfirm` signature changes to include `canAddExtra` and `canRemove`
+- `AddItemModal.onConfirm` signature changes to include `canAddExtra`, `canRemove`, `extraCost`, and optional `replacementItem`
+
+---
 
 ## Files to Modify
 
-| File | Action |
-|------|--------|
-| `src/hooks/useMaintenanceData.ts` | Add `useClassificationTypes()` hook and `ClassificationTypeItem` interface |
-| `src/pages/inventory/IngredientMasterAdd.tsx` | Full rewrite with 5-section layout, all fields, tooltips, conditional logic, and 3-button footer |
-| `src/pages/inventory/IngredientMasterEdit.tsx` | Same 5-section layout, pre-populated from DB (new fields default to initial values since columns do not exist yet) |
-| `src/components/ingredients/IngredientSaveConfirmModal.tsx` | Update `IngredientSummary` interface to include new fields; display group name, classification, units, toggles in summary card |
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/item-mapping/AddIngredientModal.tsx` | Rewrite | Larger modal, 2 sections, toggles, tooltips, mutual exclusivity |
+| `src/components/item-mapping/AddItemModal.tsx` | Rewrite | Larger modal, 3 sections, replacement dropdown, toggles, tooltips |
+| `src/components/item-mapping/IngredientTable.tsx` | Modify | Add Can Add, Can Remove, Extra Cost, Edit columns |
+| `src/components/item-mapping/ItemTable.tsx` | Modify | Add Can Add, Can Remove, Edit columns |
+| `src/components/item-mapping/SubItemMappingList.tsx` | Modify | Add new fields to SubItemMappingItem interface |
+| `src/pages/ItemsAdd.tsx` | Modify | Update handlers for new modal signatures, add edit handlers |
+| `src/pages/ItemsEdit.tsx` | Modify | Same handler updates as ItemsAdd |
 
-## Save Behavior (Prototype Phase)
-- Only existing DB columns (`name_en`, `name_ar`, `name_ur`, `unit_id`, `cost_per_unit`, `is_active`) will be saved
-- New fields will be in local state only, visible in the confirmation modal summary
-- A follow-up database migration will add the remaining columns and wire up persistence
+---
 
+## Validation Summary
+
+- Ingredient cannot be added twice to the same item (already enforced via `mappedIds`)
+- Can Add Extra and Can Remove are mutually exclusive (new toggle logic)
+- Extra Cost required only when Can Add Extra = ON
+- Quantity must be > 0
+- Replacement Item cannot equal Selected Item (new validation)
+- Item cannot be added twice in same combo (already enforced via `mappedIds`)
+
+## Visual Design Notes
+
+- Modal width: `sm:max-w-[600px]` (50%+ on desktop)
+- Section headers: 13px uppercase tracking-wide with thin bottom border
+- All fields: TooltipInfo icon next to label
+- Toggle styling: Switch component with mutually exclusive behavior
+- Badges in grids: pill-style (green for Addable, blue for Removable)
+- Footer: sticky with border-t, muted background, Cancel + Save buttons
+- 13px typography throughout per visual identity standards
