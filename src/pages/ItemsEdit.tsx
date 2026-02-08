@@ -224,6 +224,21 @@ export default function ItemsEdit() {
   const [subItemMappings, setSubItemMappings] = useState<SubItemMappingItem[]>([]);
   const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [editIngredientData, setEditIngredientData] = useState<{
+    ingredientId: string;
+    quantity: number;
+    extraCost: number;
+    canAddExtra: boolean;
+    canRemove: boolean;
+  } | null>(null);
+  const [editItemData, setEditItemData] = useState<{
+    itemId: string;
+    quantity: number;
+    extraCost: number;
+    canAddExtra: boolean;
+    canRemove: boolean;
+    replacementItemId?: string;
+  } | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<{
     id: string;
     name: string;
@@ -365,22 +380,46 @@ export default function ItemsEdit() {
   const mappedIngredientIds = ingredientMappings.map((m) => m.ingredient_id);
   const mappedSubItemIds = subItemMappings.map((m) => m.sub_item_id);
 
-  const handleAddIngredient = (ingredient: AvailableIngredient, quantity: number, extraCost: number) => {
+  const handleAddIngredient = (ingredient: AvailableIngredient, quantity: number, extraCost: number, canAddExtra: boolean, canRemove: boolean) => {
     const newMapping: IngredientMappingItem = {
       id: `m${Date.now()}`,
       ingredient_id: ingredient.id,
       ingredient_name: getLocalizedName(ingredient),
       quantity,
       unit: ingredient.unit,
-      can_remove: true,
-      can_add_extra: extraCost > 0,
-      extra_cost: extraCost > 0 ? extraCost : null,
+      can_remove: canRemove,
+      can_add_extra: canAddExtra,
+      extra_cost: canAddExtra && extraCost > 0 ? extraCost : null,
       sort_order: ingredientMappings.length + 1,
     };
     setIngredientMappings([...ingredientMappings, newMapping]);
   };
 
-  const handleAddItem = (subItem: AvailableItem, quantity: number) => {
+  const handleEditIngredient = (mappingId: string) => {
+    const mapping = ingredientMappings.find(m => m.id === mappingId);
+    if (!mapping) return;
+    setEditIngredientData({
+      ingredientId: mapping.ingredient_id,
+      quantity: mapping.quantity,
+      extraCost: mapping.extra_cost || 0,
+      canAddExtra: mapping.can_add_extra,
+      canRemove: mapping.can_remove,
+    });
+    setShowAddIngredientModal(true);
+  };
+
+  const handleEditIngredientConfirm = (ingredient: AvailableIngredient, quantity: number, extraCost: number, canAddExtra: boolean, canRemove: boolean) => {
+    if (!editIngredientData) return;
+    setIngredientMappings(prev => prev.map(m => {
+      if (m.ingredient_id === editIngredientData.ingredientId) {
+        return { ...m, quantity, can_add_extra: canAddExtra, can_remove: canRemove, extra_cost: canAddExtra && extraCost > 0 ? extraCost : null };
+      }
+      return m;
+    }));
+    setEditIngredientData(null);
+  };
+
+  const handleAddItem = (subItem: AvailableItem, quantity: number, extraCost: number, canAddExtra: boolean, canRemove: boolean, replacementItem?: AvailableItem) => {
     const newMapping: SubItemMappingItem = {
       id: `s${Date.now()}`,
       sub_item_id: subItem.id,
@@ -389,9 +428,47 @@ export default function ItemsEdit() {
       unit_price: subItem.base_cost,
       sort_order: subItemMappings.length + 1,
       combo_price: 0,
+      can_add_extra: canAddExtra,
+      can_remove: canRemove,
+      extra_cost: canAddExtra && extraCost > 0 ? extraCost : 0,
+      replacement_item_id: replacementItem?.id,
+      replacement_item_name: replacementItem ? getLocalizedName(replacementItem) : undefined,
       replacements: [],
     };
     setSubItemMappings([...subItemMappings, newMapping]);
+  };
+
+  const handleEditItem = (mappingId: string) => {
+    const mapping = subItemMappings.find(m => m.id === mappingId);
+    if (!mapping) return;
+    setEditItemData({
+      itemId: mapping.sub_item_id,
+      quantity: mapping.quantity,
+      extraCost: mapping.extra_cost || 0,
+      canAddExtra: mapping.can_add_extra || false,
+      canRemove: mapping.can_remove || false,
+      replacementItemId: mapping.replacement_item_id,
+    });
+    setShowAddItemModal(true);
+  };
+
+  const handleEditItemConfirm = (item: AvailableItem, quantity: number, extraCost: number, canAddExtra: boolean, canRemove: boolean, replacementItem?: AvailableItem) => {
+    if (!editItemData) return;
+    setSubItemMappings(prev => prev.map(m => {
+      if (m.sub_item_id === editItemData.itemId) {
+        return {
+          ...m,
+          quantity,
+          can_add_extra: canAddExtra,
+          can_remove: canRemove,
+          extra_cost: canAddExtra && extraCost > 0 ? extraCost : 0,
+          replacement_item_id: replacementItem?.id,
+          replacement_item_name: replacementItem ? getLocalizedName(replacementItem) : undefined,
+        };
+      }
+      return m;
+    }));
+    setEditItemData(null);
   };
 
   const handleRequestRemove = (mappingId: string, name: string, type: "ingredient" | "item") => {
@@ -967,6 +1044,7 @@ export default function ItemsEdit() {
                     if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
                   }}
                   onAdd={() => setShowAddItemModal(true)}
+                  onEdit={handleEditItem}
                   onReplacement={handleOpenReplacementModal}
                   onRemoveReplacement={handleRemoveReplacement}
                   onViewReplacement={handleViewReplacement}
@@ -1011,21 +1089,29 @@ export default function ItemsEdit() {
       {/* Modals */}
       <AddIngredientModal
         open={showAddIngredientModal}
-        onOpenChange={setShowAddIngredientModal}
-        onConfirm={handleAddIngredient}
+        onOpenChange={(open) => {
+          setShowAddIngredientModal(open);
+          if (!open) setEditIngredientData(null);
+        }}
+        onConfirm={editIngredientData ? handleEditIngredientConfirm : handleAddIngredient}
         ingredients={availableIngredients}
         mappedIds={mappedIngredientIds}
         currentLanguage={currentLanguage}
+        editData={editIngredientData}
       />
 
       <AddItemModal
         open={showAddItemModal}
-        onOpenChange={setShowAddItemModal}
-        onConfirm={(item, qty) => handleAddItem(item, qty)}
+        onOpenChange={(open) => {
+          setShowAddItemModal(open);
+          if (!open) setEditItemData(null);
+        }}
+        onConfirm={editItemData ? handleEditItemConfirm : handleAddItem}
         items={availableItems}
         mappedIds={mappedSubItemIds}
         currentItemId={id || ""}
         currentLanguage={currentLanguage}
+        editData={editItemData}
       />
 
       <RemoveConfirmModal

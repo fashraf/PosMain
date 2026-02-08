@@ -37,6 +37,11 @@ export interface SubItemMappingItem {
   unit_price: number;
   sort_order: number;
   combo_price?: number;
+  can_add_extra?: boolean;
+  can_remove?: boolean;
+  extra_cost?: number;
+  replacement_item_id?: string;
+  replacement_item_name?: string;
   replacements?: ReplacementItem[];
 }
 
