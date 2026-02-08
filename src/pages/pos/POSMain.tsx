@@ -14,13 +14,10 @@ export default function POSMain() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
 
-  // Customization drawer state
-  const [customizeItem, setCustomizeItem] = useState<POSMenuItem | null>(null);
-  const [editingCartItemId, setEditingCartItemId] = useState<string | null>(null);
-
-  // New modal states
+  // Modal states
   const [detailsItem, setDetailsItem] = useState<POSMenuItem | null>(null);
   const [customizeModalItem, setCustomizeModalItem] = useState<POSMenuItem | null>(null);
+  const [editingCartItemIdForModal, setEditingCartItemIdForModal] = useState<string | null>(null);
 
   const [showCheckout, setShowCheckout] = useState(false);
 
@@ -53,6 +50,7 @@ export default function POSMain() {
   };
 
   const handleCustomizeItem = (item: POSMenuItem) => {
+    setEditingCartItemIdForModal(null);
     setCustomizeModalItem(item);
   };
 
@@ -60,19 +58,22 @@ export default function POSMain() {
     setDetailsItem(item);
   };
 
-  // Cart item edit (opens existing drawer)
-  const handleEditCartItem = (cartItemId: string, item: POSMenuItem) => {
-    setCustomizeItem(item);
-    setEditingCartItemId(cartItemId);
-  };
+  // Cart item edit icon → open CustomizeModal with matching POSMenuItem
+  const handleEditCartItemCustomization = (cartItemId: string) => {
+    const cartItem = cart.items.find((i) => i.id === cartItemId);
+    if (!cartItem) return;
 
-  const handleCloseCustomizeDrawer = () => {
-    setCustomizeItem(null);
-    setEditingCartItemId(null);
+    // Find the matching POSMenuItem from the loaded items list
+    const menuItem = (items || []).find((i) => i.id === cartItem.menuItemId);
+    if (!menuItem) return;
+
+    setEditingCartItemIdForModal(cartItemId);
+    setCustomizeModalItem(menuItem);
   };
 
   const handleCloseCustomizeModal = () => {
     setCustomizeModalItem(null);
+    setEditingCartItemIdForModal(null);
   };
 
   const handlePay = () => setShowCheckout(true);
@@ -114,7 +115,8 @@ export default function POSMain() {
       onIncrement={cart.incrementItem}
       onDecrement={cart.decrementItem}
       onRemove={cart.removeItem}
-      onEditItem={handleEditCartItem}
+      onEditCustomization={handleEditCartItemCustomization}
+      onClearAll={cart.clearCart}
       onPay={handlePay}
     />
   );
@@ -130,31 +132,14 @@ export default function POSMain() {
         menuItem={detailsItem}
       />
 
-      {/* Customize Modal (from card button) */}
+      {/* Customize Modal (from card button OR cart edit icon) */}
       <CustomizeModal
         open={!!customizeModalItem}
         onOpenChange={(open) => !open && handleCloseCustomizeModal()}
         menuItem={customizeModalItem}
         cart={cart}
         onClose={handleCloseCustomizeModal}
-      />
-
-      {/* Customize Drawer (from cart edit) */}
-      <CustomizeDrawer
-        open={!!customizeItem}
-        onOpenChange={(open) => !open && handleCloseCustomizeDrawer()}
-        menuItem={customizeItem}
-        editingCartItemId={editingCartItemId}
-        cart={cart}
-        onClose={handleCloseCustomizeDrawer}
-      />
-
-      {/* Checkout Drawer */}
-      <CheckoutDrawer
-        open={showCheckout}
-        onOpenChange={(open) => !open && handleCloseCheckout()}
-        cart={cart}
-        onOrderComplete={handleOrderComplete}
+        editingCartItemId={editingCartItemIdForModal}
       />
     </>
   );

@@ -3,7 +3,7 @@ import { CartHeader } from "./CartHeader";
 import { CartItemList } from "./CartItemList";
 import { CartTotals } from "./CartTotals";
 import { PayButton } from "./PayButton";
-import type { CartItem, POSMenuItem } from "@/lib/pos/types";
+import type { CartItem } from "@/lib/pos/types";
 
 interface CartPanelProps {
   items: CartItem[];
@@ -14,7 +14,8 @@ interface CartPanelProps {
   onIncrement: (itemId: string) => void;
   onDecrement: (itemId: string) => void;
   onRemove: (itemId: string) => void;
-  onEditItem: (cartItemId: string, item: POSMenuItem) => void;
+  onEditCustomization: (cartItemId: string) => void;
+  onClearAll: () => void;
   onPay: () => void;
 }
 
@@ -27,17 +28,16 @@ export function CartPanel({
   onIncrement,
   onDecrement,
   onRemove,
-  onEditItem,
+  onEditCustomization,
+  onClearAll,
   onPay,
 }: CartPanelProps) {
   const isEmpty = items.length === 0;
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <CartHeader itemCount={items.length} />
+      <CartHeader itemCount={items.length} onClearAll={onClearAll} />
 
-      {/* Item List */}
       <div className="flex-1 overflow-auto">
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -49,12 +49,11 @@ export function CartPanel({
             onIncrement={onIncrement}
             onDecrement={onDecrement}
             onRemove={onRemove}
-            onEdit={onEditItem}
+            onEditCustomization={onEditCustomization}
           />
         )}
       </div>
 
-      {/* Totals */}
       {!isEmpty && (
         <CartTotals
           subtotal={subtotal}
@@ -64,7 +63,6 @@ export function CartPanel({
         />
       )}
 
-      {/* Pay Button */}
       <PayButton total={total} disabled={isEmpty} onClick={onPay} />
     </div>
   );
