@@ -70,18 +70,35 @@ export function usePOSItemDetails(itemId: string | null) {
     } | null> => {
       if (!itemId) return null;
 
-      // Fetch item
-      const { data: item, error: itemError } = await supabase
-        .from("pos_menu_items")
+      // Fetch item from items table (shared with Item Master)
+      const { data: rawItem, error: itemError } = await supabase
+        .from("items")
         .select("*")
         .eq("id", itemId)
         .single();
 
-      if (itemError) {
-        throw new Error(`Failed to fetch item: ${itemError.message}`);
+      const item = rawItem ? {
+        id: rawItem.id,
+        name_en: rawItem.name_en,
+        name_ar: rawItem.name_ar,
+        name_ur: rawItem.name_ur,
+        description_en: rawItem.description_en,
+        category_id: rawItem.category_id,
+        base_price: Number(rawItem.base_cost),
+        image_url: rawItem.image_url,
+        is_customizable: rawItem.is_customizable,
+        is_favorite: rawItem.is_favorite,
+        is_available: rawItem.is_active,
+        sort_order: rawItem.sort_order,
+        created_at: rawItem.created_at,
+        updated_at: rawItem.updated_at,
+      } : null;
+
+      if (itemError || !item) {
+        throw new Error(`Failed to fetch item: ${itemError?.message ?? 'Not found'}`);
       }
 
-      // Fetch ingredients
+      // Fetch ingredients from pos_item_ingredients using item id
       const { data: ingredients, error: ingredientsError } = await supabase
         .from("pos_item_ingredients")
         .select("*")
@@ -92,7 +109,7 @@ export function usePOSItemDetails(itemId: string | null) {
         throw new Error(`Failed to fetch ingredients: ${ingredientsError.message}`);
       }
 
-      // Fetch replacements
+      // Fetch replacements from pos_item_replacements using item id
       const { data: replacements, error: replacementsError } = await supabase
         .from("pos_item_replacements")
         .select("*")
@@ -105,10 +122,7 @@ export function usePOSItemDetails(itemId: string | null) {
       }
 
       return {
-        item: {
-          ...item,
-          base_price: Number(item.base_price),
-        },
+        item,
         ingredients: (ingredients || []).map((ing) => ({
           ...ing,
           extra_price: Number(ing.extra_price),

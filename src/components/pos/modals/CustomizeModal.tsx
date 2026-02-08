@@ -157,7 +157,7 @@ export function CustomizeModal({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="pos-light max-w-[750px] w-[92vw] max-h-[85vh] flex flex-col bg-card border-border p-0">
+        <DialogContent className="pos-light max-w-[80vw] w-[80vw] max-h-[85vh] flex flex-col bg-card border-border p-0">
           {/* Header */}
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
             <div className="flex items-center justify-between">

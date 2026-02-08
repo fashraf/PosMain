@@ -33,7 +33,7 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
       <div className="flex items-center gap-2.5 p-2.5 pb-1.5">
         {/* Small square image */}
         {hasImage && (
-          <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+          <div className="h-[52px] w-[52px] flex-shrink-0 overflow-hidden rounded-lg bg-muted">
             <img
               src={item.image_url!}
               alt={item.name_en}
@@ -46,16 +46,16 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
         {/* Name + price */}
         <div className="flex flex-1 flex-col min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-semibold leading-tight text-card-foreground truncate">
+            <h3 className="text-base font-semibold leading-tight text-card-foreground truncate">
               {item.name_en}
             </h3>
             {isCustomizable && (
-              <span className="flex-shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-foreground">
+              <span className="flex-shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
                 Custom
               </span>
             )}
           </div>
-          <p className="text-sm font-bold text-foreground mt-0.5">
+          <p className="text-base font-bold text-foreground mt-0.5">
             Rs. {item.base_price.toFixed(2)}
           </p>
         </div>
@@ -69,22 +69,22 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
               className={cn(
                 "flex items-center justify-center gap-1 rounded-lg",
-                "bg-primary text-primary-foreground font-semibold text-xs",
+                "bg-primary text-primary-foreground font-semibold text-sm",
                 "h-8 active:scale-95 transition-transform duration-100"
               )}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3.5 w-3.5" />
               ADD
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onCustomize(); }}
               className={cn(
                 "flex items-center justify-center gap-1 rounded-lg",
-                "border border-primary/30 text-primary font-semibold text-xs",
+                "border border-primary/30 text-primary font-semibold text-sm",
                 "h-8 active:scale-95 transition-transform duration-100"
               )}
             >
-              <Settings2 className="h-3 w-3" />
+              <Settings2 className="h-3.5 w-3.5" />
               CUSTOMIZE
             </button>
           </div>
@@ -93,11 +93,11 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
             onClick={(e) => { e.stopPropagation(); onAdd(); }}
             className={cn(
               "flex w-full items-center justify-center gap-1 rounded-lg",
-              "bg-primary text-primary-foreground font-semibold text-xs",
+              "bg-primary text-primary-foreground font-semibold text-sm",
               "h-8 active:scale-95 transition-transform duration-100"
             )}
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-3.5 w-3.5" />
             ADD
           </button>
         )}
