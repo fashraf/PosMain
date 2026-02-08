@@ -15,7 +15,8 @@ export function POSLayout({ children }: POSLayoutProps) {
   return (
     <div
       className={cn(
-        "min-h-screen w-full bg-background",
+        "pos-dark", // Scoped dark POS theme
+        "min-h-screen w-full bg-background text-foreground",
         "touch-manipulation", // Optimize for touch
         "select-none", // Prevent text selection
         "overflow-hidden" // Prevent body scroll
