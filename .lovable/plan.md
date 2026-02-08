@@ -1,80 +1,66 @@
 
 
-# Full Cart Redesign: Match Reference Image
+# Redesign Cart Item Card to Match Reference Layout
 
-The previous plan only covered the header. Here is the complete set of changes covering every remaining item from your original specification.
+## Current vs Reference
 
-## Summary of All Changes
+The current layout stacks vertically: name + price on top, mods in middle, qty controls at bottom.
 
-### 1. Cart Header Redesign (`CartHeader.tsx`)
-- Merge into a **single row**: Cart icon + "Total Item : X" on the left, "Qty" label in center-right, "Clear All" button on far right
-- Remove the separate column headers sub-row
+The reference image shows a **horizontal single-line layout** for the main row:
 
-### 2. Cart Item Card Redesign (`CartItem.tsx`)
-- **Card style**: Each item becomes a rounded card (`rounded-2xl`) with subtle shadow and light border, padding 16-20px
-- **Layout restructure**:
-  - Left: Item name (16px bold)
-  - Right column: Line total price in **20px bold** high-contrast
-  - Below name: Modification tags (14px) -- red strikethrough for removals, green "+" for extras, purple arrow for replacements
-  - Quantity controls: Large pill-style `[- 1 +]` buttons (44x44px min touch targets, 14px qty number)
-  - Edit pencil icon (24px) moved to bottom-right of card, only visible for customized items
-- Remove the "Price : X.XX x qty" breakdown line (not in reference)
-- Remove the unit total line at bottom of customization details
-
-### 3. Cart Item List (`CartItemList.tsx`)
-- Add spacing/gap between cards instead of flat divider lines
-- Each card is visually separated by whitespace (gap-3)
-
-### 4. Bottom Footer Redesign (`PayButton.tsx` + `CartTotals.tsx`)
-- **Merge** CartTotals and PayButton into a single sticky footer bar
-- **Left side**: "Clear Cart" button (red outline, with trash icon) -- moved from header
-- **Right side**: Large green "Confirm & Pay -> XXX SAR" button with cart icon
-- Remove the separate Subtotal/VAT/TOTAL breakdown section (move subtotal info into the header area instead)
-- The header gets a **Subtotal: XXX SAR** display (22px bold)
-
-### 5. Empty Cart State (`CartPanel.tsx`)
-- Replace plain "Your cart is empty" with a centered friendly message and subtle styling
-
-### 6. CartPanel Layout Updates (`CartPanel.tsx`)
-- Pass `totalQuantity` and `subtotal` to CartHeader for display
-- Move "Clear All" action from header to footer
-- Remove CartTotals component usage (merged into footer)
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `CartHeader.tsx` | Single row, add Qty label, add Subtotal display (22px bold) |
-| `CartItem.tsx` | Card-style with rounded corners, shadow, larger prices (20px), bigger qty buttons (44px), pencil bottom-right |
-| `CartItemList.tsx` | Gap spacing between cards instead of dividers |
-| `CartTotals.tsx` | Remove (merged into footer) |
-| `PayButton.tsx` | Redesign as full footer: Clear Cart (left) + Confirm & Pay (right, green) |
-| `CartPanel.tsx` | Updated layout, pass new props, improved empty state |
-| `index.ts` | Update exports if needed |
-
-## Technical Details
-
-**CartHeader** new props:
-```
-totalQuantity: number  (sum of all qty)
-subtotal: number       (for display)
-```
-
-**CartItem card** structure:
 ```text
-+-----------------------------------------------+
-| Item Name                    42.50 SAR (20px)  |
-| - Onion removed (red)                          |
-| + Cheese +3.50 (green)                         |
-| -> Pepsi instead of Mango (purple)             |
-|                     [- ] 2 [ +]         pencil |
-+-----------------------------------------------+
++----------------------------------------------------------+
+| Chicken Biryani    [-] 4 [+]                    140.00   |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| Chicken Biryani    [-] 1 [+]  pencil             35.00   |
+| -> Pepsi                                      +3.00 SAR  |
+|                                             * 38.00      |
++----------------------------------------------------------+
+
++----------------------------------------------------------+
+| Chicken Biryani    [-] 1 [+]  pencil             35.00   |
+| + Tomato                                                 |
++----------------------------------------------------------+
 ```
 
-**Footer** structure:
+Key layout rules from the image:
+- **Row 1**: Item name (left), qty controls (center), pencil icon (if customized), line total (right) -- all on one horizontal line
+- **Row 2+**: Modification lines below, with price diffs right-aligned
+- **Green dot total**: When customizations change the price, show a green-dot total below the base price (e.g., "* 38.00")
+- Pencil icon appears inline with qty controls, not in bottom-right corner
+
+## Change (1 file)
+
+**`src/components/pos/cart/CartItem.tsx`**
+
+Restructure the card layout:
+
 ```text
-| [Trash Clear Cart]          [Confirm & Pay -> 120.50 SAR] |
+<div card>
+  <!-- Main row: all on one line -->
+  <div flex items-center justify-between>
+    <span name (flex-shrink-0, ~40% width)>
+    <div qty controls [-] N [+]>
+    {isCustomized && <pencil button>}
+    <span price (text-xl bold, right-aligned)>
+  </div>
+
+  <!-- Modification lines below -->
+  {mods && <div mods>
+    {removals...}
+    {extras with +price right-aligned}
+    {replacement with price diff right-aligned}
+    {hasExtraCost && <div green-dot total>}
+  </div>}
+</div>
 ```
 
-Qty buttons increase from 28px (h-7) to 44px (h-11) for proper touch targets. Prices go from text-sm to text-xl for the line total.
+Specific changes:
+1. Move qty controls and pencil icon onto the same row as the item name and price
+2. Show base price (item.basePrice * item.quantity) as the main price when customized, with a green-dot adjusted total below
+3. Pencil icon sits between qty controls and price, inline
+4. Remove the spacer div and bottom-row layout
+5. Keep 44px touch targets for qty buttons
 
