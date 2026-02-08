@@ -1,13 +1,13 @@
 import React from "react";
 import { CartItemRow } from "./CartItem";
-import type { CartItem, POSMenuItem } from "@/lib/pos/types";
+import type { CartItem } from "@/lib/pos/types";
 
 interface CartItemListProps {
   items: CartItem[];
   onIncrement: (itemId: string) => void;
   onDecrement: (itemId: string) => void;
   onRemove: (itemId: string) => void;
-  onEdit: (cartItemId: string, item: POSMenuItem) => void;
+  onEditCustomization: (cartItemId: string) => void;
 }
 
 export function CartItemList({
@@ -15,7 +15,7 @@ export function CartItemList({
   onIncrement,
   onDecrement,
   onRemove,
-  onEdit,
+  onEditCustomization,
 }: CartItemListProps) {
   return (
     <div className="divide-y">
@@ -26,7 +26,7 @@ export function CartItemList({
           onIncrement={() => onIncrement(item.id)}
           onDecrement={() => onDecrement(item.id)}
           onRemove={() => onRemove(item.id)}
-          onEdit={onEdit}
+          onEditCustomization={onEditCustomization}
         />
       ))}
     </div>
