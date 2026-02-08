@@ -18,13 +18,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IngredientRow } from "./IngredientRow";
 import { ReplacementPills } from "./ReplacementPills";
+import { ChangesSummary } from "./ChangesSummary";
 import { PriceAnimator } from "./PriceAnimator";
 import { usePOSItemDetails } from "@/hooks/pos";
 import type { POSMenuItem } from "@/lib/pos/types";
 import type { POSCartHook } from "@/hooks/pos";
 import { buildCustomizationData, calculateLivePrice } from "@/lib/pos/priceCalculations";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShoppingCart, X } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ShoppingCart } from "lucide-react";
 
 interface CustomizeModalProps {
   open: boolean;
@@ -52,10 +54,8 @@ export function CustomizeModal({
 
   const { data: itemDetails, isLoading } = usePOSItemDetails(open ? menuItem?.id ?? null : null);
 
-  // Track dirty state
   const isDirty = extras.size > 0 || removals.size > 0 || selectedReplacement !== null;
 
-  // Reset state when item changes
   useEffect(() => {
     if (open && menuItem) {
       if (editingCartItemId) {
@@ -157,24 +157,33 @@ export function CustomizeModal({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="pos-light max-w-[80vw] w-[80vw] max-h-[85vh] flex flex-col bg-card border-border p-0">
+        <DialogContent className="pos-light max-w-[80vw] w-[80vw] max-h-[75vh] flex flex-col bg-card border-border p-0">
           {/* Header */}
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-card-foreground text-lg">
                 Customize: {menuItem?.name_en}
               </DialogTitle>
-              {livePrice && (
-                <PriceAnimator
-                  value={livePrice.total}
-                  className="text-lg text-primary font-bold"
-                />
-              )}
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-muted-foreground">
+                  Base <span className="font-semibold tabular-nums text-card-foreground">{menuItem?.base_price?.toFixed(2)} SAR</span>
+                </span>
+                {livePrice && (
+                  <span className="text-muted-foreground">
+                    Current{" "}
+                    <PriceAnimator
+                      value={livePrice.total}
+                      className="text-primary font-bold tabular-nums"
+                    />
+                    <span className="text-primary font-bold"> SAR</span>
+                  </span>
+                )}
+              </div>
             </div>
           </DialogHeader>
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Body: Two bordered cards */}
+          <div className="flex-1 overflow-hidden px-5 py-4">
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -182,74 +191,98 @@ export function CustomizeModal({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left: Ingredients */}
-                {hasIngredients && (
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              <div className="grid grid-cols-2 gap-4 h-full">
+                {/* Left Card: Ingredients */}
+                <div className="rounded-xl border border-border bg-card flex flex-col overflow-hidden">
+                  <div className="border-b px-4 py-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
                       Ingredients
                     </h3>
-                    <div className="space-y-2">
-                      {itemDetails!.ingredients.map((ing) => (
-                        <IngredientRow
-                          key={ing.id}
-                          ingredient={ing}
-                          isRemoved={removals.has(ing.id)}
-                          isExtra={extras.has(ing.id)}
-                          onRemoveToggle={() => handleRemovalToggle(ing.id)}
-                          onExtraToggle={() => handleExtraToggle(ing.id)}
-                        />
-                      ))}
-                    </div>
                   </div>
-                )}
+                  <ScrollArea className="flex-1 px-4 py-3">
+                    {hasIngredients ? (
+                      <div className="space-y-2">
+                        {itemDetails!.ingredients.map((ing) => (
+                          <IngredientRow
+                            key={ing.id}
+                            ingredient={ing}
+                            isRemoved={removals.has(ing.id)}
+                            isExtra={extras.has(ing.id)}
+                            onRemoveToggle={() => handleRemovalToggle(ing.id)}
+                            onExtraToggle={() => handleExtraToggle(ing.id)}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        No ingredients
+                      </p>
+                    )}
+                  </ScrollArea>
+                </div>
 
-                {/* Right: Replacements */}
-                {hasReplacements && (
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Replacements
+                {/* Right Card: Combo Replacements */}
+                <div className="rounded-xl border border-border bg-card flex flex-col overflow-hidden">
+                  <div className="border-b px-4 py-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                      Combo Replacements
                     </h3>
-                    <div className="space-y-4">
-                      {Object.entries(replacementGroups).map(([group, reps]) => (
-                        <ReplacementPills
-                          key={group}
-                          groupName={group}
-                          replacements={reps}
-                          selectedId={selectedReplacement?.id ?? null}
-                          onSelect={handleReplacementSelect}
-                        />
-                      ))}
-                    </div>
                   </div>
-                )}
-
-                {!hasIngredients && !hasReplacements && (
-                  <p className="text-muted-foreground col-span-2 text-center py-8">
-                    No customization options available.
-                  </p>
-                )}
+                  <ScrollArea className="flex-1 px-4 py-3">
+                    {hasReplacements ? (
+                      <div className="space-y-4">
+                        {Object.entries(replacementGroups).map(([group, reps]) => (
+                          <ReplacementPills
+                            key={group}
+                            groupName={group}
+                            replacements={reps}
+                            selectedId={selectedReplacement?.id ?? null}
+                            onSelect={handleReplacementSelect}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-8">
+                        No items
+                      </p>
+                    )}
+                  </ScrollArea>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Sticky footer */}
-          <DialogFooter className="px-5 py-3 border-t border-border flex-row gap-2">
-            <button
-              onClick={() => handleOpenChange(false)}
-              className="flex-1 h-12 rounded-lg border border-border text-muted-foreground font-medium text-sm active:scale-95 transition-transform"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAddToCart}
-              disabled={isLoading}
-              className="flex-[2] h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {editingCartItemId ? "UPDATE CART" : "ADD TO CART"}
-              {livePrice && ` — Rs. ${livePrice.total.toFixed(2)}`}
-            </button>
+          {/* Footer: Changes Summary + Price Breakdown + Buttons */}
+          <DialogFooter className="px-5 py-3 border-t border-border flex-col gap-3">
+            {livePrice && itemDetails && (
+              <ChangesSummary
+                ingredients={itemDetails.ingredients}
+                extras={extras}
+                removals={removals}
+                selectedReplacement={selectedReplacement}
+                basePrice={livePrice.basePrice}
+                extrasTotal={livePrice.extrasTotal}
+                replacementDiff={livePrice.replacementDiff}
+                total={livePrice.total}
+              />
+            )}
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => handleOpenChange(false)}
+                className="flex-1 h-12 rounded-lg border border-border text-muted-foreground font-medium text-sm active:scale-95 transition-transform"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddToCart}
+                disabled={isLoading}
+                className="flex-[2] h-12 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {editingCartItemId ? "UPDATE CART" : "ADD TO CART"}
+                {livePrice && ` — ${livePrice.total.toFixed(2)} SAR`}
+              </button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
