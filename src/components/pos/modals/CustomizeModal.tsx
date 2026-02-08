@@ -278,41 +278,23 @@ export function CustomizeModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex items-stretch gap-6 shrink-0">
-            {/* Left: Changes summary */}
-            <div className="flex-1 min-w-0">
-              {livePrice && itemDetails && (
-                <ChangesSummary
-                  ingredients={itemDetails.ingredients}
-                  extras={extras}
-                  removals={removals}
-                  selectedReplacement={selectedReplacement}
-                  basePrice={livePrice.basePrice}
-                  extrasTotal={livePrice.extrasTotal}
-                  replacementDiff={livePrice.replacementDiff}
-                  total={livePrice.total}
-                />
-              )}
-            </div>
-
-            {/* Right: Buttons stacked */}
-            <div className="flex flex-col gap-2 justify-center min-w-[280px]">
-              <button
-                onClick={() => handleOpenChange(false)}
-                className="h-12 rounded-xl border border-gray-300 text-gray-600 font-medium text-base active:scale-95 transition-all duration-150 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddToCart}
-                disabled={isLoading}
-                className="h-14 rounded-xl bg-primary text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all duration-150 disabled:opacity-50 shadow-lg"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {editingCartItemId ? "UPDATE CART" : "ADD TO CART"}
-                {livePrice && ` — ${livePrice.total.toFixed(2)} SAR`}
-              </button>
-            </div>
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center gap-6 shrink-0">
+            <div className="flex-1" />
+            <button
+              onClick={() => handleOpenChange(false)}
+              className="h-12 min-w-[200px] rounded-xl border border-gray-300 text-gray-600 font-medium text-base active:scale-95 transition-all duration-150 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddToCart}
+              disabled={isLoading}
+              className="h-14 min-w-[280px] rounded-xl bg-primary text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all duration-150 disabled:opacity-50 shadow-lg"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {editingCartItemId ? "UPDATE CART" : "ADD TO CART"}
+              {livePrice && ` — ${livePrice.total.toFixed(2)} SAR`}
+            </button>
           </div>
         </DialogContent>
       </Dialog>

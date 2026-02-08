@@ -31,7 +31,7 @@ export function ReplacementPills({
   };
 
   return (
-    <div className={cn(!isLast && "border-b border-dotted border-gray-300 pb-4 mb-4")}>
+    <div className={cn(!isLast && "pb-4 mb-4")}>
       <h4 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-3">
         {groupName} (Choose 1)
       </h4>
