@@ -98,39 +98,76 @@ export function usePOSItemDetails(itemId: string | null) {
         throw new Error(`Failed to fetch item: ${itemError?.message ?? 'Not found'}`);
       }
 
-      // Fetch ingredients from pos_item_ingredients using item id
-      const { data: ingredients, error: ingredientsError } = await supabase
-        .from("pos_item_ingredients")
-        .select("*")
-        .eq("menu_item_id", itemId)
+      // Fetch ingredients from item_ingredients (shared with Item Master)
+      const { data: itemIngredients, error: ingredientsError } = await supabase
+        .from("item_ingredients")
+        .select("*, ingredients(name_en, name_ar, name_ur)")
+        .eq("item_id", itemId)
         .order("sort_order", { ascending: true });
 
       if (ingredientsError) {
         throw new Error(`Failed to fetch ingredients: ${ingredientsError.message}`);
       }
 
-      // Fetch replacements from pos_item_replacements using item id
-      const { data: replacements, error: replacementsError } = await supabase
-        .from("pos_item_replacements")
-        .select("*")
-        .eq("menu_item_id", itemId)
-        .order("replacement_group", { ascending: true })
+      // Map item_ingredients to POSItemIngredient format
+      const ingredients: POSItemIngredient[] = (itemIngredients || []).map((ing: any) => ({
+        id: ing.id,
+        menu_item_id: itemId,
+        ingredient_name_en: ing.ingredients?.name_en || "Unknown",
+        ingredient_name_ar: ing.ingredients?.name_ar || null,
+        ingredient_name_ur: ing.ingredients?.name_ur || null,
+        extra_price: Number(ing.extra_cost) || 0,
+        is_removable: ing.can_remove ?? true,
+        is_default_included: true,
+        sort_order: ing.sort_order || 0,
+        created_at: ing.created_at,
+      }));
+
+      // Fetch sub-items for combo replacements from item_sub_items
+      const { data: subItems, error: subItemsError } = await supabase
+        .from("item_sub_items")
+        .select("*, sub_item:items!item_sub_items_sub_item_id_fkey(name_en, name_ar, name_ur, base_cost)")
+        .eq("item_id", itemId)
         .order("sort_order", { ascending: true });
 
-      if (replacementsError) {
-        throw new Error(`Failed to fetch replacements: ${replacementsError.message}`);
+      if (subItemsError) {
+        throw new Error(`Failed to fetch sub-items: ${subItemsError.message}`);
+      }
+
+      // Build replacements from sub-items (combo logic)
+      let replacements: POSItemReplacement[] = [];
+      if (subItems && subItems.length > 0) {
+        replacements = subItems.map((si: any, index: number) => ({
+          id: si.id,
+          menu_item_id: itemId,
+          replacement_group: "combo",
+          replacement_name_en: si.sub_item?.name_en || "Unknown",
+          replacement_name_ar: si.sub_item?.name_ar || null,
+          replacement_name_ur: si.sub_item?.name_ur || null,
+          price_difference: si.is_default ? 0 : Number(si.replacement_price) || 0,
+          is_default: si.is_default ?? (index === 0),
+          sort_order: si.sort_order || index,
+          created_at: si.created_at,
+        }));
+      } else {
+        // Fallback: check pos_item_replacements for legacy data
+        const { data: legacyReplacements } = await supabase
+          .from("pos_item_replacements")
+          .select("*")
+          .eq("menu_item_id", itemId)
+          .order("replacement_group", { ascending: true })
+          .order("sort_order", { ascending: true });
+
+        replacements = (legacyReplacements || []).map((rep: any) => ({
+          ...rep,
+          price_difference: Number(rep.price_difference),
+        }));
       }
 
       return {
         item,
-        ingredients: (ingredients || []).map((ing) => ({
-          ...ing,
-          extra_price: Number(ing.extra_price),
-        })),
-        replacements: (replacements || []).map((rep) => ({
-          ...rep,
-          price_difference: Number(rep.price_difference),
-        })),
+        ingredients,
+        replacements,
       };
     },
     enabled: !!itemId,

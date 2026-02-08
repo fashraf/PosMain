@@ -238,6 +238,60 @@ export type Database = {
           },
         ]
       }
+      item_sub_items: {
+        Row: {
+          can_remove: boolean
+          created_at: string
+          id: string
+          is_default: boolean
+          item_id: string
+          quantity: number
+          replacement_price: number
+          sort_order: number
+          sub_item_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_remove?: boolean
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          item_id: string
+          quantity?: number
+          replacement_price?: number
+          sort_order?: number
+          sub_item_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_remove?: boolean
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          item_id?: string
+          quantity?: number
+          replacement_price?: number
+          sort_order?: number
+          sub_item_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_sub_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_sub_items_sub_item_id_fkey"
+            columns: ["sub_item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_types: {
         Row: {
           created_at: string

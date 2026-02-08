@@ -88,6 +88,21 @@ export default function ItemsEdit() {
     enabled: !!id,
   });
 
+  // Fetch item sub-items (combo)
+  const { data: itemSubItems = [] } = useQuery({
+    queryKey: ["item-sub-items", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("item_sub_items")
+        .select("*, sub_item:items!item_sub_items_sub_item_id_fkey(name_en, name_ar, name_ur, base_cost)")
+        .eq("item_id", id)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   // Fetch available ingredients
   const { data: availableIngredients = [] } = useQuery({
     queryKey: ["ingredients-master"],
@@ -211,6 +226,26 @@ export default function ItemsEdit() {
       setIngredientMappings(mappings);
     }
   }, [itemIngredients]);
+
+  // Load sub-item mappings (combo)
+  useEffect(() => {
+    if (itemSubItems.length > 0) {
+      const mappings: SubItemMappingItem[] = itemSubItems.map((m: any) => ({
+        id: m.id,
+        sub_item_id: m.sub_item_id,
+        sub_item_name: m.sub_item?.name_en || "Unknown",
+        quantity: Number(m.quantity) || 1,
+        unit_price: Number(m.sub_item?.base_cost) || 0,
+        sort_order: m.sort_order || 0,
+        combo_price: 0,
+        can_add_extra: false,
+        can_remove: m.can_remove ?? false,
+        extra_cost: 0,
+        replacements: [],
+      }));
+      setSubItemMappings(mappings);
+    }
+  }, [itemSubItems]);
 
   const [comboConfirm, setComboConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
   const [statusConfirm, setStatusConfirm] = useState<{open: boolean; newValue: boolean}>({open: false, newValue: false});
@@ -649,10 +684,32 @@ export default function ItemsEdit() {
         if (mappingError) throw mappingError;
       }
 
+      // Delete existing sub-item mappings and re-insert
+      await supabase.from("item_sub_items").delete().eq("item_id", id);
+
+      if (formData.is_combo && subItemMappings.length > 0) {
+        const subItemsToInsert = subItemMappings.map((m, index) => ({
+          item_id: id,
+          sub_item_id: m.sub_item_id,
+          quantity: m.quantity,
+          sort_order: index + 1,
+          is_default: index === 0,
+          replacement_price: index === 0 ? 0 : m.unit_price,
+          can_remove: index === 0 ? true : false,
+        }));
+
+        const { error: subItemError } = await supabase
+          .from("item_sub_items")
+          .insert(subItemsToInsert);
+
+        if (subItemError) throw subItemError;
+      }
+
       queryClient.invalidateQueries({ queryKey: ["items-master"] });
       queryClient.invalidateQueries({ queryKey: ["items"] });
       queryClient.invalidateQueries({ queryKey: ["item", id] });
       queryClient.invalidateQueries({ queryKey: ["item-ingredients", id] });
+      queryClient.invalidateQueries({ queryKey: ["item-sub-items", id] });
 
       toast({ title: t("items.editItem"), description: `${formData.name_en} has been updated.` });
       setShowConfirmModal(false);

@@ -21,9 +21,9 @@ export function CartHeader({ itemCount, onClearAll }: CartHeaderProps) {
           <button
             type="button"
             onClick={onClearAll}
-            className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 touch-manipulation"
+            className="flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 active:scale-95 transition-all touch-manipulation"
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-3.5 w-3.5" />
             Clear All
           </button>
         )}
