@@ -22,7 +22,7 @@ export function CartItemList({
   return (
     <div className="flex flex-col p-3">
       {items.map((item, idx) => {
-        const isHighlighted = highlight?.id === item.id;
+        const isHighlighted = highlight?.id === item.id || highlight?.id === item.menuItemId;
         return (
         <React.Fragment key={isHighlighted ? `${item.id}-${highlight.tick}` : item.id}>
           <CartItemRow
