@@ -25,15 +25,15 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
     <div
       onClick={handleCardClick}
       className={cn(
-        "relative flex flex-col rounded-xl border border-border bg-card overflow-hidden",
+        "relative flex flex-col rounded-xl border border-dashed border-border bg-card overflow-hidden",
         "touch-manipulation cursor-pointer",
         "active:scale-[0.98] transition-all duration-100"
       )}
     >
       {/* Customizable badge */}
       {isCustomizable && (
-        <div className="absolute top-2 right-2 z-10 rounded-full bg-primary/20 px-2 py-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+        <div className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
             Customizable
           </span>
         </div>
@@ -65,7 +65,7 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
           className={cn(
             "mt-1 font-bold",
             hasImage ? "text-sm" : "text-base text-center",
-            "text-[hsl(38,92%,50%)]" // amber price
+            "text-foreground font-bold"
           )}
         >
           Rs. {item.base_price.toFixed(2)}

@@ -33,7 +33,7 @@ export function ItemDetailsModal({ open, onOpenChange, menuItem }: ItemDetailsMo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="pos-dark max-w-[700px] w-[90vw] max-h-[80vh] overflow-y-auto bg-card border-border">
+      <DialogContent className="pos-light max-w-[700px] w-[90vw] max-h-[80vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-card-foreground">
             <Info className="h-5 w-5 text-primary" />
@@ -82,7 +82,7 @@ export function ItemDetailsModal({ open, onOpenChange, menuItem }: ItemDetailsMo
                           )}
                         </span>
                         {ing.extra_price > 0 && (
-                          <span className="text-[hsl(38,92%,50%)]">
+                          <span className="text-primary font-medium">
                             +{ing.extra_price.toFixed(0)}
                           </span>
                         )}
@@ -127,7 +127,7 @@ export function ItemDetailsModal({ open, onOpenChange, menuItem }: ItemDetailsMo
                               <span
                                 className={
                                   rep.price_difference > 0
-                                    ? "text-[hsl(38,92%,50%)] text-xs"
+                                    ? "text-primary text-xs font-medium"
                                     : "text-muted-foreground text-xs"
                                 }
                               >
@@ -145,11 +145,11 @@ export function ItemDetailsModal({ open, onOpenChange, menuItem }: ItemDetailsMo
               )}
 
               {/* Base price */}
-              <div className="mt-6 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-center">
+              <div className="mt-6 rounded-lg border border-primary/20 bg-accent px-3 py-2.5 text-center">
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">
                   Base Price
                 </span>
-                <p className="text-lg font-bold text-[hsl(38,92%,50%)]">
+                <p className="text-lg font-bold text-primary">
                   Rs. {menuItem?.base_price.toFixed(2)}
                 </p>
               </div>
