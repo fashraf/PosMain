@@ -18,7 +18,7 @@ export function CartItemList({
   onEditCustomization,
 }: CartItemListProps) {
   return (
-    <div className="divide-y">
+    <div className="flex flex-col gap-3 p-3">
       {items.map((item) => (
         <CartItemRow
           key={item.id}

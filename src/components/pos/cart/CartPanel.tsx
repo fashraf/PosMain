@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { CartHeader } from "./CartHeader";
 import { CartItemList } from "./CartItemList";
-import { CartTotals } from "./CartTotals";
 import { PayButton } from "./PayButton";
 import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
+import { ShoppingCart } from "lucide-react";
 import type { CartItem } from "@/lib/pos/types";
 
 interface CartPanelProps {
@@ -23,8 +23,6 @@ interface CartPanelProps {
 export function CartPanel({
   items,
   subtotal,
-  vatRate,
-  vatAmount,
   total,
   onIncrement,
   onDecrement,
@@ -34,16 +32,24 @@ export function CartPanel({
   onPay,
 }: CartPanelProps) {
   const isEmpty = items.length === 0;
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   return (
     <div className="flex h-full flex-col">
-      <CartHeader itemCount={items.length} onClearAll={() => setShowClearConfirm(true)} />
+      <CartHeader
+        itemCount={items.length}
+        totalQuantity={totalQuantity}
+        subtotal={subtotal}
+      />
 
       <div className="flex-1 overflow-auto">
         {isEmpty ? (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            Your cart is empty
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground px-6">
+            <div className="rounded-full bg-muted p-4">
+              <ShoppingCart className="h-8 w-8" />
+            </div>
+            <p className="text-base font-medium">Add delicious items to start 🍲</p>
           </div>
         ) : (
           <CartItemList
@@ -56,16 +62,12 @@ export function CartPanel({
         )}
       </div>
 
-      {!isEmpty && (
-        <CartTotals
-          subtotal={subtotal}
-          vatRate={vatRate}
-          vatAmount={vatAmount}
-          total={total}
-        />
-      )}
-
-      <PayButton total={total} disabled={isEmpty} onClick={onPay} />
+      <PayButton
+        total={total}
+        disabled={isEmpty}
+        onClearAll={() => setShowClearConfirm(true)}
+        onClick={onPay}
+      />
 
       <ConfirmActionModal
         open={showClearConfirm}
