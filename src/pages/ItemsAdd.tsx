@@ -33,9 +33,9 @@ import {
   type ReplacementItem,
 } from "@/components/item-mapping";
 import {
-  IngredientMappingList,
   type IngredientMappingItem,
 } from "@/components/item-mapping/IngredientMappingList";
+import { IngredientTable } from "@/components/item-mapping/IngredientTable";
 import {
   ItemTable,
   AddIngredientModal,
@@ -937,32 +937,13 @@ export default function ItemsAdd() {
               icon={Carrot}
               variant="muted"
               isComplete={isIngredientsComplete}
-              rightBadge={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAddIngredientModal(true)}
-                  className="gap-1"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t("itemMapping.addIngredient")}
-                </Button>
-              }
             >
-              <IngredientMappingList
+              <IngredientTable
                 mappings={ingredientMappings}
-                onChange={handleIngredientMappingsChange}
                 onRemove={handleIngredientRemove}
+                onAdd={() => setShowAddIngredientModal(true)}
+                onEdit={handleEditIngredient}
               />
-              
-              {ingredientMappings.length > 0 && (
-                <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">
-                    {t("itemMapping.totalIngredientCost")}
-                  </span>
-                  <span className="font-medium">SAR {totalIngredientCost.toFixed(2)}</span>
-                </div>
-              )}
             </DashedSectionCard>
           </div>
 

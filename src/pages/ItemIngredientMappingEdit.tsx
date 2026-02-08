@@ -410,6 +410,9 @@ export default function ItemIngredientMappingEdit() {
               if (mapping) handleRequestRemove(id, mapping.ingredient_name, "ingredient");
             }}
             onAdd={() => setShowAddIngredientModal(true)}
+            onEdit={(id) => {
+              // TODO: wire up edit modal for this page
+            }}
           />
         </div>
 
