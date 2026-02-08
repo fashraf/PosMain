@@ -1,51 +1,53 @@
 
-# Compact Horizontal POS Item Card
 
-## What Changes
+# POS Card Font/Image Size Bump + Customize Modal 80% Width + Seed Data
 
-Redesign `POSItemCard` from a vertical (image-on-top) layout to a compact horizontal layout:
+## 1. POSItemCard -- Bigger Font and 52x52 Image
 
-```text
-Current (vertical):              New (horizontal):
-+------------------+            +----------------------------------+
-|   [  Image  ]    |            | [img] Item Name         [ADD]   |
-|                  |            |       Rs. 350.00    [CUSTOMIZE] |
-|  Item Name       |            +----------------------------------+
-|  Rs. 350.00      |
-| [ADD] [CUSTOMIZE]|
-+------------------+
-```
+**File:** `src/components/pos/items/POSItemCard.tsx`
 
-### Layout Structure
+- Image size: `h-8 w-8` (32px) changes to `h-[52px] w-[52px]` (52px)
+- Item name font: `text-sm` changes to `text-base` (16px)
+- Price font: `text-sm` changes to `text-base`
+- "Custom" badge: `text-[9px]` changes to `text-[10px]`
+- Button text: `text-xs` changes to `text-sm`
+- Button icons: `h-3 w-3` changes to `h-3.5 w-3.5`
 
-- Card becomes a **single horizontal row** with 3 zones:
-  1. **Left**: Small square image (48x48 rounded), hidden if no image
-  2. **Middle**: Name (bold, truncated) on top, price below -- takes remaining space
-  3. **Right**: Action buttons stacked vertically (compact)
-- If no image, the text zone simply starts from the left edge
-- "Customizable" badge sits as a small tag next to the item name instead of absolute-positioned
+## 2. Customize Modal -- Increase to 80% Width
 
-### Card Sizing
+**File:** `src/components/pos/modals/CustomizeModal.tsx`
 
-- Fixed height (~70-80px)
-- Grid stays 2-4 columns but cards are much shorter, fitting more items on screen
-- Dotted border, rounded corners preserved
+- `max-w-[750px] w-[92vw]` changes to `max-w-[80vw] w-[80vw]`
 
-### Button Adjustments
+## 3. Seed POS Data -- Ingredients and Replacements
 
-- Buttons become smaller pill-shaped (h-8 instead of h-11)
-- If customizable: two buttons stacked vertically on the right
-- If not customizable: single ADD button on the right
-- Same colors: blue primary ADD, outline CUSTOMIZE
+Since the `pos_menu_items`, `pos_item_ingredients`, and `pos_item_replacements` tables are all empty, the modals have no data to display. I will insert seed data via a database migration:
 
-## Technical Details
+**pos_menu_items** -- 3 items matching the existing `items` table entries:
+- Mango Bite (Rs. 10, not customizable, with image)
+- Chicken Biryani (Rs. 35, customizable)
+- Pepsi (Rs. 3.50, not customizable)
 
-### File Modified
+**pos_item_ingredients** -- For Chicken Biryani:
+- Rice (default included, removable, no extra cost)
+- Chicken (default included, not removable, extra +Rs. 15)
+- Onion (default included, removable, no extra cost)
+- Cheese (not default, not removable, extra +Rs. 10)
+
+**pos_item_replacements** -- For Chicken Biryani, group "Rice":
+- White Rice (default)
+- Brown Rice (+Rs. 5)
+- Naan Bread (+Rs. 8)
+
+### Hook Fix
+
+The `usePOSItemDetails` hook currently queries `pos_menu_items` for the item, but the POS grid fetches from the `items` table. The item IDs won't match. I will update the hook to query the `items` table for the base item data instead, so clicking Customize on any grid item correctly loads its details.
+
+## Technical Summary
 
 | File | Change |
 |------|--------|
-| `src/components/pos/items/POSItemCard.tsx` | Complete layout restructure from vertical flex-col to horizontal flex-row with image, text, and button zones |
-
-### No Other Files Affected
-
-The grid (`POSItemGrid.tsx`) and all parent wiring remain unchanged -- only the card's internal layout changes.
+| `src/components/pos/items/POSItemCard.tsx` | Image 52x52, bigger fonts |
+| `src/components/pos/modals/CustomizeModal.tsx` | Width to 80vw |
+| `src/hooks/pos/usePOSItems.ts` | Fix `usePOSItemDetails` to query `items` table instead of `pos_menu_items` |
+| Database migration | Seed `pos_item_ingredients` and `pos_item_replacements` with data for Chicken Biryani |
