@@ -24,55 +24,64 @@ export function IngredientRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 transition-all",
-        isRemoved && "opacity-50 bg-destructive/5 border-destructive/20",
-        isExtra && "bg-primary/5 border-primary/20"
+        "rounded-xl border px-5 py-4 transition-all duration-200",
+        "bg-[#111827] border-gray-700/50",
+        isRemoved && "bg-red-950/30 border-red-500/30",
+        isExtra && !isRemoved && "bg-emerald-950/20 border-emerald-500/30"
       )}
     >
-      {/* Name + price */}
-      <div className="flex-1 min-w-0">
-        <p
-          className={cn(
-            "text-sm font-semibold text-card-foreground",
-            isRemoved && "line-through text-destructive"
-          )}
-        >
-          {ingredient.ingredient_name_en}
-        </p>
-        {canExtra && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            +{ingredient.extra_price.toFixed(2)} SAR
-          </p>
-        )}
-      </div>
-
-      {/* Toggle controls */}
-      <div className="flex items-center gap-5 ml-3">
-        {canRemove && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Remove</span>
-            <Switch
-              checked={isRemoved}
-              onCheckedChange={onRemoveToggle}
-              className="scale-90"
-            />
-          </div>
-        )}
-        {canExtra && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Extra</span>
-            <Switch
-              checked={isExtra}
-              onCheckedChange={onExtraToggle}
-              className="scale-90 data-[state=checked]:bg-primary"
-            />
-            {isExtra && (
-              <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-bold">
-                +Extra
-              </span>
+      <div className="flex items-center justify-between">
+        {/* Name + price */}
+        <div className="flex-1 min-w-0">
+          <p
+            className={cn(
+              "text-base font-semibold text-white transition-all duration-200",
+              isRemoved && "line-through text-red-400"
             )}
-          </div>
-        )}
+          >
+            {ingredient.ingredient_name_en}
+          </p>
+          {canExtra && (
+            <p className="text-sm text-gray-400 mt-0.5">
+              +{ingredient.extra_price.toFixed(2)} SAR
+            </p>
+          )}
+        </div>
+
+        {/* Toggle controls */}
+        <div className="flex items-center gap-6 ml-4">
+          {canRemove && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400 font-medium">Remove</span>
+              <Switch
+                checked={isRemoved}
+                onCheckedChange={onRemoveToggle}
+                className="data-[state=checked]:bg-red-500"
+              />
+            </div>
+          )}
+          {canExtra && (
+            <div
+              className={cn(
+                "flex items-center gap-2 transition-opacity duration-200",
+                isRemoved && "opacity-40 pointer-events-none"
+              )}
+            >
+              <span className="text-sm text-gray-400 font-medium">Extra</span>
+              <Switch
+                checked={isExtra}
+                onCheckedChange={onExtraToggle}
+                disabled={isRemoved}
+                className="data-[state=checked]:bg-emerald-500"
+              />
+              {isExtra && (
+                <span className="rounded-full bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 text-xs font-bold">
+                  +Extra
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
