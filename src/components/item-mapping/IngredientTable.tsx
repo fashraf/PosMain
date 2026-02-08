@@ -51,14 +51,11 @@ export function IngredientTable({
             <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t("itemMapping.canAddExtra") || "Can Add"}
             </th>
-            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {t("itemMapping.canRemove") || "Can Remove"}
-            </th>
             <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t("itemMapping.extraCost") || "Extra Cost"}
             </th>
-            <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              {t("common.cost")}
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {t("itemMapping.canRemove") || "Can Remove"}
             </th>
             <th className="h-9 w-20 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t("common.actions")}
@@ -68,13 +65,13 @@ export function IngredientTable({
         <tbody>
           {mappings.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center text-muted-foreground py-6 text-sm">
+              <td colSpan={6} className="text-center text-muted-foreground py-6 text-sm">
                 {t("itemMapping.noIngredientsMapped")}
               </td>
             </tr>
           ) : (
             mappings.map((mapping, index) => (
-              <tr 
+              <tr
                 key={mapping.id}
                 className={cn(
                   "h-11 border-b border-border/50 transition-all duration-200",
@@ -97,6 +94,13 @@ export function IngredientTable({
                     <span className="text-[12px] text-muted-foreground">—</span>
                   )}
                 </td>
+                <td className="px-3 text-right text-sm">
+                  {mapping.can_add_extra && mapping.extra_cost != null && mapping.extra_cost > 0 ? (
+                    <span className="text-green-600 font-medium">SAR {mapping.extra_cost.toFixed(2)}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-3 text-center">
                   {mapping.can_remove ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">
@@ -105,16 +109,6 @@ export function IngredientTable({
                   ) : (
                     <span className="text-[12px] text-muted-foreground">—</span>
                   )}
-                </td>
-                <td className="px-3 text-right text-sm">
-                  {mapping.can_add_extra && mapping.extra_cost != null && mapping.extra_cost > 0 ? (
-                    <span className="text-green-600 font-medium">SAR {mapping.extra_cost.toFixed(2)}</span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td className="px-3 text-right font-medium text-sm text-primary">
-                  SAR {((mapping.quantity || 0) * 5).toFixed(2)}
                 </td>
                 <td className="px-3 text-center">
                   <div className="flex items-center justify-center gap-1">
