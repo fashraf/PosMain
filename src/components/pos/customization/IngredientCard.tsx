@@ -23,7 +23,7 @@ export function IngredientCard({
       {/* Info */}
       <div className="mb-3">
         <h4 className="font-medium">{ingredient.ingredient_name_en}</h4>
-        {ingredient.extra_price > 0 && (
+        {ingredient.can_add_extra && ingredient.extra_price > 0 && (
           <p className="text-sm text-muted-foreground">
             Rs. {ingredient.extra_price.toFixed(2)}
           </p>
@@ -49,20 +49,22 @@ export function IngredientCard({
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={onExtraToggle}
-          className={cn(
-            "flex h-12 flex-1 items-center justify-center gap-2 rounded-lg border-2 font-medium",
-            "touch-manipulation transition-colors active:scale-95",
-            isExtra
-              ? "border-green-600 bg-green-600/10 text-green-600"
-              : "border-muted-foreground/30 text-muted-foreground hover:border-green-600/50"
-          )}
-        >
-          <Plus className="h-4 w-4" />
-          EXTRA
-        </button>
+        {ingredient.can_add_extra && (
+          <button
+            type="button"
+            onClick={onExtraToggle}
+            className={cn(
+              "flex h-12 flex-1 items-center justify-center gap-2 rounded-lg border-2 font-medium",
+              "touch-manipulation transition-colors active:scale-95",
+              isExtra
+                ? "border-green-600 bg-green-600/10 text-green-600"
+                : "border-muted-foreground/30 text-muted-foreground hover:border-green-600/50"
+            )}
+          >
+            <Plus className="h-4 w-4" />
+            EXTRA
+          </button>
+        )}
       </div>
     </div>
   );

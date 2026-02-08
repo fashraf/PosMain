@@ -166,7 +166,7 @@ export function CustomizeDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]">
+      <DrawerContent className="max-h-[75vh]">
         {/* Header */}
         <DrawerHeader className="border-b">
           <div className="flex items-center gap-3">
@@ -181,61 +181,86 @@ export function CustomizeDrawer({
           </div>
         </DrawerHeader>
 
-        {/* Scrollable content */}
-        <ScrollArea className="flex-1 px-4">
+        {/* Scrollable content - Two card layout */}
+        <div className="flex-1 overflow-auto px-4 py-4">
           {isLoading ? (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
           ) : (
-            <div className="space-y-6 py-4">
-              {/* Ingredients Section */}
-              {itemDetails && itemDetails.ingredients.length > 0 && (
-                <div>
-                  <h3 className="mb-3 font-semibold text-sm text-muted-foreground uppercase">
+            <div className="grid grid-cols-2 gap-4 h-full">
+              {/* Left Card - Ingredients */}
+              <div className="rounded-xl border border-border bg-card flex flex-col overflow-hidden">
+                <div className="border-b px-4 py-3">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase">
                     Ingredients
                   </h3>
-                  <div className="space-y-3">
-                    {itemDetails.ingredients.map((ingredient) => (
-                      <IngredientCard
-                        key={ingredient.id}
-                        ingredient={ingredient}
-                        isExtra={extras.has(ingredient.id)}
-                        isRemoved={removals.has(ingredient.id)}
-                        onExtraToggle={() => handleExtraToggle(ingredient.id)}
-                        onRemovalToggle={() => handleRemovalToggle(ingredient.id)}
-                      />
-                    ))}
-                  </div>
                 </div>
-              )}
+                <ScrollArea className="flex-1 px-4 py-3">
+                  {itemDetails && itemDetails.ingredients.length > 0 ? (
+                    <div className="space-y-3">
+                      {itemDetails.ingredients.map((ingredient) => (
+                        <IngredientCard
+                          key={ingredient.id}
+                          ingredient={ingredient}
+                          isExtra={extras.has(ingredient.id)}
+                          isRemoved={removals.has(ingredient.id)}
+                          onExtraToggle={() => handleExtraToggle(ingredient.id)}
+                          onRemovalToggle={() => handleRemovalToggle(ingredient.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No ingredients
+                    </p>
+                  )}
+                </ScrollArea>
+              </div>
 
-              {/* Replacement Sections */}
-              {Object.entries(replacementGroups).map(([group, replacements]) => (
-                <ReplacementSection
-                  key={group}
-                  groupName={group}
-                  replacements={replacements}
-                  selectedId={selectedReplacement?.id || null}
-                  onSelect={(rep) =>
-                    handleReplacementSelect(
-                      rep
-                        ? {
-                            id: rep.id,
-                            group: rep.replacement_group,
-                            name: rep.replacement_name_en,
-                            priceDiff: rep.price_difference,
+              {/* Right Card - Items (Sub-items / Replacements) */}
+              <div className="rounded-xl border border-border bg-card flex flex-col overflow-hidden">
+                <div className="border-b px-4 py-3">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase">
+                    Items
+                  </h3>
+                </div>
+                <ScrollArea className="flex-1 px-4 py-3">
+                  {Object.keys(replacementGroups).length > 0 ? (
+                    <div className="space-y-4">
+                      {Object.entries(replacementGroups).map(([group, replacements]) => (
+                        <ReplacementSection
+                          key={group}
+                          groupName={group}
+                          replacements={replacements}
+                          selectedId={selectedReplacement?.id || null}
+                          onSelect={(rep) =>
+                            handleReplacementSelect(
+                              rep
+                                ? {
+                                    id: rep.id,
+                                    group: rep.replacement_group,
+                                    name: rep.replacement_name_en,
+                                    priceDiff: rep.price_difference,
+                                  }
+                                : null
+                            )
                           }
-                        : null
-                    )
-                  }
-                />
-              ))}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No items
+                    </p>
+                  )}
+                </ScrollArea>
+              </div>
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Price Summary */}
         {livePrice && (
