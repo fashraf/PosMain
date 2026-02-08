@@ -28,6 +28,7 @@ export interface POSItemIngredient {
   ingredient_name_ur?: string | null;
   extra_price: number;
   is_removable: boolean;
+  can_add_extra: boolean;
   is_default_included: boolean;
   sort_order: number;
   created_at: string;

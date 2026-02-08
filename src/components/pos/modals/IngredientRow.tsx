@@ -19,7 +19,7 @@ export function IngredientRow({
   onExtraToggle,
 }: IngredientRowProps) {
   const canRemove = ingredient.is_removable;
-  const canExtra = ingredient.extra_price > 0;
+  const canExtra = ingredient.can_add_extra;
 
   return (
     <div

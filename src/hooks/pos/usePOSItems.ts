@@ -118,6 +118,7 @@ export function usePOSItemDetails(itemId: string | null) {
         ingredient_name_ur: ing.ingredients?.name_ur || null,
         extra_price: Number(ing.extra_cost) || 0,
         is_removable: ing.can_remove ?? true,
+        can_add_extra: ing.can_add_extra ?? false,
         is_default_included: true,
         sort_order: ing.sort_order || 0,
         created_at: ing.created_at,
