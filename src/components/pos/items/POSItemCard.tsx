@@ -85,7 +85,7 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
               )}
             >
               <Settings2 className="h-3.5 w-3.5" />
-              CUSTOMIZE
+              EDIT
             </button>
           </div>
         ) : (

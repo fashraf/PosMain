@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { ItemImage } from "@/components/pos/shared";
 import { TouchButton } from "@/components/pos/shared";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Settings2 } from "lucide-react";
 import type { POSMenuItem } from "@/lib/pos/types";
 
 interface ItemCardProps {
@@ -49,8 +49,8 @@ export function ItemCard({ item, onAdd, onCustomize }: ItemCardProps) {
             variant="outline"
             className="h-12 flex-1 text-sm"
           >
-            <Pencil className="h-4 w-4" />
-            CUSTOMIZE
+            <Settings2 className="h-4 w-4" />
+            EDIT
           </TouchButton>
         )}
       </div>

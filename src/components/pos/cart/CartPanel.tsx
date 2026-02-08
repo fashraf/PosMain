@@ -23,6 +23,8 @@ interface CartPanelProps {
 export function CartPanel({
   items,
   subtotal,
+  vatRate,
+  vatAmount,
   total,
   onIncrement,
   onDecrement,
@@ -63,6 +65,9 @@ export function CartPanel({
 
       <PayButton
         total={total}
+        subtotal={subtotal}
+        vatRate={vatRate}
+        vatAmount={vatAmount}
         disabled={isEmpty}
         onClearAll={() => setShowClearConfirm(true)}
         onClick={onPay}
