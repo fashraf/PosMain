@@ -155,44 +155,44 @@ export function CustomizeModal({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
-          className="w-[85vw] max-w-[85vw] h-[85vh] max-h-[85vh] flex flex-col rounded-2xl border-0 bg-[#0f1217] text-white p-0 shadow-2xl gap-0 [&>button]:hidden"
+          className="w-[85vw] max-w-[85vw] h-[85vh] max-h-[85vh] flex flex-col rounded-2xl border border-gray-200 bg-white text-gray-900 p-0 shadow-2xl gap-0 [&>button]:hidden"
         >
           {/* Close button */}
           <button
             onClick={() => handleOpenChange(false)}
-            className="absolute right-4 top-4 z-10 h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+            className="absolute right-4 top-4 z-10 h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
           >
-            <X className="h-4 w-4 text-gray-400" />
+            <X className="h-4 w-4 text-gray-500" />
           </button>
 
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
-            <h2 className="text-2xl font-bold text-white">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+            <h2 className="text-2xl font-bold text-gray-900">
               Customize: {menuItem?.name_en}
             </h2>
             <div className="flex items-center gap-5 text-sm mr-10">
-              <span className="text-gray-400">
+              <span className="text-gray-500">
                 Base{" "}
-                <span className="font-semibold tabular-nums text-white">
+                <span className="font-semibold tabular-nums text-gray-900">
                   {menuItem?.base_price?.toFixed(2)} SAR
                 </span>
               </span>
               {livePrice && (
-                <span className="text-gray-400">
+                <span className="text-gray-500">
                   Current{" "}
                   <PriceAnimator
                     value={livePrice.total}
                     className={
                       livePrice.total > (menuItem?.base_price ?? 0)
-                        ? "text-emerald-400 font-bold tabular-nums"
-                        : "text-white font-bold tabular-nums"
+                        ? "text-emerald-600 font-bold tabular-nums"
+                        : "text-gray-900 font-bold tabular-nums"
                     }
                   />
                   <span
                     className={
                       livePrice.total > (menuItem?.base_price ?? 0)
-                        ? "text-emerald-400 font-bold"
-                        : "text-white font-bold"
+                        ? "text-emerald-600 font-bold"
+                        : "text-gray-900 font-bold"
                     }
                   >
                     {" "}SAR
@@ -207,15 +207,15 @@ export function CustomizeModal({
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full bg-gray-800" />
+                  <Skeleton key={i} className="h-14 w-full bg-gray-100" />
                 ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-5 h-full">
                 {/* Left Card: Ingredients */}
-                <div className="rounded-xl bg-[#1a1f2e] flex flex-col overflow-hidden">
-                  <div className="border-b border-gray-700/50 px-5 py-3">
-                    <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider">
+                <div className="rounded-xl bg-gray-50 flex flex-col overflow-hidden border border-gray-200">
+                  <div className="border-b border-gray-200 px-5 py-3">
+                    <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wider">
                       Ingredients
                     </h3>
                   </div>
@@ -235,7 +235,7 @@ export function CustomizeModal({
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 text-center py-8">
+                        <p className="text-sm text-gray-400 text-center py-8">
                           No ingredients available
                         </p>
                       )}
@@ -244,9 +244,9 @@ export function CustomizeModal({
                 </div>
 
                 {/* Right Card: Combo Replacements */}
-                <div className="rounded-xl bg-[#1a1f2e] flex flex-col overflow-hidden">
-                  <div className="border-b border-gray-700/50 px-5 py-3">
-                    <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider">
+                <div className="rounded-xl bg-gray-50 flex flex-col overflow-hidden border border-gray-200">
+                  <div className="border-b border-gray-200 px-5 py-3">
+                    <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wider">
                       Combo Replacements
                     </h3>
                   </div>
@@ -265,7 +265,7 @@ export function CustomizeModal({
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 text-center py-8">
+                        <p className="text-sm text-gray-400 text-center py-8">
                           No combo replacements
                         </p>
                       )}
@@ -277,7 +277,7 @@ export function CustomizeModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-800 flex items-stretch gap-6 shrink-0">
+          <div className="px-6 py-4 border-t border-gray-200 flex items-stretch gap-6 shrink-0">
             {/* Left: Changes summary */}
             <div className="flex-1 min-w-0">
               {livePrice && itemDetails && (
@@ -298,7 +298,7 @@ export function CustomizeModal({
             <div className="flex flex-col gap-2 justify-center min-w-[280px]">
               <button
                 onClick={() => handleOpenChange(false)}
-                className="h-12 rounded-xl border border-gray-600 text-gray-400 font-medium text-base active:scale-95 transition-all duration-150 hover:bg-gray-800"
+                className="h-12 rounded-xl border border-gray-300 text-gray-600 font-medium text-base active:scale-95 transition-all duration-150 hover:bg-gray-100"
               >
                 Cancel
               </button>
@@ -318,15 +318,15 @@ export function CustomizeModal({
 
       {/* Dirty state warning */}
       <AlertDialog open={showDirtyWarning} onOpenChange={setShowDirtyWarning}>
-        <AlertDialogContent className="bg-[#1a1f2e] border-gray-700 text-white">
+        <AlertDialogContent className="bg-white border-gray-200 text-gray-900">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
+            <AlertDialogTitle className="text-gray-900">Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-500">
               You have unsaved customizations. Are you sure you want to close?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800">
+            <AlertDialogCancel className="bg-transparent border-gray-300 text-gray-600 hover:bg-gray-100">
               Keep editing
             </AlertDialogCancel>
             <AlertDialogAction

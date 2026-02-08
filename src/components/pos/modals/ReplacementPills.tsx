@@ -30,7 +30,7 @@ export function ReplacementPills({
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400">
+      <h4 className="text-sm font-bold uppercase tracking-wider text-gray-500">
         {groupName} (choose 1)
       </h4>
       <div className="space-y-1.5">
@@ -44,15 +44,15 @@ export function ReplacementPills({
                 "w-full flex items-center gap-4 rounded-xl px-5 py-4 text-left transition-all duration-150 min-h-[48px]",
                 "active:scale-[0.98] touch-manipulation",
                 isSelected
-                  ? "bg-primary/15 border border-primary/30"
-                  : "border border-transparent hover:bg-white/5"
+                  ? "bg-primary/10 border border-primary/30"
+                  : "border border-transparent hover:bg-gray-50"
               )}
             >
               {/* Radio indicator */}
               <div
                 className={cn(
                   "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors duration-150",
-                  isSelected ? "border-primary" : "border-gray-600"
+                  isSelected ? "border-primary" : "border-gray-300"
                 )}
               >
                 {isSelected && (
@@ -64,14 +64,14 @@ export function ReplacementPills({
               <span
                 className={cn(
                   "flex-1 text-base font-medium transition-colors duration-150",
-                  isSelected ? "text-white" : "text-gray-400"
+                  isSelected ? "text-gray-900" : "text-gray-500"
                 )}
               >
                 {rep.replacement_name_en}
               </span>
 
               {/* Price */}
-              <span className="text-sm text-gray-400 tabular-nums">
+              <span className="text-sm text-gray-500 tabular-nums">
                 {rep.price_difference > 0
                   ? `+${rep.price_difference.toFixed(2)} SAR`
                   : `${rep.price_difference.toFixed(2)} SAR`}
@@ -79,7 +79,7 @@ export function ReplacementPills({
 
               {/* Default tag */}
               {rep.is_default && (
-                <span className="rounded-full bg-gray-700 px-2.5 py-0.5 text-xs font-semibold text-gray-300">
+                <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold text-gray-600">
                   default
                 </span>
               )}

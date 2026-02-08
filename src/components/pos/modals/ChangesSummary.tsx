@@ -41,27 +41,27 @@ export function ChangesSummary({
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
               Changes Applied
             </p>
-            <div className="text-sm text-gray-300 space-y-0.5">
+            <div className="text-sm text-gray-600 space-y-0.5">
               {extraItems.map((ing) => (
                 <p key={ing.id}>
-                  • Extra added: <span className="font-medium text-white">{ing.ingredient_name_en}</span>
+                  • Extra added: <span className="font-medium text-gray-900">{ing.ingredient_name_en}</span>
                   {ing.extra_price > 0 && (
-                    <span className="text-gray-400 ml-1">
+                    <span className="text-gray-500 ml-1">
                       (+{ing.extra_price.toFixed(2)} SAR)
                     </span>
                   )}
                 </p>
               ))}
               {removedItems.map((ing) => (
-                <p key={ing.id} className="text-red-400">
+                <p key={ing.id} className="text-red-500">
                   • Removed: <span className="font-medium">{ing.ingredient_name_en}</span>
                 </p>
               ))}
               {selectedReplacement && (
                 <p>
-                  • Replacement: <span className="font-medium text-white">{selectedReplacement.name}</span>
+                  • Replacement: <span className="font-medium text-gray-900">{selectedReplacement.name}</span>
                   {selectedReplacement.priceDiff !== 0 && (
-                    <span className="text-gray-400 ml-1">
+                    <span className="text-gray-500 ml-1">
                       ({selectedReplacement.priceDiff > 0 ? "+" : ""}
                       {selectedReplacement.priceDiff.toFixed(2)} SAR)
                     </span>
@@ -73,26 +73,26 @@ export function ChangesSummary({
         )}
 
         {/* Price Breakdown */}
-        <div className={cn("space-y-1 text-sm", hasChanges && "mt-3")}>
-          <div className="flex justify-between text-gray-400">
-            <span>Base</span>
+          <div className={cn("space-y-1 text-sm", hasChanges && "mt-3")}>
+            <div className="flex justify-between text-gray-500">
+              <span>Base</span>
             <span className="tabular-nums">{basePrice.toFixed(2)} SAR</span>
           </div>
-          {extrasTotal > 0 && (
-            <div className="flex justify-between text-gray-400">
+            {extrasTotal > 0 && (
+              <div className="flex justify-between text-gray-500">
               <span>Extras & Additions</span>
               <span className="tabular-nums">{extrasTotal.toFixed(2)} SAR</span>
             </div>
           )}
-          {replacementDiff !== 0 && (
-            <div className="flex justify-between text-gray-400">
+            {replacementDiff !== 0 && (
+              <div className="flex justify-between text-gray-500">
               <span>Replacement Difference</span>
               <span className="tabular-nums">
                 {replacementDiff > 0 ? "+" : ""}{replacementDiff.toFixed(2)} SAR
               </span>
             </div>
           )}
-          <div className="border-t border-gray-700 pt-1.5 flex justify-between font-bold text-base text-white">
+          <div className="border-t border-gray-200 pt-1.5 flex justify-between font-bold text-base text-gray-900">
             <span>Final Total</span>
             <span className="tabular-nums">{total.toFixed(2)} SAR</span>
           </div>
