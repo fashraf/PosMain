@@ -227,21 +227,37 @@ export default function ItemsEdit() {
     }
   }, [itemIngredients]);
 
-  // Load sub-item mappings (combo)
+  // Load sub-item mappings (combo) — reconstruct slots from flat rows
   useEffect(() => {
     if (itemSubItems.length > 0) {
-      const mappings: SubItemMappingItem[] = itemSubItems.map((m: any) => ({
-        id: m.id,
-        sub_item_id: m.sub_item_id,
-        sub_item_name: m.sub_item?.name_en || "Unknown",
-        quantity: Number(m.quantity) || 1,
-        unit_price: Number(m.sub_item?.base_cost) || 0,
-        sort_order: m.sort_order || 0,
+      const defaults = itemSubItems.filter((m: any) => m.is_default);
+      const nonDefaults = itemSubItems.filter((m: any) => !m.is_default);
+
+      const mappings: SubItemMappingItem[] = defaults.map((d: any) => ({
+        id: d.id,
+        sub_item_id: d.sub_item_id,
+        sub_item_name: d.sub_item?.name_en || "Unknown",
+        quantity: Number(d.quantity) || 1,
+        unit_price: Number(d.sub_item?.base_cost) || 0,
+        sort_order: d.sort_order || 0,
         combo_price: 0,
         can_add_extra: false,
-        can_remove: m.can_remove ?? false,
+        can_remove: d.can_remove ?? false,
         extra_cost: 0,
-        replacements: [],
+        replacements: nonDefaults
+          .filter((nd: any) => nd.sort_order > d.sort_order)
+          .filter((nd: any, _: number, arr: any[]) => {
+            // Find the next default's sort_order to scope replacements to this slot
+            const nextDefault = defaults.find((dd: any) => dd.sort_order > d.sort_order);
+            return !nextDefault || nd.sort_order < nextDefault.sort_order;
+          })
+          .map((nd: any) => ({
+            id: nd.id,
+            item_id: nd.sub_item_id,
+            item_name: nd.sub_item?.name_en || "Unknown",
+            extra_cost: Number(nd.replacement_price) || 0,
+            is_default: false,
+          })),
       }));
       setSubItemMappings(mappings);
     }
@@ -684,19 +700,36 @@ export default function ItemsEdit() {
         if (mappingError) throw mappingError;
       }
 
-      // Delete existing sub-item mappings and re-insert
+      // Delete existing sub-item mappings and re-insert — flatten slots + replacements
       await supabase.from("item_sub_items").delete().eq("item_id", id);
 
       if (formData.is_combo && subItemMappings.length > 0) {
-        const subItemsToInsert = subItemMappings.map((m, index) => ({
-          item_id: id,
-          sub_item_id: m.sub_item_id,
-          quantity: m.quantity,
-          sort_order: index + 1,
-          is_default: index === 0,
-          replacement_price: index === 0 ? 0 : m.unit_price,
-          can_remove: index === 0 ? true : false,
-        }));
+        let sortCounter = 0;
+        const subItemsToInsert = subItemMappings.flatMap((slot) => {
+          sortCounter++;
+          const defaultRow = {
+            item_id: id,
+            sub_item_id: slot.sub_item_id,
+            quantity: slot.quantity,
+            sort_order: sortCounter,
+            is_default: true,
+            replacement_price: 0,
+            can_remove: slot.can_remove ?? false,
+          };
+          const replacementRows = (slot.replacements || []).map((r) => {
+            sortCounter++;
+            return {
+              item_id: id,
+              sub_item_id: r.item_id,
+              quantity: slot.quantity,
+              sort_order: sortCounter,
+              is_default: false,
+              replacement_price: r.extra_cost || 0,
+              can_remove: false,
+            };
+          });
+          return [defaultRow, ...replacementRows];
+        });
 
         const { error: subItemError } = await supabase
           .from("item_sub_items")

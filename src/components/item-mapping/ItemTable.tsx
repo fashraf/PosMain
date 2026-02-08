@@ -1,6 +1,7 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { PlusCircle, Trash2, Pencil, GripVertical, Package, Check, Circle } from "lucide-react";
+import { PlusCircle, Trash2, Pencil, GripVertical, Package, Check, Circle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SubItemMappingItem } from "./SubItemMappingList";
 import { cn } from "@/lib/utils";
@@ -143,7 +144,14 @@ function SortableItemRow({
           <GripVertical className="h-4 w-4" />
         </button>
       </td>
-      <td className="px-3 font-medium text-sm">{mapping.sub_item_name}</td>
+      <td className="px-3 font-medium text-sm">
+        <span className="inline-flex items-center gap-1.5">
+          {mapping.sub_item_name}
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-0">
+            Default
+          </Badge>
+        </span>
+      </td>
       <td className="px-3 text-center text-sm">
         <ReplacementCell mapping={mapping} onOpenReplacement={onOpenReplacement} />
       </td>
@@ -193,22 +201,37 @@ function SortableItemRow({
               </Tooltip>
             </TooltipProvider>
           )}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => onRemove(mapping.id)}
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                >
-                  <Trash2 size={14} strokeWidth={1.5} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{t("common.remove")}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {(mapping.replacements?.length ?? 0) > 0 ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="p-1.5 rounded-md text-muted-foreground/40 cursor-not-allowed">
+                    <Lock size={14} strokeWidth={1.5} />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Remove all replacements first</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(mapping.id)}
+                    className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("common.remove")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </td>
     </tr>

@@ -615,17 +615,34 @@ export default function ItemsAdd() {
         if (mappingError) throw mappingError;
       }
 
-      // Insert sub-item mappings (combo items)
+      // Insert sub-item mappings (combo items) — flatten slots + replacements
       if (formData.is_combo && subItemMappings.length > 0) {
-        const subItemsToInsert = subItemMappings.map((m, index) => ({
-          item_id: newItem.id,
-          sub_item_id: m.sub_item_id,
-          quantity: m.quantity,
-          sort_order: index + 1,
-          is_default: index === 0, // First added is default
-          replacement_price: index === 0 ? 0 : m.unit_price, // Default = 0, others have price
-          can_remove: index === 0 ? true : false, // Replacements cannot be removed
-        }));
+        let sortCounter = 0;
+        const subItemsToInsert = subItemMappings.flatMap((slot) => {
+          sortCounter++;
+          const defaultRow = {
+            item_id: newItem.id,
+            sub_item_id: slot.sub_item_id,
+            quantity: slot.quantity,
+            sort_order: sortCounter,
+            is_default: true,
+            replacement_price: 0,
+            can_remove: slot.can_remove ?? false,
+          };
+          const replacementRows = (slot.replacements || []).map((r) => {
+            sortCounter++;
+            return {
+              item_id: newItem.id,
+              sub_item_id: r.item_id,
+              quantity: slot.quantity,
+              sort_order: sortCounter,
+              is_default: false,
+              replacement_price: r.extra_cost || 0,
+              can_remove: false,
+            };
+          });
+          return [defaultRow, ...replacementRows];
+        });
 
         const { error: subItemError } = await supabase
           .from("item_sub_items")
