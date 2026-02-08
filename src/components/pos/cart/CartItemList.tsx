@@ -18,16 +18,22 @@ export function CartItemList({
   onEditCustomization,
 }: CartItemListProps) {
   return (
-    <div className="flex flex-col gap-3 p-3">
-      {items.map((item) => (
-        <CartItemRow
-          key={item.id}
-          item={item}
-          onIncrement={() => onIncrement(item.id)}
-          onDecrement={() => onDecrement(item.id)}
-          onRemove={() => onRemove(item.id)}
-          onEditCustomization={onEditCustomization}
-        />
+    <div className="flex flex-col p-3">
+      {items.map((item, idx) => (
+        <React.Fragment key={item.id}>
+          <CartItemRow
+            item={item}
+            onIncrement={() => onIncrement(item.id)}
+            onDecrement={() => onDecrement(item.id)}
+            onRemove={() => onRemove(item.id)}
+            onEditCustomization={onEditCustomization}
+          />
+          {idx < items.length - 1 && (
+            <div className="flex justify-center">
+              <div className="w-3/4 border-b border-dotted border-border" />
+            </div>
+          )}
+        </React.Fragment>
       ))}
     </div>
   );
