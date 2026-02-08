@@ -1006,17 +1006,6 @@ export default function ItemsEdit() {
                 icon={Package}
                 variant="muted"
                 isComplete={isItemsComplete}
-                rightBadge={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddItemModal(true)}
-                    className="gap-1"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t("itemMapping.addItem")}
-                  </Button>
-                }
               >
                 <ItemTable
                   mappings={subItemMappings}
@@ -1026,17 +1015,9 @@ export default function ItemsEdit() {
                   }}
                   onAdd={() => setShowAddItemModal(true)}
                   onEdit={handleEditItem}
+                  onReorder={setSubItemMappings}
                   isCombo={formData.is_combo}
                 />
-                
-                {subItemMappings.length > 0 && (
-                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      {t("itemMapping.totalSubItemCost")}
-                    </span>
-                    <span className="font-medium">SAR {totalSubItemCost.toFixed(2)}</span>
-                  </div>
-                )}
               </DashedSectionCard>
             </div>
           )}
