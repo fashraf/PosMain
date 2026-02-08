@@ -1,60 +1,37 @@
 
 
-# Fix Ingredient Grid: Replace Card Layout with Table + Add Edit Action
+# Add Replacement Button + Tooltip to Item Grid
 
-## Problem
+## What Changes
 
-The ItemsAdd and ItemsEdit pages currently render `IngredientMappingList` (a drag-and-drop card-based component without column headers or an Edit button) instead of the redesigned `IngredientTable` (which has proper table headers, badges, and Edit/Delete actions).
+The "Replacement" column in the Item grid will become interactive:
+- **No replacements**: Shows a grey "+" icon button (click opens the Replacement Modal)
+- **Has replacements**: Shows a green "2x +" badge (count of replacements) with a tooltip listing the replacement item names and their extra costs; clicking opens the Replacement Modal for editing
 
-## Changes
+## Technical Details
 
-### 1. Clean Up IngredientTable Columns
+### 1. Update ItemTable Component
 
-**File**: `src/components/item-mapping/IngredientTable.tsx`
+**File**: `src/components/item-mapping/ItemTable.tsx`
 
-Remove the "Cost" column (the last data column showing `SAR {(quantity * 5).toFixed(2)}`) since it is not in the spec. The final columns will be:
+- Add `onOpenReplacement?: (mappingId: string) => void` prop to `ItemTableProps`
+- Pass it down to `SortableItemRow`
+- Replace the current static text in the Replacement column (line 82-84) with:
+  - If `mapping.replacements` has items: a green badge showing `{count}x` with a `+` icon, wrapped in a Tooltip that lists each replacement name and extra cost
+  - If no replacements: a grey `PlusCircle` icon button
+  - Both click to call `onOpenReplacement(mapping.id)`
 
-| Name | Quantity | Can Add | Extra Cost | Can Remove | Actions |
+### 2. Wire Up in Parent Pages
 
-- Remove the `<th>` for "Cost" (line 60-62)
-- Remove the `<td>` for cost (line 116-118)
-- Update `colSpan` on empty state row from 7 to 6
+**Files**: `src/pages/ItemsAdd.tsx`, `src/pages/ItemsEdit.tsx`, `src/pages/ItemIngredientMappingEdit.tsx`
 
-### 2. Replace IngredientMappingList with IngredientTable in ItemsAdd
-
-**File**: `src/pages/ItemsAdd.tsx`
-
-- Replace `<IngredientMappingList>` (lines 952-956) with `<IngredientTable>` passing:
-  - `mappings={ingredientMappings}`
-  - `onRemove={handleIngredientRemove}`
-  - `onAdd={() => setShowAddIngredientModal(true)}`
-  - `onEdit={handleEditIngredient}`
-- Remove the "Add Ingredient" button from the `DashedSectionCard`'s `rightBadge` prop (since `IngredientTable` has its own Add button in the header)
-- Remove the cost footer block (lines 958-965)
-- Update imports: add `IngredientTable` from `@/components/item-mapping`, remove `IngredientMappingList` import if no longer used
-
-### 3. Replace IngredientMappingList with IngredientTable in ItemsEdit
-
-**File**: `src/pages/ItemsEdit.tsx`
-
-Same changes as ItemsAdd:
-- Replace `<IngredientMappingList>` with `<IngredientTable>`
-- Remove duplicate Add button from `rightBadge`
-- Remove cost footer
-- Update imports
-
-### 4. Replace IngredientMappingList with IngredientTable in ItemIngredientMappingEdit
-
-**File**: `src/pages/ItemIngredientMappingEdit.tsx`
-
-- Already uses `IngredientTable` but does not pass `onEdit` -- add `onEdit` prop and wire up an edit handler
+- Pass `onOpenReplacement={handleOpenReplacementModal}` prop to `<ItemTable>` (the handler already exists in all three pages)
 
 ## Files Modified
 
 | File | Changes |
 |------|---------|
-| `src/components/item-mapping/IngredientTable.tsx` | Remove "Cost" column, update colSpan |
-| `src/pages/ItemsAdd.tsx` | Replace IngredientMappingList with IngredientTable, remove duplicate Add button and cost footer |
-| `src/pages/ItemsEdit.tsx` | Same as ItemsAdd |
-| `src/pages/ItemIngredientMappingEdit.tsx` | Add onEdit prop to IngredientTable |
-
+| `src/components/item-mapping/ItemTable.tsx` | Add `onOpenReplacement` prop, interactive replacement column with count badge, tooltip, and "+" button |
+| `src/pages/ItemsAdd.tsx` | Pass `onOpenReplacement` to ItemTable |
+| `src/pages/ItemsEdit.tsx` | Pass `onOpenReplacement` to ItemTable |
+| `src/pages/ItemIngredientMappingEdit.tsx` | Pass `onOpenReplacement` to ItemTable |
