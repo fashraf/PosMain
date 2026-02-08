@@ -1,44 +1,69 @@
 
 
-# Resize Modals & Rearrange Quantity/Rules Layout
+# Clean Up Ingredient & Item Grids + Remove Replacement from Item Modal
 
-## Changes
+## Changes Overview
 
-### 1. Increase Modal Size to 65% Screen Width
+### 1. IngredientTable -- Add "Actions" Column Header + Make Edit Modal-Only
 
-Both `AddIngredientModal.tsx` and `AddItemModal.tsx` will change from `sm:max-w-[600px]` to `sm:max-w-[65vw]` to fill 65% of the screen.
+**File**: `src/components/item-mapping/IngredientTable.tsx`
 
-### 2. Rename "Default Quantity" to "Quantity"
+- Add "Actions" label to the currently empty `<th>` column header (line 68)
+- Remove the inline `QuantityControl` from the Quantity column -- display quantity as read-only text instead (editing happens only via the modal)
+- Remove the cost footer (`<tfoot>` block, lines 172-184) -- no cost details at the bottom
+- Remove `onQuantityChange` from the props interface since quantity is no longer editable inline
+- Remove `totalCost` from props since footer is removed
 
-The label currently reads `t("itemMapping.defaultQuantity") || "Default Quantity"`. It will be changed to just `t("itemMapping.quantity") || "Quantity"` in both modals.
+### 2. AddItemModal -- Remove Replacement Rule Section
 
-### 3. Rearrange Section 2 to a Single Row (4 columns)
+**File**: `src/components/item-mapping/AddItemModal.tsx`
 
-Currently, Section 2 uses `grid-cols-2` placing fields in a 2x2 grid. The new layout will use `grid-cols-4` to place all four fields in one row:
+- Delete Section 3 ("Replacement Rule") entirely (lines 302-361) -- the replacement item dropdown, validation error, and section header
+- Remove `replacementItem` state, `replacementDropdownOpen` state, `replacementItems` memo, and `replacementError` logic
+- Update `onConfirm` signature to remove the `replacementItem` parameter
+- Update `handleConfirm` to not pass `replacementItem`
+- Update `isValid` to remove `replacementError` check
+- Clean up `handleClose` to remove replacement state resets
+- Remove `editData.replacementItemId` handling from `handleOpenChange`
 
-| Col 1 | Col 2 | Col 3 | Col 4 |
-|-------|-------|-------|-------|
-| Quantity | Can Add Extra | Extra Cost | Can Remove |
+### 3. ItemTable -- Redesign to Match IngredientTable Style
 
-This applies to both modals.
+**File**: `src/components/item-mapping/ItemTable.tsx`
 
-## Technical Details
+Complete redesign to use the same clean table structure as IngredientTable with:
 
-### Files Modified
+| Column | Align | Content |
+|--------|-------|---------|
+| Name | Left | Item name (text) |
+| Replacement | Center | Replacement item name or "--" |
+| Quantity | Center | Read-only quantity display (no inline edit) |
+| Combo Price | Right | SAR value |
+| Actual Cost | Right | SAR value |
+| Can Add | Center | Green pill badge (Yes) or dash |
+| Can Remove | Center | Blue pill badge (Yes) or dash |
+| Actions | Center | Edit (pencil, opens modal) + Delete (trash, confirmation) |
 
-| File | Changes |
-|------|---------|
-| `src/components/item-mapping/AddIngredientModal.tsx` | Modal width to `sm:max-w-[65vw]`, Section 2 grid to `grid-cols-4`, label "Quantity" |
-| `src/components/item-mapping/AddItemModal.tsx` | Modal width to `sm:max-w-[65vw]`, Section 2 grid to `grid-cols-4`, label "Quantity" |
+- Remove `onQuantityChange` from props (no inline editing)
+- Remove replacement sub-rows (no longer needed since replacement is just a column value)
+- Remove `onReplacement`, `onRemoveReplacement`, `onViewReplacement` props
+- Remove footer with cost totals (`totalCost`, `totalComboPrice` props removed)
+- Same visual styling as IngredientTable: zebra striping, hover effects, pill badges, animation
 
-### Specific Edits per File
+### 4. Update Parent Pages (ItemsAdd + ItemsEdit)
 
-**AddIngredientModal.tsx** (3 changes):
-- Line 129: `sm:max-w-[600px]` becomes `sm:max-w-[65vw]`
-- Line 230: `grid-cols-2` becomes `grid-cols-4`
-- Line 234: Label changes from "Default Quantity" to "Quantity"
+**Files**: `src/pages/ItemsAdd.tsx`, `src/pages/ItemsEdit.tsx`
 
-**AddItemModal.tsx** (3 changes):
-- Line 145: `sm:max-w-[600px]` becomes `sm:max-w-[65vw]`
-- Line 235: `grid-cols-2` becomes `grid-cols-4`
-- Line 239: Label changes from "Default Quantity" to "Quantity"
+- Remove `onQuantityChange` prop from `IngredientTable` usage
+- Remove `totalCost` prop from `IngredientTable` usage
+- Remove `onQuantityChange`, `totalCost`, `totalComboPrice`, `onReplacement`, `onRemoveReplacement`, `onViewReplacement` props from `ItemTable` usage
+- Update `AddItemModal` `onConfirm` handler to remove `replacementItem` parameter
+
+## Files Modified
+
+| File | Action |
+|------|--------|
+| `src/components/item-mapping/IngredientTable.tsx` | Add Actions header, remove inline quantity editing, remove cost footer |
+| `src/components/item-mapping/AddItemModal.tsx` | Remove Section 3 (Replacement Rule) and all replacement-related state/logic |
+| `src/components/item-mapping/ItemTable.tsx` | Rewrite to match IngredientTable style with specified columns |
+| `src/pages/ItemsAdd.tsx` | Update props passed to grids and modal |
+| `src/pages/ItemsEdit.tsx` | Same prop updates |
