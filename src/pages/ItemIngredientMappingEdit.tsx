@@ -413,6 +413,7 @@ export default function ItemIngredientMappingEdit() {
             onEdit={(id) => {
               // TODO: wire up edit modal for this page
             }}
+            onReorder={setIngredientMappings}
           />
         </div>
 
