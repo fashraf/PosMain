@@ -405,13 +405,11 @@ export default function ItemIngredientMappingEdit() {
         <div className="p-2">
           <IngredientTable
             mappings={ingredientMappings}
-            onQuantityChange={handleIngredientQuantityChange}
             onRemove={(id) => {
               const mapping = ingredientMappings.find((m) => m.id === id);
               if (mapping) handleRequestRemove(id, mapping.ingredient_name, "ingredient");
             }}
             onAdd={() => setShowAddIngredientModal(true)}
-            totalCost={totalIngredientCost}
           />
         </div>
 
@@ -419,17 +417,11 @@ export default function ItemIngredientMappingEdit() {
         <div className="p-2">
           <ItemTable
             mappings={subItemMappings}
-            onQuantityChange={handleItemQuantityChange}
             onRemove={(id) => {
               const mapping = subItemMappings.find((m) => m.id === id);
               if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
             }}
             onAdd={() => setShowAddItemModal(true)}
-            onReplacement={handleOpenReplacementModal}
-            onRemoveReplacement={handleRemoveReplacement}
-            onViewReplacement={handleViewReplacement}
-            totalCost={totalSubItemCost}
-            totalComboPrice={totalComboPrice}
             isCombo={item.is_combo}
           />
         </div>

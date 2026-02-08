@@ -31,7 +31,7 @@ import type { AvailableItem } from "./SubItemSearchPicker";
 interface AddItemModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (item: AvailableItem, quantity: number, extraCost: number, canAddExtra: boolean, canRemove: boolean, replacementItem?: AvailableItem) => void;
+  onConfirm: (item: AvailableItem, quantity: number, extraCost: number, canAddExtra: boolean, canRemove: boolean) => void;
   items: AvailableItem[];
   mappedIds: string[];
   currentItemId: string;
@@ -42,7 +42,6 @@ interface AddItemModalProps {
     extraCost: number;
     canAddExtra: boolean;
     canRemove: boolean;
-    replacementItemId?: string;
   } | null;
 }
 
@@ -58,9 +57,7 @@ export function AddItemModal({
 }: AddItemModalProps) {
   const { t } = useLanguage();
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
-  const [replacementDropdownOpen, setReplacementDropdownOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<AvailableItem | null>(null);
-  const [replacementItem, setReplacementItem] = useState<AvailableItem | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [extraCost, setExtraCost] = useState(0);
   const [canAddExtra, setCanAddExtra] = useState(false);
@@ -79,9 +76,6 @@ export function AddItemModal({
       setExtraCost(editData.extraCost);
       setCanAddExtra(editData.canAddExtra);
       setCanRemove(editData.canRemove);
-      if (editData.replacementItemId) {
-        setReplacementItem(items.find(i => i.id === editData.replacementItemId) || null);
-      }
     } else if (!isOpen) {
       handleClose();
       return;
@@ -95,13 +89,6 @@ export function AddItemModal({
       (item) => !item.is_combo && item.id !== currentItemId && (!mappedIds.includes(item.id) || (editData && item.id === editData.itemId))
     );
   }, [items, currentItemId, mappedIds, editData]);
-
-  // Replacement items: all non-combo items except selected
-  const replacementItems = useMemo(() => {
-    return items.filter(
-      (item) => !item.is_combo && item.id !== currentItemId && item.id !== selectedItem?.id
-    );
-  }, [items, currentItemId, selectedItem]);
 
   const handleCanAddExtraChange = (checked: boolean) => {
     setCanAddExtra(checked);
@@ -119,17 +106,13 @@ export function AddItemModal({
 
   const handleConfirm = () => {
     if (!selectedItem || quantity <= 0) return;
-    // Validate replacement != selected
-    if (replacementItem && replacementItem.id === selectedItem.id) return;
-    onConfirm(selectedItem, quantity, canAddExtra ? extraCost : 0, canAddExtra, canRemove, replacementItem || undefined);
+    onConfirm(selectedItem, quantity, canAddExtra ? extraCost : 0, canAddExtra, canRemove);
     handleClose();
   };
 
   const handleClose = () => {
     setItemDropdownOpen(false);
-    setReplacementDropdownOpen(false);
     setSelectedItem(null);
-    setReplacementItem(null);
     setQuantity(1);
     setExtraCost(0);
     setCanAddExtra(false);
@@ -137,8 +120,7 @@ export function AddItemModal({
     onOpenChange(false);
   };
 
-  const replacementError = replacementItem && selectedItem && replacementItem.id === selectedItem.id;
-  const isValid = selectedItem && quantity > 0 && !replacementError;
+  const isValid = selectedItem && quantity > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -194,8 +176,6 @@ export function AddItemModal({
                               onSelect={() => {
                                 setSelectedItem(item);
                                 setItemDropdownOpen(false);
-                                // Clear replacement if it was same
-                                if (replacementItem?.id === item.id) setReplacementItem(null);
                               }}
                               className="text-[13px] cursor-pointer py-2"
                             >
@@ -233,7 +213,7 @@ export function AddItemModal({
               {t("itemMapping.quantityAndRules") || "Quantity & Rules"}
             </h4>
             <div className="grid grid-cols-4 gap-x-4 gap-y-4">
-              {/* Default Quantity */}
+              {/* Quantity */}
               <div className="space-y-1.5">
                 <label className="text-[13px] font-medium text-foreground flex items-center gap-1.5">
                   {t("itemMapping.quantity") || "Quantity"} <span className="text-destructive">*</span>
@@ -296,67 +276,6 @@ export function AddItemModal({
                   <span className="text-[13px] text-muted-foreground">{canRemove ? "Yes" : "No"}</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Section 3: Replacement Rule */}
-          <div>
-            <h4 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 pb-2 border-b border-border/50">
-              {t("itemMapping.replacementRule") || "Replacement Rule"}
-            </h4>
-            <div className="space-y-1.5">
-              <label className="text-[13px] font-medium text-foreground flex items-center gap-1.5">
-                {t("itemMapping.replacementItem") || "Replacement Item"}
-                <span className="font-normal text-muted-foreground ml-1 text-[12px]">({t("common.optional")})</span>
-                <TooltipInfo content="Replacement cannot be the same item" />
-              </label>
-              <Popover open={replacementDropdownOpen} onOpenChange={setReplacementDropdownOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    disabled={!selectedItem}
-                    className="w-full justify-between h-9 text-[13px] font-normal border-border"
-                  >
-                    {replacementItem ? (
-                      <span className="truncate text-foreground">{getLocalizedName(replacementItem)}</span>
-                    ) : (
-                      <span className="text-muted-foreground">{t("common.select")}...</span>
-                    )}
-                    <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder={t("itemMapping.searchItems")} className="h-9" />
-                    <CommandList className="max-h-[200px]">
-                      <CommandEmpty className="py-4 text-center text-[13px] text-muted-foreground">
-                        {t("common.noData")}
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {replacementItems.map((item) => (
-                          <CommandItem
-                            key={item.id}
-                            value={getLocalizedName(item)}
-                            onSelect={() => {
-                              setReplacementItem(item);
-                              setReplacementDropdownOpen(false);
-                            }}
-                            className="text-[13px] cursor-pointer py-2"
-                          >
-                            <Check className={cn("mr-2 h-4 w-4 text-primary", replacementItem?.id === item.id ? "opacity-100" : "opacity-0")} />
-                            <span className="flex-1">{getLocalizedName(item)}</span>
-                            <span className="text-muted-foreground ml-2">SAR {item.base_cost.toFixed(2)}</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {replacementError && (
-                <p className="text-[12px] text-destructive">Replacement item cannot be the same as the selected item</p>
-              )}
             </div>
           </div>
         </div>

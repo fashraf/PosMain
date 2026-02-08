@@ -1,6 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
 import { PlusCircle, Trash2, Pencil } from "lucide-react";
-import { QuantityControl } from "./QuantityControl";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -8,20 +7,16 @@ import type { IngredientMappingItem } from "./IngredientMappingList";
 
 interface IngredientTableProps {
   mappings: IngredientMappingItem[];
-  onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onAdd: () => void;
   onEdit?: (id: string) => void;
-  totalCost: number;
 }
 
 export function IngredientTable({
   mappings,
-  onQuantityChange,
   onRemove,
   onAdd,
   onEdit,
-  totalCost,
 }: IngredientTableProps) {
   const { t } = useLanguage();
 
@@ -65,7 +60,9 @@ export function IngredientTable({
             <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t("common.cost")}
             </th>
-            <th className="h-9 w-20"></th>
+            <th className="h-9 w-20 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {t("common.actions")}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -88,16 +85,8 @@ export function IngredientTable({
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <td className="px-3 font-medium text-sm">{mapping.ingredient_name}</td>
-                <td className="px-3">
-                  <div className="flex justify-center">
-                    <QuantityControl
-                      value={mapping.quantity}
-                      onChange={(qty) => onQuantityChange(mapping.id, qty)}
-                      min={0.01}
-                      step={mapping.unit === "Pcs" ? 1 : 0.01}
-                      unit={mapping.unit}
-                    />
-                  </div>
+                <td className="px-3 text-center text-sm">
+                  {mapping.quantity} {mapping.unit}
                 </td>
                 <td className="px-3 text-center">
                   {mapping.can_add_extra ? (
@@ -169,19 +158,6 @@ export function IngredientTable({
             ))
           )}
         </tbody>
-        {mappings.length > 0 && (
-          <tfoot className="bg-muted/40 border-t-2 border-primary/20">
-            <tr>
-              <td colSpan={5} className="h-10 px-3 text-right text-xs font-semibold uppercase tracking-wide">
-                {t("itemMapping.ingredientCostTotal")}
-              </td>
-              <td className="h-10 px-3 text-right font-bold text-primary text-sm">
-                SAR {totalCost.toFixed(2)}
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-        )}
       </table>
     </div>
   );
