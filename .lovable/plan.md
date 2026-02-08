@@ -1,66 +1,45 @@
 
 
-# Redesign Cart Item Card to Match Reference Layout
+# Three Fixes: Independent Slot Replacements, Column Layout, Remove Subtotal
 
-## Current vs Reference
+## Issue 1: Slot replacements are not independent
 
-The current layout stacks vertically: name + price on top, mods in middle, qty controls at bottom.
+**Problem**: The CustomizeModal stores `selectedReplacement` as a single object. When you pick Pepsi in the "Mango Bite" slot, it overwrites the state, so "Curd" slot also loses its selection (or vice versa). Each slot group should work independently.
 
-The reference image shows a **horizontal single-line layout** for the main row:
+**Fix**: Change `selectedReplacement` from a single object to a **Map keyed by group name**. Each slot group maintains its own selection independently.
 
-```text
-+----------------------------------------------------------+
-| Chicken Biryani    [-] 4 [+]                    140.00   |
-+----------------------------------------------------------+
+### Files changed:
 
-+----------------------------------------------------------+
-| Chicken Biryani    [-] 1 [+]  pencil             35.00   |
-| -> Pepsi                                      +3.00 SAR  |
-|                                             * 38.00      |
-+----------------------------------------------------------+
+**`src/components/pos/modals/CustomizeModal.tsx`**
+- Change state from `useState<{...} | null>` to `useState<Map<string, {...}>>(new Map())`
+- `handleReplacementSelect(rep)` updates only the specific group key in the map
+- `isDirty` checks `selectedReplacements.size > 0`
+- `calculateLivePrice` sums price diffs across all selected replacements
+- `buildCustomizationData` passes all replacements (or the first non-default one for backward compatibility with the single `replacement` field in `CustomizationData`)
 
-+----------------------------------------------------------+
-| Chicken Biryani    [-] 1 [+]  pencil             35.00   |
-| + Tomato                                                 |
-+----------------------------------------------------------+
-```
+**`src/lib/pos/types.ts`**
+- Change `CustomizationData.replacement` from single object to `replacements: Array<{id, group, name, priceDiff}>` (or keep backward-compatible by storing multiple)
 
-Key layout rules from the image:
-- **Row 1**: Item name (left), qty controls (center), pencil icon (if customized), line total (right) -- all on one horizontal line
-- **Row 2+**: Modification lines below, with price diffs right-aligned
-- **Green dot total**: When customizations change the price, show a green-dot total below the base price (e.g., "* 38.00")
-- Pencil icon appears inline with qty controls, not in bottom-right corner
+**`src/lib/pos/priceCalculations.ts`**
+- Update `calculateLivePrice` to accept a Map of replacements and sum all price diffs
+- Update `buildCustomizationData` to accept the Map and produce the customization data
+- Update `calculateCustomizedPrice` to handle multiple replacements
 
-## Change (1 file)
+**`src/lib/pos/cartUtils.ts`**
+- Update `hasCustomization` to check the new replacements structure
 
 **`src/components/pos/cart/CartItem.tsx`**
+- Update rendering to show multiple replacements if present
 
-Restructure the card layout:
+## Issue 2: Column layout -- Ingredients col-4, Combo Replacements col-8
 
-```text
-<div card>
-  <!-- Main row: all on one line -->
-  <div flex items-center justify-between>
-    <span name (flex-shrink-0, ~40% width)>
-    <div qty controls [-] N [+]>
-    {isCustomized && <pencil button>}
-    <span price (text-xl bold, right-aligned)>
-  </div>
+**Problem**: Current layout is `grid grid-cols-2` (50/50 split).
 
-  <!-- Modification lines below -->
-  {mods && <div mods>
-    {removals...}
-    {extras with +price right-aligned}
-    {replacement with price diff right-aligned}
-    {hasExtraCost && <div green-dot total>}
-  </div>}
-</div>
-```
+**Fix in `CustomizeModal.tsx`**: Change to `grid grid-cols-12`, Ingredients card gets `col-span-4`, Combo Replacements card gets `col-span-8`.
 
-Specific changes:
-1. Move qty controls and pencil icon onto the same row as the item name and price
-2. Show base price (item.basePrice * item.quantity) as the main price when customized, with a green-dot adjusted total below
-3. Pencil icon sits between qty controls and price, inline
-4. Remove the spacer div and bottom-row layout
-5. Keep 44px touch targets for qty buttons
+## Issue 3: Remove subtotal from cart header
+
+**Fix in `CartHeader.tsx`**: Remove the subtotal display section (lines 28-38). Remove `subtotal` from props.
+
+**Fix in `CartPanel.tsx`**: Stop passing `subtotal` prop to CartHeader.
 
