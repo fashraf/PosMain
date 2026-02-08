@@ -25,6 +25,7 @@ import { CSS } from "@dnd-kit/utilities";
 interface IngredientTableProps {
   mappings: IngredientMappingItem[];
   onRemove: (id: string) => void;
+  onAdd: () => void;
   onEdit?: (id: string) => void;
   onReorder?: (mappings: IngredientMappingItem[]) => void;
 }
@@ -150,6 +151,7 @@ function SortableRow({
 export function IngredientTable({
   mappings,
   onRemove,
+  onAdd,
   onEdit,
   onReorder,
 }: IngredientTableProps) {
@@ -176,7 +178,29 @@ export function IngredientTable({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <div className="border-2 border-dotted border-border rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between h-11 px-4 bg-background border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <Carrot className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">
+            {t("itemMapping.ingredients")}
+          </span>
+        </div>
+        <Button
+          type="button"
+          onClick={onAdd}
+          variant="outline"
+          size="sm"
+          className="h-7 px-3 text-xs font-medium border-border"
+        >
+          <PlusCircle className="h-3.5 w-3.5 me-1" />
+          {t("itemMapping.addIngredient") || "Add Item"}
+        </Button>
+      </div>
+
+      {/* Table */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="w-full">
           <thead>
             <tr className="bg-muted/50 border-b border-border">
@@ -224,6 +248,7 @@ export function IngredientTable({
             )}
           </tbody>
         </table>
-    </DndContext>
+      </DndContext>
+    </div>
   );
 }

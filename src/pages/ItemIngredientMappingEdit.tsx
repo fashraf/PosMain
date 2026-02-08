@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, Check, Plus } from "lucide-react";
+import { ArrowLeft, Package, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   IngredientTable,
@@ -403,25 +403,13 @@ export default function ItemIngredientMappingEdit() {
       <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-border">
         {/* Left: Ingredients */}
         <div className="p-2">
-          <div className="flex items-center justify-between h-9 px-3 mb-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("itemMapping.ingredients")}</span>
-            <Button
-              type="button"
-              onClick={() => setShowAddIngredientModal(true)}
-              variant="outline"
-              size="sm"
-              className="h-7 px-3 text-xs font-medium border-border"
-            >
-              <Plus className="h-3.5 w-3.5 me-1" />
-              {t("itemMapping.addIngredient")}
-            </Button>
-          </div>
           <IngredientTable
             mappings={ingredientMappings}
             onRemove={(id) => {
               const mapping = ingredientMappings.find((m) => m.id === id);
               if (mapping) handleRequestRemove(id, mapping.ingredient_name, "ingredient");
             }}
+            onAdd={() => setShowAddIngredientModal(true)}
             onEdit={(id) => {
               // TODO: wire up edit modal for this page
             }}
@@ -431,35 +419,16 @@ export default function ItemIngredientMappingEdit() {
 
         {/* Right: Items */}
         <div className="p-2">
-          <div className="flex items-center justify-between h-9 px-3 mb-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("itemMapping.items")}</span>
-            {item.is_combo && (
-              <Button
-                type="button"
-                onClick={() => setShowAddItemModal(true)}
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs font-medium border-border"
-              >
-                <Plus className="h-3.5 w-3.5 me-1" />
-                {t("itemMapping.addItem")}
-              </Button>
-            )}
-          </div>
-          {item.is_combo ? (
-            <ItemTable
-              mappings={subItemMappings}
-              onRemove={(id) => {
-                const mapping = subItemMappings.find((m) => m.id === id);
-                if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
-              }}
-              onOpenReplacement={handleOpenReplacementModal}
-            />
-          ) : (
-            <div className="p-6 text-center text-muted-foreground text-sm">
-              {t("itemMapping.notComboItem")}
-            </div>
-          )}
+          <ItemTable
+            mappings={subItemMappings}
+            onRemove={(id) => {
+              const mapping = subItemMappings.find((m) => m.id === id);
+              if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+            }}
+            onAdd={() => setShowAddItemModal(true)}
+            onOpenReplacement={handleOpenReplacementModal}
+            isCombo={item.is_combo}
+          />
         </div>
       </div>
 
@@ -500,11 +469,6 @@ export default function ItemIngredientMappingEdit() {
         onConfirm={confirmRemove}
         itemName={removeConfirm?.name || ""}
         itemType={removeConfirm?.type || "ingredient"}
-        replacementCount={
-          removeConfirm?.type === "item"
-            ? subItemMappings.find(m => m.id === removeConfirm.id)?.replacements?.length
-            : undefined
-        }
       />
 
       <SaveSummaryModal
