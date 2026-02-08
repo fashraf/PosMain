@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { SplitPanelContainer } from "@/components/pos/layout";
 import { CategoryBar } from "@/components/pos/category";
 import { POSItemGrid } from "@/components/pos/items";
@@ -20,6 +20,8 @@ export default function POSMain() {
   const [editingCartItemIdForModal, setEditingCartItemIdForModal] = useState<string | null>(null);
 
   const [showCheckout, setShowCheckout] = useState(false);
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const cart = usePOSCart();
 
@@ -40,14 +42,21 @@ export default function POSMain() {
     setSelectedCategoryId(null);
   };
 
-  const handleAddItem = (item: POSMenuItem) => {
+  const handleAddItem = useCallback((item: POSMenuItem) => {
     cart.addItem({
       menuItemId: item.id,
       name: item.name_en,
       basePrice: item.base_price,
       quantity: 1,
     });
-  };
+    // Find the cart item that matches this menuItemId (after state updates, use the ID pattern)
+    // Since addToCart merges by hash, the matching item will have this menuItemId
+    const matchingItem = cart.items.find((i) => i.menuItemId === item.id);
+    const idToHighlight = matchingItem?.id ?? item.id;
+    clearTimeout(highlightTimer.current);
+    setHighlightedItemId(idToHighlight);
+    highlightTimer.current = setTimeout(() => setHighlightedItemId(null), 2000);
+  }, [cart]);
 
   const handleCustomizeItem = (item: POSMenuItem) => {
     setEditingCartItemIdForModal(null);
@@ -108,6 +117,7 @@ export default function POSMain() {
   const rightPanel = (
     <CartPanel
       items={cart.items}
+      highlightedItemId={highlightedItemId}
       subtotal={cart.subtotal}
       vatRate={cart.vatRate}
       vatAmount={cart.vatAmount}
