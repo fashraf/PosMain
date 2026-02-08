@@ -1,5 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Pencil } from "lucide-react";
 import { QuantityControl } from "./QuantityControl";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,6 +11,7 @@ interface IngredientTableProps {
   onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onAdd: () => void;
+  onEdit?: (id: string) => void;
   totalCost: number;
 }
 
@@ -19,6 +20,7 @@ export function IngredientTable({
   onQuantityChange,
   onRemove,
   onAdd,
+  onEdit,
   totalCost,
 }: IngredientTableProps) {
   const { t } = useLanguage();
@@ -51,16 +53,25 @@ export function IngredientTable({
             <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t("itemMapping.quantity")}
             </th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {t("itemMapping.canAddExtra") || "Can Add"}
+            </th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {t("itemMapping.canRemove") || "Can Remove"}
+            </th>
+            <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              {t("itemMapping.extraCost") || "Extra Cost"}
+            </th>
             <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t("common.cost")}
             </th>
-            <th className="h-9 w-12"></th>
+            <th className="h-9 w-20"></th>
           </tr>
         </thead>
         <tbody>
           {mappings.length === 0 ? (
             <tr>
-              <td colSpan={4} className="text-center text-muted-foreground py-6 text-sm">
+              <td colSpan={7} className="text-center text-muted-foreground py-6 text-sm">
                 {t("itemMapping.noIngredientsMapped")}
               </td>
             </tr>
@@ -88,26 +99,71 @@ export function IngredientTable({
                     />
                   </div>
                 </td>
+                <td className="px-3 text-center">
+                  {mapping.can_add_extra ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">
+                      Yes
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-3 text-center">
+                  {mapping.can_remove ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">
+                      Yes
+                    </span>
+                  ) : (
+                    <span className="text-[12px] text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-3 text-right text-sm">
+                  {mapping.can_add_extra && mapping.extra_cost != null && mapping.extra_cost > 0 ? (
+                    <span className="text-green-600 font-medium">SAR {mapping.extra_cost.toFixed(2)}</span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
                 <td className="px-3 text-right font-medium text-sm text-primary">
                   SAR {((mapping.quantity || 0) * 5).toFixed(2)}
                 </td>
                 <td className="px-3 text-center">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => onRemove(mapping.id)}
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        >
-                          <Trash2 size={14} strokeWidth={1.5} />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{t("common.remove")}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex items-center justify-center gap-1">
+                    {onEdit && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => onEdit(mapping.id)}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                            >
+                              <Pencil size={14} strokeWidth={1.5} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("common.edit")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => onRemove(mapping.id)}
+                            className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <Trash2 size={14} strokeWidth={1.5} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t("common.remove")}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </td>
               </tr>
             ))
@@ -116,7 +172,7 @@ export function IngredientTable({
         {mappings.length > 0 && (
           <tfoot className="bg-muted/40 border-t-2 border-primary/20">
             <tr>
-              <td colSpan={2} className="h-10 px-3 text-right text-xs font-semibold uppercase tracking-wide">
+              <td colSpan={5} className="h-10 px-3 text-right text-xs font-semibold uppercase tracking-wide">
                 {t("itemMapping.ingredientCostTotal")}
               </td>
               <td className="h-10 px-3 text-right font-bold text-primary text-sm">

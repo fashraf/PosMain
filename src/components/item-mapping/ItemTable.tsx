@@ -1,5 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { PlusCircle, Plus, X, Eye, Star, Trash2 } from "lucide-react";
+import { PlusCircle, Plus, X, Eye, Star, Trash2, Pencil } from "lucide-react";
 import { QuantityControl } from "./QuantityControl";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -11,6 +11,7 @@ interface ItemTableProps {
   onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onAdd: () => void;
+  onEdit?: (id: string) => void;
   onReplacement?: (id: string) => void;
   onRemoveReplacement?: (mappingId: string, replacementId: string) => void;
   onViewReplacement?: (mappingId: string, replacementId: string) => void;
@@ -24,6 +25,7 @@ export function ItemTable({
   onQuantityChange,
   onRemove,
   onAdd,
+  onEdit,
   onReplacement,
   onRemoveReplacement,
   onViewReplacement,
@@ -36,7 +38,6 @@ export function ItemTable({
   if (!isCombo) {
     return (
       <div className="border-2 border-dashed border-amber-300/50 rounded-lg overflow-hidden opacity-50">
-        {/* Header */}
         <div className="flex items-center justify-between h-10 px-3 bg-amber-50 border-b border-amber-200/50">
           <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
             {t("itemMapping.items")}
@@ -71,28 +72,34 @@ export function ItemTable({
       <table className="w-full">
         <thead>
           <tr className="bg-muted/50 border-b border-border">
-            <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide w-[25%]">
+            <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide w-[20%]">
               {t("common.name")}
             </th>
-            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[12%]">
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[10%]">
               {t("itemMapping.replacement")}
             </th>
-            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[20%]">
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[15%]">
               {t("itemMapping.quantity")}
             </th>
-            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[15%]">
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[10%]">
               {t("itemMapping.comboPrice")}
             </th>
-            <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide w-[23%]">
+            <th className="h-9 px-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wide w-[15%]">
               {t("itemMapping.actualCost")}
             </th>
-            <th className="h-9 w-12"></th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[8%]">
+              Can Add
+            </th>
+            <th className="h-9 px-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wide w-[8%]">
+              Can Remove
+            </th>
+            <th className="h-9 w-20"></th>
           </tr>
         </thead>
         <tbody>
           {mappings.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center text-muted-foreground py-6 text-sm">
+              <td colSpan={8} className="text-center text-muted-foreground py-6 text-sm">
                 {t("itemMapping.noItemsMapped")}
               </td>
             </tr>
@@ -158,22 +165,60 @@ export function ItemTable({
                       <div className="font-medium">SAR {subtotal.toFixed(2)}</div>
                     </td>
                     <td className="px-3 text-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => onRemove(mapping.id)}
-                              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            >
-                              <Trash2 size={14} strokeWidth={1.5} />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t("common.remove")}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {mapping.can_add_extra ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 text-center">
+                      {mapping.can_remove ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">
+                          Yes
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {onEdit && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => onEdit(mapping.id)}
+                                  className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                >
+                                  <Pencil size={14} strokeWidth={1.5} />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{t("common.edit")}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => onRemove(mapping.id)}
+                                className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 size={14} strokeWidth={1.5} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("common.remove")}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </td>
                   </tr>
 
@@ -221,6 +266,8 @@ export function ItemTable({
                       </td>
                       <td></td>
                       <td></td>
+                      <td></td>
+                      <td></td>
                     </tr>
                   ))}
                 </>
@@ -238,6 +285,8 @@ export function ItemTable({
               <td></td>
               <td className="text-center font-bold">SAR {totalComboPrice.toFixed(2)}</td>
               <td className="text-right font-bold">SAR {totalCost.toFixed(2)}</td>
+              <td></td>
+              <td></td>
               <td></td>
             </tr>
           </tfoot>
