@@ -8,6 +8,7 @@ import type { CartItem } from "@/lib/pos/types";
 
 interface CartPanelProps {
   items: CartItem[];
+  highlightedItemId?: string | null;
   subtotal: number;
   vatRate: number;
   vatAmount: number;
@@ -22,6 +23,7 @@ interface CartPanelProps {
 
 export function CartPanel({
   items,
+  highlightedItemId,
   subtotal,
   vatRate,
   vatAmount,
@@ -55,6 +57,7 @@ export function CartPanel({
         ) : (
           <CartItemList
             items={items}
+            highlightedItemId={highlightedItemId}
             onIncrement={onIncrement}
             onDecrement={onDecrement}
             onRemove={onRemove}

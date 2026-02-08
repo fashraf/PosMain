@@ -263,6 +263,15 @@
   .grid-action-btn.danger:hover svg {
     @apply text-[#EF4444];
   }
+
+  /* Cart add-item flash */
+  @keyframes cart-flash-green {
+    0% { background-color: rgb(209 250 229); }
+    100% { background-color: transparent; }
+  }
+  .animate-cart-flash {
+    animation: cart-flash-green 2s ease-out forwards;
+  }
 }
 
 /* ── POS Light Theme (scoped) ── */

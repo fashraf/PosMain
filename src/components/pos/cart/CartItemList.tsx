@@ -4,6 +4,7 @@ import type { CartItem } from "@/lib/pos/types";
 
 interface CartItemListProps {
   items: CartItem[];
+  highlightedItemId?: string | null;
   onIncrement: (itemId: string) => void;
   onDecrement: (itemId: string) => void;
   onRemove: (itemId: string) => void;
@@ -12,6 +13,7 @@ interface CartItemListProps {
 
 export function CartItemList({
   items,
+  highlightedItemId,
   onIncrement,
   onDecrement,
   onRemove,
@@ -23,6 +25,7 @@ export function CartItemList({
         <React.Fragment key={item.id}>
           <CartItemRow
             item={item}
+            isHighlighted={item.id === highlightedItemId}
             onIncrement={() => onIncrement(item.id)}
             onDecrement={() => onDecrement(item.id)}
             onRemove={() => onRemove(item.id)}
