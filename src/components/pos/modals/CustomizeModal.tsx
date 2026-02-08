@@ -173,7 +173,7 @@ export function CustomizeModal({
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
             <h2 className="text-2xl font-bold text-gray-900">
-              Customize: {menuItem?.name_en}
+              {menuItem?.name_en}
             </h2>
             <div className="flex items-center gap-5 text-sm mr-10">
               <span className="text-gray-500">
