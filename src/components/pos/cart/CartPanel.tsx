@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { CartHeader } from "./CartHeader";
 import { CartItemList } from "./CartItemList";
 import { CartTotals } from "./CartTotals";
 import { PayButton } from "./PayButton";
+import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
 import type { CartItem } from "@/lib/pos/types";
 
 interface CartPanelProps {
@@ -33,10 +34,11 @@ export function CartPanel({
   onPay,
 }: CartPanelProps) {
   const isEmpty = items.length === 0;
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   return (
     <div className="flex h-full flex-col">
-      <CartHeader itemCount={items.length} onClearAll={onClearAll} />
+      <CartHeader itemCount={items.length} onClearAll={() => setShowClearConfirm(true)} />
 
       <div className="flex-1 overflow-auto">
         {isEmpty ? (
@@ -64,6 +66,19 @@ export function CartPanel({
       )}
 
       <PayButton total={total} disabled={isEmpty} onClick={onPay} />
+
+      <ConfirmActionModal
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        onConfirm={() => {
+          onClearAll();
+          setShowClearConfirm(false);
+        }}
+        title="Clear Cart"
+        message="Are you sure you want to clear all items from the cart?"
+        confirmLabel="Clear All"
+        variant="destructive"
+      />
     </div>
   );
 }
