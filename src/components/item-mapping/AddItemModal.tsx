@@ -142,7 +142,7 @@ export function AddItemModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 gap-0 rounded-lg overflow-hidden">
+      <DialogContent className="sm:max-w-[65vw] p-0 gap-0 rounded-lg overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-5 py-4 border-b border-border bg-background">
           <DialogTitle className="text-base font-semibold">
@@ -232,11 +232,11 @@ export function AddItemModal({
             <h4 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3 pb-2 border-b border-border/50">
               {t("itemMapping.quantityAndRules") || "Quantity & Rules"}
             </h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div className="grid grid-cols-4 gap-x-4 gap-y-4">
               {/* Default Quantity */}
               <div className="space-y-1.5">
                 <label className="text-[13px] font-medium text-foreground flex items-center gap-1.5">
-                  {t("itemMapping.defaultQuantity") || "Default Quantity"} <span className="text-destructive">*</span>
+                  {t("itemMapping.quantity") || "Quantity"} <span className="text-destructive">*</span>
                   <TooltipInfo content="Default quantity of this item" />
                 </label>
                 <Input
