@@ -28,7 +28,69 @@ interface ItemTableProps {
   onAdd: () => void;
   onEdit?: (id: string) => void;
   onReorder?: (mappings: SubItemMappingItem[]) => void;
+  onOpenReplacement?: (mappingId: string) => void;
   isCombo: boolean;
+}
+
+function ReplacementCell({
+  mapping,
+  onOpenReplacement,
+}: {
+  mapping: SubItemMappingItem;
+  onOpenReplacement?: (mappingId: string) => void;
+}) {
+  const count = mapping.replacements?.length || 0;
+
+  if (!onOpenReplacement) {
+    return <span className="text-muted-foreground text-sm">{mapping.replacement_item_name || "—"}</span>;
+  }
+
+  if (count > 0) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => onOpenReplacement(mapping.id)}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-colors cursor-pointer"
+            >
+              {count}x <PlusCircle size={12} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[220px]">
+            <ul className="space-y-1 text-xs">
+              {mapping.replacements!.map((r) => (
+                <li key={r.id} className="flex justify-between gap-3">
+                  <span>{r.item_name}</span>
+                  {r.extra_cost > 0 && (
+                    <span className="text-green-600 font-medium">+SAR {r.extra_cost.toFixed(2)}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => onOpenReplacement(mapping.id)}
+            className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          >
+            <PlusCircle size={16} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent><p>Add Replacement</p></TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 function SortableItemRow({
@@ -36,12 +98,14 @@ function SortableItemRow({
   index,
   onRemove,
   onEdit,
+  onOpenReplacement,
   t,
 }: {
   mapping: SubItemMappingItem;
   index: number;
   onRemove: (id: string) => void;
   onEdit?: (id: string) => void;
+  onOpenReplacement?: (mappingId: string) => void;
   t: (key: string) => string;
 }) {
   const {
@@ -79,8 +143,8 @@ function SortableItemRow({
         </button>
       </td>
       <td className="px-3 font-medium text-sm">{mapping.sub_item_name}</td>
-      <td className="px-3 text-center text-sm text-muted-foreground">
-        {mapping.replacement_item_name || "—"}
+      <td className="px-3 text-center text-sm">
+        <ReplacementCell mapping={mapping} onOpenReplacement={onOpenReplacement} />
       </td>
       <td className="px-3 text-center text-sm">{mapping.quantity}</td>
       <td className="px-3 text-center">
@@ -156,6 +220,7 @@ export function ItemTable({
   onAdd,
   onEdit,
   onReorder,
+  onOpenReplacement,
   isCombo,
 }: ItemTableProps) {
   const { t } = useLanguage();
@@ -258,6 +323,7 @@ export function ItemTable({
                     index={index}
                     onRemove={onRemove}
                     onEdit={onEdit}
+                    onOpenReplacement={onOpenReplacement}
                     t={t}
                   />
                 ))}
