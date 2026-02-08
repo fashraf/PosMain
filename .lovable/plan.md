@@ -1,53 +1,45 @@
 
 
-# POS Card Font/Image Size Bump + Customize Modal 80% Width + Seed Data
+# Fix POS Customization Data to Match Item Master
 
-## 1. POSItemCard -- Bigger Font and 52x52 Image
+## Problem
 
-**File:** `src/components/pos/items/POSItemCard.tsx`
+The seed data currently in `pos_item_ingredients` and `pos_item_replacements` is fabricated dummy data (Rice, Chicken, Onion, Cheese ingredients + Rice replacement group). The actual Item Master configuration for Chicken Biryani is:
 
-- Image size: `h-8 w-8` (32px) changes to `h-[52px] w-[52px]` (52px)
-- Item name font: `text-sm` changes to `text-base` (16px)
-- Price font: `text-sm` changes to `text-base`
-- "Custom" badge: `text-[9px]` changes to `text-[10px]`
-- Button text: `text-xs` changes to `text-sm`
-- Button icons: `h-3 w-3` changes to `h-3.5 w-3.5`
+- **1 Ingredient**: Tomato (can_remove = true, can_add_extra = false, no extra cost)
+- **1 Sub-Item**: Pepsi (from the combo items list, though sub-items are not yet persisted to a database table)
+- **No replacements** configured
 
-## 2. Customize Modal -- Increase to 80% Width
+## Changes Required
 
-**File:** `src/components/pos/modals/CustomizeModal.tsx`
+### 1. Clean Up Dummy Data
 
-- `max-w-[750px] w-[92vw]` changes to `max-w-[80vw] w-[80vw]`
+Delete all existing rows from `pos_item_ingredients` and `pos_item_replacements` for Chicken Biryani (`cef55e70-b359-4ebb-9b73-5fb43d2b2823`).
 
-## 3. Seed POS Data -- Ingredients and Replacements
+### 2. Insert Correct Ingredient Data
 
-Since the `pos_menu_items`, `pos_item_ingredients`, and `pos_item_replacements` tables are all empty, the modals have no data to display. I will insert seed data via a database migration:
+Insert into `pos_item_ingredients` for Chicken Biryani:
 
-**pos_menu_items** -- 3 items matching the existing `items` table entries:
-- Mango Bite (Rs. 10, not customizable, with image)
-- Chicken Biryani (Rs. 35, customizable)
-- Pepsi (Rs. 3.50, not customizable)
+| ingredient_name_en | is_removable | is_default_included | extra_price |
+|---|---|---|---|
+| Tomato | true | true | 0.00 |
 
-**pos_item_ingredients** -- For Chicken Biryani:
-- Rice (default included, removable, no extra cost)
-- Chicken (default included, not removable, extra +Rs. 15)
-- Onion (default included, removable, no extra cost)
-- Cheese (not default, not removable, extra +Rs. 10)
+This matches the `item_ingredients` record: ingredient = Tomato, can_remove = true, can_add_extra = false.
 
-**pos_item_replacements** -- For Chicken Biryani, group "Rice":
-- White Rice (default)
-- Brown Rice (+Rs. 5)
-- Naan Bread (+Rs. 8)
+### 3. No Replacements
 
-### Hook Fix
+The `pos_item_replacements` table should remain empty for this item since no replacements are configured in the Item Master.
 
-The `usePOSItemDetails` hook currently queries `pos_menu_items` for the item, but the POS grid fetches from the `items` table. The item IDs won't match. I will update the hook to query the `items` table for the base item data instead, so clicking Customize on any grid item correctly loads its details.
+### 4. No Sub-Items Table
+
+The combo sub-items (like Pepsi) are managed in-memory on the form and are not yet persisted to any database table. There is no `item_sub_items` table in the schema. This means the POS Customize modal will only show the Tomato ingredient for now.
 
 ## Technical Summary
 
-| File | Change |
-|------|--------|
-| `src/components/pos/items/POSItemCard.tsx` | Image 52x52, bigger fonts |
-| `src/components/pos/modals/CustomizeModal.tsx` | Width to 80vw |
-| `src/hooks/pos/usePOSItems.ts` | Fix `usePOSItemDetails` to query `items` table instead of `pos_menu_items` |
-| Database migration | Seed `pos_item_ingredients` and `pos_item_replacements` with data for Chicken Biryani |
+| Action | Details |
+|---|---|
+| DELETE from `pos_item_ingredients` | Remove 4 dummy rows (Rice, Chicken, Onion, Cheese) |
+| DELETE from `pos_item_replacements` | Remove 3 dummy rows (White Rice, Brown Rice, Naan) |
+| INSERT into `pos_item_ingredients` | 1 row: Tomato, removable, default included, no extra cost |
+| No code changes needed | The hook and modal code already work correctly |
+
