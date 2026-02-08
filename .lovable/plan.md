@@ -1,75 +1,57 @@
 
 
-# Fix Combo Sub-Item Persistence and Cart Clear All UI
+# Fix Customize Modal: Ingredients, Sub-Items, and Layout
 
-## Problem 1: Combo Sub-Items Don't Save
+## Issues Found
 
-When creating a combo item (e.g., Chicken Biryani with Pepsi), the sub-items added in the Items section are never saved to the database. The save function only persists ingredients to `item_ingredients` but skips sub-item mappings entirely because there is no database table for them.
+1. **Ingredient Remove/Extra toggles not showing**: The `IngredientRow` component decides whether to show the "Extra" toggle by checking `extra_price > 0`. However, Tomato has `can_add_extra: true` but `extra_cost: null` (meaning extra is free). The `can_add_extra` flag from the database is never passed through to the POS ingredient type, so the toggle never appears. Similarly, the "Remove" toggle only shows when `is_removable` is true -- Tomato has `can_remove: false`, which is correct, but the Extra toggle is broken.
 
-### Solution
+2. **Replacement sub-items not showing**: Checking the database, only Mango Bite (default) is saved as a sub-item for Chicken Biryani. Pepsi was never persisted. The Items save logic needs to be verified, and the data re-saved. The Customize Modal also needs to render sub-items in a separate "Items" card.
 
-1. **Create a new `item_sub_items` table** to persist combo sub-item mappings:
+3. **Modal height**: Currently 85vh, needs to be 75vh per user request.
 
-| Column | Type | Description |
-|---|---|---|
-| id | uuid (PK) | Auto-generated |
-| item_id | uuid (FK to items) | The parent combo item |
-| sub_item_id | uuid (FK to items) | The child item (e.g., Pepsi) |
-| quantity | integer | Default 1 |
-| sort_order | integer | Display order |
-| is_default | boolean | First added = true (default item, always 0 cost) |
-| replacement_price | numeric | Price for replacement items (non-default) |
-| can_remove | boolean | Whether user can remove this from cart (false for replacements) |
+4. **Two-card layout**: Ingredients and Items (sub-items/replacements) should be in two separate bordered cards side by side (col-6 each).
 
-2. **Update the save function** in `ItemsAdd.tsx` (and `ItemsEdit.tsx`) to insert sub-item mappings into the new table after saving the item.
+## Changes
 
-3. **Update the edit page** to load existing sub-item mappings from the database when editing a combo item.
+### 1. Add `can_add_extra` flag to POS types and hook
 
-## Problem 2: Combo Sub-Item POS Logic
+**File: `src/lib/pos/types.ts`**
+- Add `can_add_extra: boolean` to `POSItemIngredient` interface
 
-The business rules for combo sub-items in POS:
-- The **first sub-item** added is the **default** -- it always costs 0 (included in the combo price)
-- Subsequent sub-items are **replacements** -- they have an additional cost
-- Replacements **cannot be removed** from the order (you can only swap between them)
+**File: `src/hooks/pos/usePOSItems.ts`**
+- Map `can_add_extra` from `item_ingredients` data into the POS ingredient object (currently only `can_remove` is mapped to `is_removable`)
 
-This logic will need to be reflected when syncing to `pos_item_replacements` or handled directly from `item_sub_items` in the POS hooks.
+### 2. Fix IngredientRow toggle logic
 
-### Solution
+**File: `src/components/pos/modals/IngredientRow.tsx`**
+- Change `canExtra` from `ingredient.extra_price > 0` to `ingredient.can_add_extra` (the new flag)
+- The Extra toggle should show whenever the ingredient allows extras, regardless of whether there is an extra cost
 
-Update the POS item details hook (`usePOSItemDetails`) to also fetch from `item_sub_items` and build replacement groups from them:
-- Default sub-item becomes the "default" replacement option (price = 0)
-- Other sub-items become replacement alternatives (with their replacement_price)
+### 3. Fix sub-item save logic
 
-## Problem 3: Clear All Button UI
+**File: `src/pages/ItemsAdd.tsx`** and **`src/pages/ItemsEdit.tsx`**
+- Verify the sub-item save code actually inserts all sub-items (not just the first one). The current data shows only 1 sub-item was saved for Chicken Biryani, suggesting the save might be dropping items or the user only added one.
 
-The current "Clear All" is a small text link. Per the reference image, it should be a proper button with a trash icon and confirmation before clearing.
+### 4. Redesign CustomizeModal layout
 
-### Solution
-
-- Style "Clear All" as a visible button with the trash icon (matching the reference image layout)
-- Add a confirmation dialog: "Are you sure you want to clear all items from the cart?"
+**File: `src/components/pos/modals/CustomizeModal.tsx`**
+- Change `max-h-[85vh]` to `max-h-[75vh]`
+- Replace the current flat grid layout with two separate bordered cards:
+  - **Left card (col-6)**: "Ingredients" header + ingredient rows with Remove/Extra toggles
+  - **Right card (col-6)**: "Items" header + replacement pills/sub-item options
+- Both cards should have a border, rounded corners, and their own scroll area if content overflows
+- Always show both cards even if one section is empty (show "No ingredients" or "No items" placeholder)
 
 ## Technical Details
 
-### Database Migration
-
-Create table `item_sub_items` with RLS policies matching `item_ingredients`.
-
-### Files to Modify
-
 | File | Change |
 |---|---|
-| `src/pages/ItemsAdd.tsx` | Add sub-item insert logic after item save (lines ~600-616) |
-| `src/pages/ItemsEdit.tsx` | Load existing sub-items on edit; save updates |
-| `src/hooks/pos/usePOSItemDetails.ts` (or equivalent) | Fetch `item_sub_items` and build replacement data from them |
-| `src/components/pos/cart/CartHeader.tsx` | Restyle "Clear All" as a proper button |
-| `src/components/pos/cart/CartPanel.tsx` | Add clear-all confirmation dialog |
+| `src/lib/pos/types.ts` | Add `can_add_extra: boolean` to `POSItemIngredient` |
+| `src/hooks/pos/usePOSItems.ts` | Map `can_add_extra` from database field in `usePOSItemDetails` |
+| `src/components/pos/modals/IngredientRow.tsx` | Use `ingredient.can_add_extra` instead of `extra_price > 0` for showing Extra toggle |
+| `src/components/pos/modals/CustomizeModal.tsx` | Change height to 75vh; wrap Ingredients and Items sections in separate bordered cards with col-6 layout |
+| `src/pages/ItemsAdd.tsx` | Verify sub-item insert logic handles all mappings |
+| `src/pages/ItemsEdit.tsx` | Verify sub-item load and re-save logic |
 
-### Sequence
-
-1. Create `item_sub_items` table via migration
-2. Update ItemsAdd save logic to persist sub-items
-3. Update ItemsEdit to load and save sub-items
-4. Update POS hooks to read from `item_sub_items` for replacement data
-5. Update CartHeader Clear All button styling and add confirmation modal
-
+No database changes needed -- the `item_sub_items` table and `item_ingredients` table already have the correct columns. The Pepsi sub-item just needs to be re-added via the Items Edit page after the save logic is verified.
