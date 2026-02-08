@@ -25,11 +25,9 @@ import { CSS } from "@dnd-kit/utilities";
 interface ItemTableProps {
   mappings: SubItemMappingItem[];
   onRemove: (id: string) => void;
-  onAdd: () => void;
   onEdit?: (id: string) => void;
   onReorder?: (mappings: SubItemMappingItem[]) => void;
   onOpenReplacement?: (mappingId: string) => void;
-  isCombo: boolean;
 }
 
 function ReplacementCell({
@@ -217,11 +215,9 @@ function SortableItemRow({
 export function ItemTable({
   mappings,
   onRemove,
-  onAdd,
   onEdit,
   onReorder,
   onOpenReplacement,
-  isCombo,
 }: ItemTableProps) {
   const { t } = useLanguage();
 
@@ -245,48 +241,8 @@ export function ItemTable({
     }
   };
 
-  if (!isCombo) {
-    return (
-      <div className="border-2 border-dotted border-border rounded-lg overflow-hidden opacity-50">
-        <div className="flex items-center justify-between h-11 px-4 bg-background border-b border-border/50">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-semibold text-foreground">
-              {t("itemMapping.items")}
-            </span>
-          </div>
-        </div>
-        <div className="p-6 text-center text-muted-foreground text-sm">
-          {t("itemMapping.notComboItem")}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="border-2 border-dotted border-border rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between h-11 px-4 bg-background border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-semibold text-foreground">
-            {t("itemMapping.items")}
-          </span>
-        </div>
-        <Button
-          type="button"
-          onClick={onAdd}
-          variant="outline"
-          size="sm"
-          className="h-7 px-3 text-xs font-medium border-border"
-        >
-          <PlusCircle className="h-3.5 w-3.5 me-1" />
-          {t("itemMapping.addItem") || "Add Item"}
-        </Button>
-      </div>
-
-      {/* Table */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="w-full">
           <thead>
             <tr className="bg-muted/50 border-b border-border">
@@ -338,7 +294,6 @@ export function ItemTable({
             )}
           </tbody>
         </table>
-      </DndContext>
-    </div>
+    </DndContext>
   );
 }
