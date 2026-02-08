@@ -30,10 +30,10 @@ export function ReplacementPills({
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400">
         {groupName} (choose 1)
       </h4>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {replacements.map((rep) => {
           const isSelected = rep.is_default ? isDefaultSelected : selectedId === rep.id;
           return (
@@ -41,37 +41,37 @@ export function ReplacementPills({
               key={rep.id}
               onClick={() => handleSelect(rep)}
               className={cn(
-                "w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all duration-150",
-                "active:scale-[0.98] touch-manipulation text-left",
+                "w-full flex items-center gap-4 rounded-xl px-5 py-4 text-left transition-all duration-150 min-h-[48px]",
+                "active:scale-[0.98] touch-manipulation",
                 isSelected
-                  ? "bg-primary/8 border border-primary/25 shadow-sm"
-                  : "border border-transparent hover:bg-muted/50"
+                  ? "bg-primary/15 border border-primary/30"
+                  : "border border-transparent hover:bg-white/5"
               )}
             >
               {/* Radio indicator */}
               <div
                 className={cn(
-                  "h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                  isSelected
-                    ? "border-primary"
-                    : "border-muted-foreground/40"
+                  "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors duration-150",
+                  isSelected ? "border-primary" : "border-gray-600"
                 )}
               >
                 {isSelected && (
-                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-primary" />
                 )}
               </div>
 
               {/* Name */}
-              <span className={cn(
-                "flex-1 font-medium",
-                isSelected ? "text-card-foreground" : "text-muted-foreground"
-              )}>
+              <span
+                className={cn(
+                  "flex-1 text-base font-medium transition-colors duration-150",
+                  isSelected ? "text-white" : "text-gray-400"
+                )}
+              >
                 {rep.replacement_name_en}
               </span>
 
               {/* Price */}
-              <span className="text-xs text-muted-foreground tabular-nums">
+              <span className="text-sm text-gray-400 tabular-nums">
                 {rep.price_difference > 0
                   ? `+${rep.price_difference.toFixed(2)} SAR`
                   : `${rep.price_difference.toFixed(2)} SAR`}
@@ -79,7 +79,7 @@ export function ReplacementPills({
 
               {/* Default tag */}
               {rep.is_default && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                <span className="rounded-full bg-gray-700 px-2.5 py-0.5 text-xs font-semibold text-gray-300">
                   default
                 </span>
               )}

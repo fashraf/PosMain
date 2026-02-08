@@ -2,9 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -26,7 +23,7 @@ import type { POSCartHook } from "@/hooks/pos";
 import { buildCustomizationData, calculateLivePrice } from "@/lib/pos/priceCalculations";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, X } from "lucide-react";
 
 interface CustomizeModalProps {
   open: boolean;
@@ -157,103 +154,130 @@ export function CustomizeModal({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="pos-light max-w-[80vw] w-[80vw] max-h-[80vh] flex flex-col bg-card border-border p-0">
-          {/* Header */}
-          <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-card-foreground text-lg">
-                Customize: {menuItem?.name_en}
-              </DialogTitle>
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-muted-foreground">
-                  Base <span className="font-semibold tabular-nums text-card-foreground">{menuItem?.base_price?.toFixed(2)} SAR</span>
-                </span>
-                {livePrice && (
-                  <span className="text-muted-foreground">
-                    Current{" "}
-                    <PriceAnimator
-                      value={livePrice.total}
-                      className="text-primary font-bold tabular-nums"
-                    />
-                    <span className="text-primary font-bold"> SAR</span>
-                  </span>
-                )}
-              </div>
-            </div>
-          </DialogHeader>
+        <DialogContent
+          className="w-[85vw] max-w-[85vw] h-[85vh] max-h-[85vh] flex flex-col rounded-2xl border-0 bg-[#0f1217] text-white p-0 shadow-2xl gap-0 [&>button]:hidden"
+        >
+          {/* Close button */}
+          <button
+            onClick={() => handleOpenChange(false)}
+            className="absolute right-4 top-4 z-10 h-8 w-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+          >
+            <X className="h-4 w-4 text-gray-400" />
+          </button>
 
-          {/* Body: Two bordered cards */}
-          <div className="flex-1 overflow-hidden px-5 py-4">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
+            <h2 className="text-2xl font-bold text-white">
+              Customize: {menuItem?.name_en}
+            </h2>
+            <div className="flex items-center gap-5 text-sm mr-10">
+              <span className="text-gray-400">
+                Base{" "}
+                <span className="font-semibold tabular-nums text-white">
+                  {menuItem?.base_price?.toFixed(2)} SAR
+                </span>
+              </span>
+              {livePrice && (
+                <span className="text-gray-400">
+                  Current{" "}
+                  <PriceAnimator
+                    value={livePrice.total}
+                    className={
+                      livePrice.total > (menuItem?.base_price ?? 0)
+                        ? "text-emerald-400 font-bold tabular-nums"
+                        : "text-white font-bold tabular-nums"
+                    }
+                  />
+                  <span
+                    className={
+                      livePrice.total > (menuItem?.base_price ?? 0)
+                        ? "text-emerald-400 font-bold"
+                        : "text-white font-bold"
+                    }
+                  >
+                    {" "}SAR
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-hidden px-6 py-5">
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
+                  <Skeleton key={i} className="h-14 w-full bg-gray-800" />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4 h-full">
+              <div className="grid grid-cols-2 gap-5 h-full">
                 {/* Left Card: Ingredients */}
-                <div className="rounded-xl border border-border bg-card flex flex-col overflow-hidden">
-                  <div className="border-b px-4 py-3">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                <div className="rounded-xl bg-[#1a1f2e] flex flex-col overflow-hidden">
+                  <div className="border-b border-gray-700/50 px-5 py-3">
+                    <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider">
                       Ingredients
                     </h3>
                   </div>
-                  <ScrollArea className="flex-1 px-4 py-3">
-                    {hasIngredients ? (
-                      <div className="space-y-2">
-                        {itemDetails!.ingredients.map((ing) => (
-                          <IngredientRow
-                            key={ing.id}
-                            ingredient={ing}
-                            isRemoved={removals.has(ing.id)}
-                            isExtra={extras.has(ing.id)}
-                            onRemoveToggle={() => handleRemovalToggle(ing.id)}
-                            onExtraToggle={() => handleExtraToggle(ing.id)}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No ingredients
-                      </p>
-                    )}
+                  <ScrollArea className="flex-1">
+                    <div className="px-5 py-4">
+                      {hasIngredients ? (
+                        <div className="space-y-3">
+                          {itemDetails!.ingredients.map((ing) => (
+                            <IngredientRow
+                              key={ing.id}
+                              ingredient={ing}
+                              isRemoved={removals.has(ing.id)}
+                              isExtra={extras.has(ing.id)}
+                              onRemoveToggle={() => handleRemovalToggle(ing.id)}
+                              onExtraToggle={() => handleExtraToggle(ing.id)}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-8">
+                          No ingredients available
+                        </p>
+                      )}
+                    </div>
                   </ScrollArea>
                 </div>
 
                 {/* Right Card: Combo Replacements */}
-                <div className="rounded-xl border border-border bg-card flex flex-col overflow-hidden">
-                  <div className="border-b px-4 py-3">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                <div className="rounded-xl bg-[#1a1f2e] flex flex-col overflow-hidden">
+                  <div className="border-b border-gray-700/50 px-5 py-3">
+                    <h3 className="font-bold text-sm text-gray-400 uppercase tracking-wider">
                       Combo Replacements
                     </h3>
                   </div>
-                  <ScrollArea className="flex-1 px-4 py-3">
-                    {hasReplacements ? (
-                      <div className="space-y-4">
-                        {Object.entries(replacementGroups).map(([group, reps]) => (
-                          <ReplacementPills
-                            key={group}
-                            groupName={group}
-                            replacements={reps}
-                            selectedId={selectedReplacement?.id ?? null}
-                            onSelect={handleReplacementSelect}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No items
-                      </p>
-                    )}
+                  <ScrollArea className="flex-1">
+                    <div className="px-5 py-4">
+                      {hasReplacements ? (
+                        <div className="space-y-5">
+                          {Object.entries(replacementGroups).map(([group, reps]) => (
+                            <ReplacementPills
+                              key={group}
+                              groupName={group}
+                              replacements={reps}
+                              selectedId={selectedReplacement?.id ?? null}
+                              onSelect={handleReplacementSelect}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-8">
+                          No combo replacements
+                        </p>
+                      )}
+                    </div>
                   </ScrollArea>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Footer: Changes Summary + Price Breakdown + Buttons */}
-          <DialogFooter className="px-5 py-3 border-t border-border flex-row items-stretch gap-4">
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-800 flex items-stretch gap-6 shrink-0">
             {/* Left: Changes summary */}
             <div className="flex-1 min-w-0">
               {livePrice && itemDetails && (
@@ -274,38 +298,40 @@ export function CustomizeModal({
             <div className="flex flex-col gap-2 justify-center min-w-[280px]">
               <button
                 onClick={() => handleOpenChange(false)}
-                className="h-11 rounded-lg border border-border text-muted-foreground font-medium text-sm active:scale-95 transition-transform hover:bg-muted/50"
+                className="h-12 rounded-xl border border-gray-600 text-gray-400 font-medium text-base active:scale-95 transition-all duration-150 hover:bg-gray-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddToCart}
                 disabled={isLoading}
-                className="h-12 rounded-lg bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50 shadow-md"
+                className="h-14 rounded-xl bg-primary text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all duration-150 disabled:opacity-50 shadow-lg"
               >
-                <ShoppingCart className="h-4 w-4" />
+                <ShoppingCart className="h-5 w-5" />
                 {editingCartItemId ? "UPDATE CART" : "ADD TO CART"}
                 {livePrice && ` — ${livePrice.total.toFixed(2)} SAR`}
               </button>
             </div>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Dirty state warning */}
       <AlertDialog open={showDirtyWarning} onOpenChange={setShowDirtyWarning}>
-        <AlertDialogContent className="pos-light bg-card border-border">
+        <AlertDialogContent className="bg-[#1a1f2e] border-gray-700 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-card-foreground">Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
               You have unsaved customizations. Are you sure you want to close?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogCancel className="bg-transparent border-gray-600 text-gray-300 hover:bg-gray-800">
+              Keep editing
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => { setShowDirtyWarning(false); onClose(); }}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-red-600 text-white hover:bg-red-700"
             >
               Discard
             </AlertDialogAction>

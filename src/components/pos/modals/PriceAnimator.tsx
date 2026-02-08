@@ -7,7 +7,7 @@ interface PriceAnimatorProps {
   className?: string;
 }
 
-export function PriceAnimator({ value, prefix = "Rs. ", className }: PriceAnimatorProps) {
+export function PriceAnimator({ value, prefix = "", className }: PriceAnimatorProps) {
   const [flash, setFlash] = useState(false);
   const prevValue = useRef(value);
 
