@@ -71,7 +71,7 @@ export function IngredientRow({
 
       {/* Status badges */}
       {isExtra && (
-        <span className="ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">
+        <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
           +Extra
         </span>
       )}
