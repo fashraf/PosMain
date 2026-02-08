@@ -587,7 +587,7 @@ export default function ItemsAdd() {
           image_url: imageUrl,
           is_active: formData.is_active,
           category_id: formData.category || null,
-          is_customizable: ingredientMappings.length > 0,
+          is_customizable: ingredientMappings.length > 0 || subItemMappings.length > 0,
           is_favorite: false,
           sort_order: 0,
         })
