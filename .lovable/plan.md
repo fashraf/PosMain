@@ -1,45 +1,66 @@
 
 
-# Fix POS Customization Data to Match Item Master
+# Redesign Cart Item Row to Match Reference
 
-## Problem
+## What Changes
 
-The seed data currently in `pos_item_ingredients` and `pos_item_replacements` is fabricated dummy data (Rice, Chicken, Onion, Cheese ingredients + Rice replacement group). The actual Item Master configuration for Chicken Biryani is:
+The cart item row will be redesigned to match the reference screenshot with these behaviors:
 
-- **1 Ingredient**: Tomato (can_remove = true, can_add_extra = false, no extra cost)
-- **1 Sub-Item**: Pepsi (from the combo items list, though sub-items are not yet persisted to a database table)
-- **No replacements** configured
+### Visual Layout (matching the reference image)
 
-## Changes Required
+```text
++-------------------------------------------------------+
+| Total Item : 7 Qty Total |            [    Clear All  ]
++--------------------------------------------------------+
+| [edit icon] Masala Paneer  [-] 1 [+]           228.00  |
+| Price : 228.00 * 1 |
+| × Tomato                                     removed
+| + Extra Cheese                               +2.00 SAR
+| ✏ Pepsi → Ice Tea                           +3.00 SAR
+|                                           > 233.00 SAR (Bold)
++-------------------------------------------------------+
+| Chicken Biryani             [-] 1 [+]      228.00 (Bold)
+| Price : 228.00 * 1 |
 
-### 1. Clean Up Dummy Data
++-------------------------------------------------------+
 
-Delete all existing rows from `pos_item_ingredients` and `pos_item_replacements` for Chicken Biryani (`cef55e70-b359-4ebb-9b73-5fb43d2b2823`).
 
-### 2. Insert Correct Ingredient Data
 
-Insert into `pos_item_ingredients` for Chicken Biryani:
+- **Left icon**: A customization indicator (e.g., a pencil/edit icon) shown only when the item has customizations. Clicking it opens the Customize Modal to view/edit modifications.
+- **Item name**: Bold, on the first line next to the icon.
+- **Quantity controls**: Colored minus (red/pink) and plus (blue) buttons with quantity between them.
+- **Total**: Right-aligned line total.
+- **Price breakdown**: Below the name, showing `Price : {unitPrice} * {qty}`.
+- **Customization tags**: Listed below the price -- removals in red with `-` prefix, extras in green with `+` prefix, replacements in blue.
+- **Minus to 1 deletes**: When quantity is 1 and user clicks minus, the item is removed from the cart (this already works via `updateCartItemQuantity` returning null for qty <= 0).
 
-| ingredient_name_en | is_removable | is_default_included | extra_price |
-|---|---|---|---|
-| Tomato | true | true | 0.00 |
+### Cart Header Update
 
-This matches the `item_ingredients` record: ingredient = Tomato, can_remove = true, can_add_extra = false.
+- Show "Total Item : {count}" matching the reference format, replacing the current "Cart" label with badge.
 
-### 3. No Replacements
+### Behavior Details
 
-The `pos_item_replacements` table should remain empty for this item since no replacements are configured in the Item Master.
+- Clicking the edit icon on a customized item opens the CustomizeModal (not the old drawer) so the user can review and modify customizations.
+- The separate "Remove" button row will be removed since minus-to-zero handles deletion.
+- Non-customized items won't show the edit icon.
 
-### 4. No Sub-Items Table
+## Technical Details
 
-The combo sub-items (like Pepsi) are managed in-memory on the form and are not yet persisted to any database table. There is no `item_sub_items` table in the schema. This means the POS Customize modal will only show the Tomato ingredient for now.
+### Files to Modify
 
-## Technical Summary
+1. **`src/components/pos/cart/CartItem.tsx`** -- Complete redesign of the row layout:
+   - Replace `(c)` text indicator with a clickable edit icon (only for customized items)
+   - Show price breakdown line: `Price : {unitPrice} * {qty}`
+   - Style minus button with red/pink tint, plus button with blue tint
+   - Remove the separate "Remove" / "Trash" button row
+   - Keep customization detail lines (extras, removals, replacements)
 
-| Action | Details |
-|---|---|
-| DELETE from `pos_item_ingredients` | Remove 4 dummy rows (Rice, Chicken, Onion, Cheese) |
-| DELETE from `pos_item_replacements` | Remove 3 dummy rows (White Rice, Brown Rice, Naan) |
-| INSERT into `pos_item_ingredients` | 1 row: Tomato, removable, default included, no extra cost |
-| No code changes needed | The hook and modal code already work correctly |
+2. **`src/components/pos/cart/CartHeader.tsx`** -- Update to show `Total Item : {count}` format with column headers (Qty, Total).
 
+3. **`src/components/pos/cart/CartPanel.tsx`** -- Pass `totalQuantity` to CartHeader for the item count display.
+
+4. **`src/components/pos/cart/CartItemList.tsx`** -- Update `onEdit` prop to work with the new icon click pattern (pass a simpler callback since the edit icon is directly on the row).
+
+5. **`src/pages/pos/POSMain.tsx`** -- Wire the cart item edit to open `CustomizeModal` instead of `CustomizeDrawer`, so clicking the edit icon on a cart item opens the same modal used for initial customization.
+
+### No database or schema changes required.
