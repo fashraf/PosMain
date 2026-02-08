@@ -1038,18 +1038,12 @@ export default function ItemsEdit() {
               >
                 <ItemTable
                   mappings={subItemMappings}
-                  onQuantityChange={handleItemQuantityChange}
                   onRemove={(id) => {
                     const mapping = subItemMappings.find((m) => m.id === id);
                     if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
                   }}
                   onAdd={() => setShowAddItemModal(true)}
                   onEdit={handleEditItem}
-                  onReplacement={handleOpenReplacementModal}
-                  onRemoveReplacement={handleRemoveReplacement}
-                  onViewReplacement={handleViewReplacement}
-                  totalCost={totalSubItemCost}
-                  totalComboPrice={totalSubItemCost}
                   isCombo={formData.is_combo}
                 />
                 
