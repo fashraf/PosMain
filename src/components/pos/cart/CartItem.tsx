@@ -90,17 +90,17 @@ export function CartItemRow({
               {e.price > 0 && <span className="text-xs">+{e.price.toFixed(2)} SAR</span>}
             </div>
           ))}
-          {item.customization.replacement && (
-            <div className="flex items-center justify-between text-primary">
-              <span>→ {item.customization.replacement.name}</span>
-              {item.customization.replacement.priceDiff !== 0 && (
+          {item.customization.replacements.map((r) => (
+            <div key={r.id} className="flex items-center justify-between text-primary">
+              <span>→ {r.name}</span>
+              {r.priceDiff !== 0 && (
                 <span className="text-xs">
-                  {item.customization.replacement.priceDiff > 0 ? "+" : ""}
-                  {item.customization.replacement.priceDiff.toFixed(2)} SAR
+                  {r.priceDiff > 0 ? "+" : ""}
+                  {r.priceDiff.toFixed(2)} SAR
                 </span>
               )}
             </div>
-          )}
+          ))}
           {/* Green-dot adjusted total */}
           {hasExtraCost && (
             <div className="flex items-center justify-end gap-1.5 pt-1 text-emerald-600 dark:text-emerald-400 font-semibold">

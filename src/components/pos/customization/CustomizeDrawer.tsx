@@ -38,12 +38,7 @@ export function CustomizeDrawer({
   // State for ingredient selections
   const [extras, setExtras] = useState<Set<string>>(new Set());
   const [removals, setRemovals] = useState<Set<string>>(new Set());
-  const [selectedReplacement, setSelectedReplacement] = useState<{
-    id: string;
-    group: string;
-    name: string;
-    priceDiff: number;
-  } | null>(null);
+  const [selectedReplacements, setSelectedReplacements] = useState<Map<string, { id: string; group: string; name: string; priceDiff: number }>>(new Map());
 
   // Fetch item details
   const { data: itemDetails, isLoading } = usePOSItemDetails(menuItem?.id || null);
@@ -57,14 +52,16 @@ export function CustomizeDrawer({
         if (cartItem) {
           setExtras(new Set(cartItem.customization.extras.map((e) => e.id)));
           setRemovals(new Set(cartItem.customization.removals.map((r) => r.id)));
-          setSelectedReplacement(cartItem.customization.replacement || null);
+          const repMap = new Map<string, { id: string; group: string; name: string; priceDiff: number }>();
+          cartItem.customization.replacements.forEach((r) => repMap.set(r.group, r));
+          setSelectedReplacements(repMap);
           return;
         }
       }
       // New customization - start fresh
       setExtras(new Set());
       setRemovals(new Set());
-      setSelectedReplacement(null);
+      setSelectedReplacements(new Map());
     }
   }, [open, menuItem, editingCartItemId, cart.items]);
 
@@ -75,9 +72,9 @@ export function CustomizeDrawer({
       itemDetails.item,
       itemDetails.ingredients,
       extras,
-      selectedReplacement
+      selectedReplacements
     );
-  }, [itemDetails, extras, selectedReplacement]);
+  }, [itemDetails, extras, selectedReplacements]);
 
   // Handlers
   const handleExtraToggle = (ingredientId: string) => {
@@ -122,7 +119,12 @@ export function CustomizeDrawer({
     name: string;
     priceDiff: number;
   } | null) => {
-    setSelectedReplacement(replacement);
+    setSelectedReplacements((prev) => {
+      const next = new Map(prev);
+      if (!replacement) return next; // no-op for null
+      next.set(replacement.group, replacement);
+      return next;
+    });
   };
 
   const handleAddToCart = () => {
@@ -132,7 +134,7 @@ export function CustomizeDrawer({
       itemDetails.ingredients,
       extras,
       removals,
-      selectedReplacement
+      selectedReplacements
     );
 
     if (editingCartItemId) {
@@ -235,7 +237,7 @@ export function CustomizeDrawer({
                           key={group}
                           groupName={group}
                           replacements={replacements}
-                          selectedId={selectedReplacement?.id || null}
+                          selectedId={selectedReplacements.get(group)?.id || null}
                           onSelect={(rep) =>
                             handleReplacementSelect(
                               rep
@@ -268,7 +270,7 @@ export function CustomizeDrawer({
             <PriceSummary
               basePrice={livePrice.basePrice}
               extrasTotal={livePrice.extrasTotal}
-              replacementDiff={livePrice.replacementDiff}
+              replacementDiff={livePrice.replacementsDiff}
               total={livePrice.total}
             />
           </div>

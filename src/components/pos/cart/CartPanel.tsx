@@ -40,7 +40,6 @@ export function CartPanel({
       <CartHeader
         itemCount={items.length}
         totalQuantity={totalQuantity}
-        subtotal={subtotal}
       />
 
       <div className="flex-1 overflow-auto">

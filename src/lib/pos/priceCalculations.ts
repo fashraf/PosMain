@@ -1,4 +1,4 @@
-import type { CustomizationData, POSMenuItem, POSItemIngredient } from "./types";
+import type { CustomizationData, POSMenuItem, POSItemIngredient, ReplacementSelection } from "./types";
 
 /**
  * Calculate the final price of an item with customizations
@@ -8,8 +8,8 @@ export function calculateCustomizedPrice(
   customization: CustomizationData
 ): number {
   const extrasTotal = customization.extras.reduce((sum, e) => sum + e.price, 0);
-  const replacementDiff = customization.replacement?.priceDiff || 0;
-  return basePrice + extrasTotal + replacementDiff;
+  const replacementsDiff = customization.replacements.reduce((sum, r) => sum + r.priceDiff, 0);
+  return basePrice + extrasTotal + replacementsDiff;
 }
 
 /**
@@ -45,25 +45,23 @@ export function getCustomizationSummary(
 ): {
   extras: string[];
   removals: string[];
-  replacement: string | null;
+  replacements: string[];
   additionalCost: number;
 } {
   const extras = customization.extras.map(
     (e) => `+${e.name}${e.price > 0 ? ` (+${e.price.toFixed(2)})` : ""}`
   );
   const removals = customization.removals.map((r) => `-${r.name}`);
-  const replacement = customization.replacement
-    ? `Replace: ${customization.replacement.name}`
-    : null;
+  const replacements = customization.replacements.map((r) => `Replace: ${r.name}`);
 
   const additionalCost =
     customization.extras.reduce((sum, e) => sum + e.price, 0) +
-    (customization.replacement?.priceDiff || 0);
+    customization.replacements.reduce((sum, r) => sum + r.priceDiff, 0);
 
   return {
     extras,
     removals,
-    replacement,
+    replacements,
     additionalCost,
   };
 }
@@ -75,7 +73,7 @@ export function buildCustomizationData(
   ingredients: POSItemIngredient[],
   extras: Set<string>,
   removals: Set<string>,
-  selectedReplacement: { id: string; group: string; name: string; priceDiff: number } | null
+  selectedReplacements: Map<string, ReplacementSelection>
 ): CustomizationData {
   const extrasData = ingredients
     .filter((ing) => extras.has(ing.id))
@@ -95,7 +93,7 @@ export function buildCustomizationData(
   return {
     extras: extrasData,
     removals: removalsData,
-    replacement: selectedReplacement,
+    replacements: Array.from(selectedReplacements.values()),
   };
 }
 
@@ -106,11 +104,11 @@ export function calculateLivePrice(
   menuItem: POSMenuItem,
   ingredients: POSItemIngredient[],
   extras: Set<string>,
-  selectedReplacement: { priceDiff: number } | null
+  selectedReplacements: Map<string, ReplacementSelection>
 ): {
   basePrice: number;
   extrasTotal: number;
-  replacementDiff: number;
+  replacementsDiff: number;
   total: number;
 } {
   const basePrice = menuItem.base_price;
@@ -119,12 +117,13 @@ export function calculateLivePrice(
     .filter((ing) => extras.has(ing.id))
     .reduce((sum, ing) => sum + ing.extra_price, 0);
 
-  const replacementDiff = selectedReplacement?.priceDiff || 0;
+  const replacementsDiff = Array.from(selectedReplacements.values())
+    .reduce((sum, r) => sum + r.priceDiff, 0);
 
   return {
     basePrice,
     extrasTotal,
-    replacementDiff,
-    total: basePrice + extrasTotal + replacementDiff,
+    replacementsDiff,
+    total: basePrice + extrasTotal + replacementsDiff,
   };
 }
