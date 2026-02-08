@@ -1,101 +1,54 @@
 
+# Cart Add Animation + Larger Item Cards
 
-# Cart Item Card Redesign
+## 1. Green blink animation when adding item to cart
 
-Based on the reference image, here are the 4 clear changes:
+When an item is added to cart, the corresponding `CartItemRow` will flash green for ~2 seconds then fade out.
 
-## 1. Remove gap between items, use centered dotted divider
+**How it works:**
+- Track a `highlightedItemId` state in `CartPanel` (or parent)
+- When `addItem` is called, set the highlighted ID to the newly added/updated cart item
+- Pass it down to `CartItemList` -> `CartItemRow`
+- `CartItemRow` applies a green background (`bg-emerald-100`) that fades out over 2s using a CSS transition
+- After 2s, clear the highlight state
 
-- Remove `gap-3` from `CartItemList.tsx`
-- Remove `rounded-2xl border shadow-sm` card styling from each `CartItemRow`
-- Add a **75% width, center-aligned dotted line** between items (not after the last one)
+**Files:**
+- `src/components/pos/cart/CartItem.tsx` -- accept `isHighlighted` prop, apply green flash class
+- `src/components/pos/cart/CartItemList.tsx` -- accept `highlightedItemId`, pass `isHighlighted` to each row
+- `src/components/pos/cart/CartPanel.tsx` -- add `highlightedItemId` state, set it on add, pass down
+- `src/index.css` -- add a `@keyframes cart-flash-green` animation (green bg -> transparent over 2s)
 
-## 2. Restructure layout: Name + unit price on left, controls center, total right
-
-Rearrange the main row into a 12-column grid:
-
-- **Col-5 (left)**: Item name (bold, top) and single unit price below it (smaller, muted)
-- **Col-4 (center)**: Quantity controls ( - qty + )
-- **Col-3 (right)**: Line total (right-aligned, bold)
-
-## 3. Remove pencil edit icon, add red left-border marker for customized items
-
-- Remove the `Pencil` icon button entirely
-- For customized items, add a **4px red left border** on the card (like the reference image shows a red vertical bar on the left edge)
-
-## 4. Clicking the entire card row opens the edit/customize modal
-
-- Make the whole card row clickable via `onClick` that calls `onEditCustomization(item.id)`
-- Add `cursor-pointer` and hover feedback
-- Prevent click bubbling from the quantity +/- buttons so they still work independently
-
----
-
-## Mockup UI
-
-```text
-+----------------------------------------------------------+
-| Chicken Biryani       [ - ]  4  [ + ]          140.00    |
-| 140.00                                                   |
-+----------------------------------------------------------+
-              - - - - - - - - - - - - -                      (75% dotted line)
-+----------------------------------------------------------+
-|RED| Chicken Biryani    [ - ]  1  [ + ]           35.00   |
-|BAR| 35.00                                                |
-|   |  -> Pepsi                              +3.00 SAR     |
-|   |                                      * 38.00         |
-+----------------------------------------------------------+
+**Animation CSS:**
+```css
+@keyframes cart-flash-green {
+  0% { background-color: rgb(209 250 229); }   /* emerald-100 */
+  100% { background-color: transparent; }
+}
+.animate-cart-flash {
+  animation: cart-flash-green 2s ease-out forwards;
+}
 ```
 
-- Top item: no red bar (not customized), clean 3-column layout
-- Bottom item: red left border (customized), modifications listed below, green dot total
+## 2. Increase POS item card size
 
----
+Based on the reference image, the cards should be larger with:
+- Bigger image: `52x52` -> `64x64`
+- Bigger ADD button: `h-8` -> `h-10`
+- More padding: `p-2.5` -> `p-3`
+- Larger text: keep `text-base` for name, bump price to `text-lg`
+- Fewer columns on smaller screens for more room: keep `grid-cols-2` but increase `gap-3` -> `gap-4`
+
+**Files:**
+- `src/components/pos/items/POSItemCard.tsx` -- increase image size, button height, padding
+- `src/components/pos/items/POSItemGrid.tsx` -- increase gap
 
 ## Technical Details
 
-### Files changed
-
 | File | Change |
 |------|--------|
-| `CartItem.tsx` | Remove card border/shadow, add grid cols layout, remove pencil icon, add red left border for customized, make row clickable |
-| `CartItemList.tsx` | Remove `gap-3`, add dotted separator between items |
-
-### CartItemRow structure (new):
-```tsx
-<div onClick={...} className="relative pl-3 py-3 cursor-pointer grid grid-cols-12 items-center">
-  {/* Red marker */}
-  {isCustomized && <div className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-red-500" />}
-  
-  {/* Col-5: Name + unit price */}
-  <div className="col-span-5">
-    <span className="font-bold">{item.name}</span>
-    <span className="text-sm text-muted-foreground">{item.basePrice.toFixed(2)}</span>
-  </div>
-  
-  {/* Col-4: Qty controls */}
-  <div className="col-span-4 flex items-center justify-center gap-1.5">
-    <button>-</button> <span>{qty}</span> <button>+</button>
-  </div>
-  
-  {/* Col-3: Line total */}
-  <div className="col-span-3 text-right font-bold">
-    {lineTotal.toFixed(2)}
-  </div>
-</div>
-{/* Modification lines below the grid row */}
-```
-
-### CartItemList separator:
-```tsx
-{items.map((item, idx) => (
-  <React.Fragment key={item.id}>
-    <CartItemRow ... />
-    {idx < items.length - 1 && (
-      <div className="flex justify-center">
-        <div className="w-3/4 border-b border-dotted border-gray-300" />
-      </div>
-    )}
-  </React.Fragment>
-))}
-```
+| `POSItemCard.tsx` | Image 64x64, button h-10, padding p-3, price text-lg |
+| `POSItemGrid.tsx` | Gap from gap-3 to gap-4 |
+| `CartItem.tsx` | Add `isHighlighted` prop, apply `animate-cart-flash` class |
+| `CartItemList.tsx` | Accept `highlightedItemId`, pass boolean to rows |
+| `CartPanel.tsx` | Add highlight state, set on item add, clear after 2s |
+| `src/index.css` | Add `cart-flash-green` keyframes + `.animate-cart-flash` class |
