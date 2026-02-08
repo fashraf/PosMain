@@ -1,5 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { PlusCircle, Trash2, Pencil, GripVertical, Package } from "lucide-react";
+import { PlusCircle, Trash2, Pencil, GripVertical, Package, Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SubItemMappingItem } from "./SubItemMappingList";
@@ -30,6 +30,7 @@ interface ItemTableProps {
   onReorder?: (mappings: SubItemMappingItem[]) => void;
   onOpenReplacement?: (mappingId: string) => void;
   isCombo: boolean;
+  isComplete?: boolean;
 }
 
 function ReplacementCell({
@@ -222,6 +223,7 @@ export function ItemTable({
   onReorder,
   onOpenReplacement,
   isCombo,
+  isComplete,
 }: ItemTableProps) {
   const { t } = useLanguage();
 
@@ -273,16 +275,25 @@ export function ItemTable({
             {t("itemMapping.items")}
           </span>
         </div>
-        <Button
-          type="button"
-          onClick={onAdd}
-          variant="outline"
-          size="sm"
-          className="h-7 px-3 text-xs font-medium border-border"
-        >
-          <PlusCircle className="h-3.5 w-3.5 me-1" />
-          {t("itemMapping.addItem") || "Add Item"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={onAdd}
+            variant="outline"
+            size="sm"
+            className="h-7 px-3 text-xs font-medium border-border"
+          >
+            <PlusCircle className="h-3.5 w-3.5 me-1" />
+            {t("itemMapping.addItem") || "Add Item"}
+          </Button>
+          {isComplete !== undefined && (
+            isComplete ? (
+              <Check className="h-4 w-4 text-green-600" strokeWidth={2} />
+            ) : (
+              <Circle className="h-4 w-4 text-muted-foreground/50" strokeWidth={1.5} />
+            )
+          )}
+        </div>
       </div>
 
       {/* Table */}

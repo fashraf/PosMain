@@ -1,5 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { PlusCircle, Trash2, Pencil, GripVertical, Carrot } from "lucide-react";
+import { PlusCircle, Trash2, Pencil, GripVertical, Carrot, Check, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ interface IngredientTableProps {
   onAdd: () => void;
   onEdit?: (id: string) => void;
   onReorder?: (mappings: IngredientMappingItem[]) => void;
+  isComplete?: boolean;
 }
 
 function SortableRow({
@@ -154,6 +155,7 @@ export function IngredientTable({
   onAdd,
   onEdit,
   onReorder,
+  isComplete,
 }: IngredientTableProps) {
   const { t } = useLanguage();
 
@@ -187,16 +189,25 @@ export function IngredientTable({
             {t("itemMapping.ingredients")}
           </span>
         </div>
-        <Button
-          type="button"
-          onClick={onAdd}
-          variant="outline"
-          size="sm"
-          className="h-7 px-3 text-xs font-medium border-border"
-        >
-          <PlusCircle className="h-3.5 w-3.5 me-1" />
-          {t("itemMapping.addIngredient") || "Add Item"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={onAdd}
+            variant="outline"
+            size="sm"
+            className="h-7 px-3 text-xs font-medium border-border"
+          >
+            <PlusCircle className="h-3.5 w-3.5 me-1" />
+            {t("itemMapping.addIngredient") || "Add Ingredient"}
+          </Button>
+          {isComplete !== undefined && (
+            isComplete ? (
+              <Check className="h-4 w-4 text-green-600" strokeWidth={2} />
+            ) : (
+              <Circle className="h-4 w-4 text-muted-foreground/50" strokeWidth={1.5} />
+            )
+          )}
+        </div>
       </div>
 
       {/* Table */}
