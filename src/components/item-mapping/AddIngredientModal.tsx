@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import {
   Dialog,
@@ -61,6 +61,18 @@ export function AddIngredientModal({
   const [extraCost, setExtraCost] = useState(0);
   const [canAddExtra, setCanAddExtra] = useState(false);
   const [canRemove, setCanRemove] = useState(false);
+
+  // Pre-fill state when opening in edit mode
+  useEffect(() => {
+    if (open && editData) {
+      const ing = ingredients.find(i => i.id === editData.ingredientId);
+      setSelectedIngredient(ing || null);
+      setQuantity(editData.quantity);
+      setExtraCost(editData.extraCost);
+      setCanAddExtra(editData.canAddExtra);
+      setCanRemove(editData.canRemove);
+    }
+  }, [open, editData, ingredients]);
 
   const getLocalizedName = (obj: { name_en: string; name_ar: string; name_ur: string }) => {
     const key = `name_${currentLanguage}` as keyof typeof obj;
