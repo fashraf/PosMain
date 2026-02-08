@@ -49,11 +49,6 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
             <h3 className="text-base font-semibold leading-tight text-card-foreground truncate">
               {item.name_en}
             </h3>
-            {isCustomizable && (
-              <span className="flex-shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
-                Custom
-              </span>
-            )}
           </div>
           <p className="text-base font-bold text-foreground mt-0.5">
             Rs. {item.base_price.toFixed(2)}
