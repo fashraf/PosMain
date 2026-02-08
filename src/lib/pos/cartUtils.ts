@@ -12,21 +12,24 @@ export function generateCustomizationHash(customization: CustomizationData): str
     .map((r) => r.id)
     .sort()
     .join(",");
-  const replacement = customization.replacement?.id || "";
+  const sortedReplacements = [...customization.replacements]
+    .map((r) => r.id)
+    .sort()
+    .join(",");
 
-  return `E:${sortedExtras}|R:${sortedRemovals}|REP:${replacement}`;
+  return `E:${sortedExtras}|R:${sortedRemovals}|REP:${sortedReplacements}`;
 }
 
 /**
- * Calculate item price including extras and replacement price difference
+ * Calculate item price including extras and replacement price differences
  */
 export function calculateItemPrice(
   basePrice: number,
   customization: CustomizationData
 ): number {
   const extrasTotal = customization.extras.reduce((sum, e) => sum + e.price, 0);
-  const replacementDiff = customization.replacement?.priceDiff || 0;
-  return basePrice + extrasTotal + replacementDiff;
+  const replacementsDiff = customization.replacements.reduce((sum, r) => sum + r.priceDiff, 0);
+  return basePrice + extrasTotal + replacementsDiff;
 }
 
 /**
@@ -47,7 +50,6 @@ export function addToCart(
   const customizationHash = generateCustomizationHash(newItem.customization);
   const unitPrice = calculateItemPrice(newItem.basePrice, newItem.customization);
 
-  // Check if same item with same customization exists
   const existingIndex = cart.findIndex(
     (item) =>
       item.menuItemId === newItem.menuItemId &&
@@ -55,7 +57,6 @@ export function addToCart(
   );
 
   if (existingIndex !== -1) {
-    // Merge quantities
     const updatedCart = [...cart];
     const existingItem = updatedCart[existingIndex];
     const newQuantity = existingItem.quantity + newItem.quantity;
@@ -67,7 +68,6 @@ export function addToCart(
     return updatedCart;
   }
 
-  // Add as new item
   const cartItem: CartItem = {
     id: crypto.randomUUID(),
     menuItemId: newItem.menuItemId,
@@ -148,7 +148,7 @@ export function hasCustomization(customization: CustomizationData): boolean {
   return (
     customization.extras.length > 0 ||
     customization.removals.length > 0 ||
-    customization.replacement !== null
+    customization.replacements.length > 0
   );
 }
 
@@ -159,6 +159,6 @@ export function createEmptyCustomization(): CustomizationData {
   return {
     extras: [],
     removals: [],
-    replacement: null,
+    replacements: [],
   };
 }

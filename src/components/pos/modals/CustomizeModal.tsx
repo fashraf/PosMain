@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IngredientRow } from "./IngredientRow";
 import { ReplacementPills } from "./ReplacementPills";
-import { ChangesSummary } from "./ChangesSummary";
 import { PriceAnimator } from "./PriceAnimator";
 import { usePOSItemDetails } from "@/hooks/pos";
-import type { POSMenuItem } from "@/lib/pos/types";
+import type { POSMenuItem, ReplacementSelection } from "@/lib/pos/types";
 import type { POSCartHook } from "@/hooks/pos";
 import { buildCustomizationData, calculateLivePrice } from "@/lib/pos/priceCalculations";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,14 +43,12 @@ export function CustomizeModal({
 }: CustomizeModalProps) {
   const [extras, setExtras] = useState<Set<string>>(new Set());
   const [removals, setRemovals] = useState<Set<string>>(new Set());
-  const [selectedReplacement, setSelectedReplacement] = useState<{
-    id: string; group: string; name: string; priceDiff: number;
-  } | null>(null);
+  const [selectedReplacements, setSelectedReplacements] = useState<Map<string, ReplacementSelection>>(new Map());
   const [showDirtyWarning, setShowDirtyWarning] = useState(false);
 
   const { data: itemDetails, isLoading } = usePOSItemDetails(open ? menuItem?.id ?? null : null);
 
-  const isDirty = extras.size > 0 || removals.size > 0 || selectedReplacement !== null;
+  const isDirty = extras.size > 0 || removals.size > 0 || selectedReplacements.size > 0;
 
   useEffect(() => {
     if (open && menuItem) {
@@ -60,20 +57,24 @@ export function CustomizeModal({
         if (cartItem) {
           setExtras(new Set(cartItem.customization.extras.map((e) => e.id)));
           setRemovals(new Set(cartItem.customization.removals.map((r) => r.id)));
-          setSelectedReplacement(cartItem.customization.replacement || null);
+          const repMap = new Map<string, ReplacementSelection>();
+          cartItem.customization.replacements.forEach((r) => {
+            repMap.set(r.group, r);
+          });
+          setSelectedReplacements(repMap);
           return;
         }
       }
       setExtras(new Set());
       setRemovals(new Set());
-      setSelectedReplacement(null);
+      setSelectedReplacements(new Map());
     }
   }, [open, menuItem, editingCartItemId, cart.items]);
 
   const livePrice = useMemo(() => {
     if (!itemDetails) return null;
-    return calculateLivePrice(itemDetails.item, itemDetails.ingredients, extras, selectedReplacement);
-  }, [itemDetails, extras, selectedReplacement]);
+    return calculateLivePrice(itemDetails.item, itemDetails.ingredients, extras, selectedReplacements);
+  }, [itemDetails, extras, selectedReplacements]);
 
   const handleExtraToggle = useCallback((id: string) => {
     setExtras((prev) => {
@@ -99,23 +100,27 @@ export function CustomizeModal({
     });
   }, []);
 
-  const handleReplacementSelect = useCallback((rep: any | null) => {
-    if (!rep) {
-      setSelectedReplacement(null);
-    } else {
-      setSelectedReplacement({
-        id: rep.id,
-        group: rep.replacement_group,
-        name: rep.replacement_name_en,
-        priceDiff: rep.price_difference,
-      });
-    }
+  const handleReplacementSelect = useCallback((group: string, rep: any | null) => {
+    setSelectedReplacements((prev) => {
+      const next = new Map(prev);
+      if (!rep) {
+        next.delete(group);
+      } else {
+        next.set(group, {
+          id: rep.id,
+          group: rep.replacement_group,
+          name: rep.replacement_name_en,
+          priceDiff: rep.price_difference,
+        });
+      }
+      return next;
+    });
   }, []);
 
   const handleAddToCart = () => {
     if (!itemDetails) return;
     const customization = buildCustomizationData(
-      itemDetails.ingredients, extras, removals, selectedReplacement
+      itemDetails.ingredients, extras, removals, selectedReplacements
     );
     if (editingCartItemId) {
       cart.updateItemCustomization(editingCartItemId, customization);
@@ -211,9 +216,9 @@ export function CustomizeModal({
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-5 h-full">
-                {/* Left Card: Ingredients */}
-                <div className="rounded-xl bg-gray-50 flex flex-col overflow-hidden border border-gray-200">
+              <div className="grid grid-cols-12 gap-5 h-full">
+                {/* Left Card: Ingredients — col-span-4 */}
+                <div className="col-span-4 rounded-xl bg-gray-50 flex flex-col overflow-hidden border border-gray-200">
                   <div className="border-b border-gray-200 px-5 py-3">
                     <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wider">
                       Ingredients
@@ -243,8 +248,8 @@ export function CustomizeModal({
                   </ScrollArea>
                 </div>
 
-                {/* Right Card: Combo Replacements */}
-                <div className="rounded-xl bg-gray-50 flex flex-col overflow-hidden border border-gray-200">
+                {/* Right Card: Combo Replacements — col-span-8 */}
+                <div className="col-span-8 rounded-xl bg-gray-50 flex flex-col overflow-hidden border border-gray-200">
                   <div className="border-b border-gray-200 px-5 py-3">
                     <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wider">
                       Combo Replacements
@@ -259,8 +264,8 @@ export function CustomizeModal({
                               key={group}
                               groupName={group}
                               replacements={reps}
-                              selectedId={selectedReplacement?.id ?? null}
-                              onSelect={handleReplacementSelect}
+                              selectedId={selectedReplacements.get(group)?.id ?? null}
+                              onSelect={(rep) => handleReplacementSelect(group, rep)}
                               isLast={idx === arr.length - 1}
                             />
                           ))}

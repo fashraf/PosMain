@@ -39,9 +39,9 @@ export function OrderSummary({
                 {item.customization.removals.map((r) => (
                   <div key={r.id}>- {r.name}</div>
                 ))}
-                {item.customization.replacement && (
-                  <div>Replace: {item.customization.replacement.name}</div>
-                )}
+                {item.customization.replacements.map((r) => (
+                  <div key={r.id}>Replace: {r.name}</div>
+                ))}
               </div>
             )}
           </div>

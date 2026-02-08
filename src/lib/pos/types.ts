@@ -79,6 +79,13 @@ export interface POSOrderItem {
   created_at: string;
 }
 
+export interface ReplacementSelection {
+  id: string;
+  group: string;
+  name: string;
+  priceDiff: number;
+}
+
 // Cart types (client-side)
 export interface CartItem {
   id: string; // Unique cart item ID
@@ -101,12 +108,7 @@ export interface CustomizationData {
     id: string;
     name: string;
   }>;
-  replacement?: {
-    id: string;
-    group: string;
-    name: string;
-    priceDiff: number;
-  } | null;
+  replacements: ReplacementSelection[];
 }
 
 export interface CartState {
