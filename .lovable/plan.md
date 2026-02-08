@@ -1,66 +1,75 @@
 
 
-# Redesign Cart Item Row to Match Reference
+# Fix Combo Sub-Item Persistence and Cart Clear All UI
 
-## What Changes
+## Problem 1: Combo Sub-Items Don't Save
 
-The cart item row will be redesigned to match the reference screenshot with these behaviors:
+When creating a combo item (e.g., Chicken Biryani with Pepsi), the sub-items added in the Items section are never saved to the database. The save function only persists ingredients to `item_ingredients` but skips sub-item mappings entirely because there is no database table for them.
 
-### Visual Layout (matching the reference image)
+### Solution
 
-```text
-+-------------------------------------------------------+
-| Total Item : 7 Qty Total |            [    Clear All  ]
-+--------------------------------------------------------+
-| [edit icon] Masala Paneer  [-] 1 [+]           228.00  |
-| Price : 228.00 * 1 |
-| × Tomato                                     removed
-| + Extra Cheese                               +2.00 SAR
-| ✏ Pepsi → Ice Tea                           +3.00 SAR
-|                                           > 233.00 SAR (Bold)
-+-------------------------------------------------------+
-| Chicken Biryani             [-] 1 [+]      228.00 (Bold)
-| Price : 228.00 * 1 |
+1. **Create a new `item_sub_items` table** to persist combo sub-item mappings:
 
-+-------------------------------------------------------+
+| Column | Type | Description |
+|---|---|---|
+| id | uuid (PK) | Auto-generated |
+| item_id | uuid (FK to items) | The parent combo item |
+| sub_item_id | uuid (FK to items) | The child item (e.g., Pepsi) |
+| quantity | integer | Default 1 |
+| sort_order | integer | Display order |
+| is_default | boolean | First added = true (default item, always 0 cost) |
+| replacement_price | numeric | Price for replacement items (non-default) |
+| can_remove | boolean | Whether user can remove this from cart (false for replacements) |
 
+2. **Update the save function** in `ItemsAdd.tsx` (and `ItemsEdit.tsx`) to insert sub-item mappings into the new table after saving the item.
 
+3. **Update the edit page** to load existing sub-item mappings from the database when editing a combo item.
 
-- **Left icon**: A customization indicator (e.g., a pencil/edit icon) shown only when the item has customizations. Clicking it opens the Customize Modal to view/edit modifications.
-- **Item name**: Bold, on the first line next to the icon.
-- **Quantity controls**: Colored minus (red/pink) and plus (blue) buttons with quantity between them.
-- **Total**: Right-aligned line total.
-- **Price breakdown**: Below the name, showing `Price : {unitPrice} * {qty}`.
-- **Customization tags**: Listed below the price -- removals in red with `-` prefix, extras in green with `+` prefix, replacements in blue.
-- **Minus to 1 deletes**: When quantity is 1 and user clicks minus, the item is removed from the cart (this already works via `updateCartItemQuantity` returning null for qty <= 0).
+## Problem 2: Combo Sub-Item POS Logic
 
-### Cart Header Update
+The business rules for combo sub-items in POS:
+- The **first sub-item** added is the **default** -- it always costs 0 (included in the combo price)
+- Subsequent sub-items are **replacements** -- they have an additional cost
+- Replacements **cannot be removed** from the order (you can only swap between them)
 
-- Show "Total Item : {count}" matching the reference format, replacing the current "Cart" label with badge.
+This logic will need to be reflected when syncing to `pos_item_replacements` or handled directly from `item_sub_items` in the POS hooks.
 
-### Behavior Details
+### Solution
 
-- Clicking the edit icon on a customized item opens the CustomizeModal (not the old drawer) so the user can review and modify customizations.
-- The separate "Remove" button row will be removed since minus-to-zero handles deletion.
-- Non-customized items won't show the edit icon.
+Update the POS item details hook (`usePOSItemDetails`) to also fetch from `item_sub_items` and build replacement groups from them:
+- Default sub-item becomes the "default" replacement option (price = 0)
+- Other sub-items become replacement alternatives (with their replacement_price)
+
+## Problem 3: Clear All Button UI
+
+The current "Clear All" is a small text link. Per the reference image, it should be a proper button with a trash icon and confirmation before clearing.
+
+### Solution
+
+- Style "Clear All" as a visible button with the trash icon (matching the reference image layout)
+- Add a confirmation dialog: "Are you sure you want to clear all items from the cart?"
 
 ## Technical Details
 
+### Database Migration
+
+Create table `item_sub_items` with RLS policies matching `item_ingredients`.
+
 ### Files to Modify
 
-1. **`src/components/pos/cart/CartItem.tsx`** -- Complete redesign of the row layout:
-   - Replace `(c)` text indicator with a clickable edit icon (only for customized items)
-   - Show price breakdown line: `Price : {unitPrice} * {qty}`
-   - Style minus button with red/pink tint, plus button with blue tint
-   - Remove the separate "Remove" / "Trash" button row
-   - Keep customization detail lines (extras, removals, replacements)
+| File | Change |
+|---|---|
+| `src/pages/ItemsAdd.tsx` | Add sub-item insert logic after item save (lines ~600-616) |
+| `src/pages/ItemsEdit.tsx` | Load existing sub-items on edit; save updates |
+| `src/hooks/pos/usePOSItemDetails.ts` (or equivalent) | Fetch `item_sub_items` and build replacement data from them |
+| `src/components/pos/cart/CartHeader.tsx` | Restyle "Clear All" as a proper button |
+| `src/components/pos/cart/CartPanel.tsx` | Add clear-all confirmation dialog |
 
-2. **`src/components/pos/cart/CartHeader.tsx`** -- Update to show `Total Item : {count}` format with column headers (Qty, Total).
+### Sequence
 
-3. **`src/components/pos/cart/CartPanel.tsx`** -- Pass `totalQuantity` to CartHeader for the item count display.
+1. Create `item_sub_items` table via migration
+2. Update ItemsAdd save logic to persist sub-items
+3. Update ItemsEdit to load and save sub-items
+4. Update POS hooks to read from `item_sub_items` for replacement data
+5. Update CartHeader Clear All button styling and add confirmation modal
 
-4. **`src/components/pos/cart/CartItemList.tsx`** -- Update `onEdit` prop to work with the new icon click pattern (pass a simpler callback since the edit icon is directly on the row).
-
-5. **`src/pages/pos/POSMain.tsx`** -- Wire the cart item edit to open `CustomizeModal` instead of `CustomizeDrawer`, so clicking the edit icon on a cart item opens the same modal used for initial customization.
-
-### No database or schema changes required.
