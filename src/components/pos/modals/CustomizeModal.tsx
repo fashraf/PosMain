@@ -253,14 +253,15 @@ export function CustomizeModal({
                   <ScrollArea className="flex-1">
                     <div className="px-5 py-4">
                       {hasReplacements ? (
-                        <div className="space-y-5">
-                          {Object.entries(replacementGroups).map(([group, reps]) => (
+                        <div>
+                          {Object.entries(replacementGroups).map(([group, reps], idx, arr) => (
                             <ReplacementPills
                               key={group}
                               groupName={group}
                               replacements={reps}
                               selectedId={selectedReplacement?.id ?? null}
                               onSelect={handleReplacementSelect}
+                              isLast={idx === arr.length - 1}
                             />
                           ))}
                         </div>
