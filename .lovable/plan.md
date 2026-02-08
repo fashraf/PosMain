@@ -1,69 +1,60 @@
 
 
-# Clean Up Ingredient & Item Grids + Remove Replacement from Item Modal
+# Fix Ingredient Grid: Replace Card Layout with Table + Add Edit Action
 
-## Changes Overview
+## Problem
 
-### 1. IngredientTable -- Add "Actions" Column Header + Make Edit Modal-Only
+The ItemsAdd and ItemsEdit pages currently render `IngredientMappingList` (a drag-and-drop card-based component without column headers or an Edit button) instead of the redesigned `IngredientTable` (which has proper table headers, badges, and Edit/Delete actions).
+
+## Changes
+
+### 1. Clean Up IngredientTable Columns
 
 **File**: `src/components/item-mapping/IngredientTable.tsx`
 
-- Add "Actions" label to the currently empty `<th>` column header (line 68)
-- Remove the inline `QuantityControl` from the Quantity column -- display quantity as read-only text instead (editing happens only via the modal)
-- Remove the cost footer (`<tfoot>` block, lines 172-184) -- no cost details at the bottom
-- Remove `onQuantityChange` from the props interface since quantity is no longer editable inline
-- Remove `totalCost` from props since footer is removed
+Remove the "Cost" column (the last data column showing `SAR {(quantity * 5).toFixed(2)}`) since it is not in the spec. The final columns will be:
 
-### 2. AddItemModal -- Remove Replacement Rule Section
+| Name | Quantity | Can Add | Extra Cost | Can Remove | Actions |
 
-**File**: `src/components/item-mapping/AddItemModal.tsx`
+- Remove the `<th>` for "Cost" (line 60-62)
+- Remove the `<td>` for cost (line 116-118)
+- Update `colSpan` on empty state row from 7 to 6
 
-- Delete Section 3 ("Replacement Rule") entirely (lines 302-361) -- the replacement item dropdown, validation error, and section header
-- Remove `replacementItem` state, `replacementDropdownOpen` state, `replacementItems` memo, and `replacementError` logic
-- Update `onConfirm` signature to remove the `replacementItem` parameter
-- Update `handleConfirm` to not pass `replacementItem`
-- Update `isValid` to remove `replacementError` check
-- Clean up `handleClose` to remove replacement state resets
-- Remove `editData.replacementItemId` handling from `handleOpenChange`
+### 2. Replace IngredientMappingList with IngredientTable in ItemsAdd
 
-### 3. ItemTable -- Redesign to Match IngredientTable Style
+**File**: `src/pages/ItemsAdd.tsx`
 
-**File**: `src/components/item-mapping/ItemTable.tsx`
+- Replace `<IngredientMappingList>` (lines 952-956) with `<IngredientTable>` passing:
+  - `mappings={ingredientMappings}`
+  - `onRemove={handleIngredientRemove}`
+  - `onAdd={() => setShowAddIngredientModal(true)}`
+  - `onEdit={handleEditIngredient}`
+- Remove the "Add Ingredient" button from the `DashedSectionCard`'s `rightBadge` prop (since `IngredientTable` has its own Add button in the header)
+- Remove the cost footer block (lines 958-965)
+- Update imports: add `IngredientTable` from `@/components/item-mapping`, remove `IngredientMappingList` import if no longer used
 
-Complete redesign to use the same clean table structure as IngredientTable with:
+### 3. Replace IngredientMappingList with IngredientTable in ItemsEdit
 
-| Column | Align | Content |
-|--------|-------|---------|
-| Name | Left | Item name (text) |
-| Replacement | Center | Replacement item name or "--" |
-| Quantity | Center | Read-only quantity display (no inline edit) |
-| Combo Price | Right | SAR value |
-| Actual Cost | Right | SAR value |
-| Can Add | Center | Green pill badge (Yes) or dash |
-| Can Remove | Center | Blue pill badge (Yes) or dash |
-| Actions | Center | Edit (pencil, opens modal) + Delete (trash, confirmation) |
+**File**: `src/pages/ItemsEdit.tsx`
 
-- Remove `onQuantityChange` from props (no inline editing)
-- Remove replacement sub-rows (no longer needed since replacement is just a column value)
-- Remove `onReplacement`, `onRemoveReplacement`, `onViewReplacement` props
-- Remove footer with cost totals (`totalCost`, `totalComboPrice` props removed)
-- Same visual styling as IngredientTable: zebra striping, hover effects, pill badges, animation
+Same changes as ItemsAdd:
+- Replace `<IngredientMappingList>` with `<IngredientTable>`
+- Remove duplicate Add button from `rightBadge`
+- Remove cost footer
+- Update imports
 
-### 4. Update Parent Pages (ItemsAdd + ItemsEdit)
+### 4. Replace IngredientMappingList with IngredientTable in ItemIngredientMappingEdit
 
-**Files**: `src/pages/ItemsAdd.tsx`, `src/pages/ItemsEdit.tsx`
+**File**: `src/pages/ItemIngredientMappingEdit.tsx`
 
-- Remove `onQuantityChange` prop from `IngredientTable` usage
-- Remove `totalCost` prop from `IngredientTable` usage
-- Remove `onQuantityChange`, `totalCost`, `totalComboPrice`, `onReplacement`, `onRemoveReplacement`, `onViewReplacement` props from `ItemTable` usage
-- Update `AddItemModal` `onConfirm` handler to remove `replacementItem` parameter
+- Already uses `IngredientTable` but does not pass `onEdit` -- add `onEdit` prop and wire up an edit handler
 
 ## Files Modified
 
-| File | Action |
-|------|--------|
-| `src/components/item-mapping/IngredientTable.tsx` | Add Actions header, remove inline quantity editing, remove cost footer |
-| `src/components/item-mapping/AddItemModal.tsx` | Remove Section 3 (Replacement Rule) and all replacement-related state/logic |
-| `src/components/item-mapping/ItemTable.tsx` | Rewrite to match IngredientTable style with specified columns |
-| `src/pages/ItemsAdd.tsx` | Update props passed to grids and modal |
-| `src/pages/ItemsEdit.tsx` | Same prop updates |
+| File | Changes |
+|------|---------|
+| `src/components/item-mapping/IngredientTable.tsx` | Remove "Cost" column, update colSpan |
+| `src/pages/ItemsAdd.tsx` | Replace IngredientMappingList with IngredientTable, remove duplicate Add button and cost footer |
+| `src/pages/ItemsEdit.tsx` | Same as ItemsAdd |
+| `src/pages/ItemIngredientMappingEdit.tsx` | Add onEdit prop to IngredientTable |
+
