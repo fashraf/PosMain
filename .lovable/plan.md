@@ -1,71 +1,106 @@
 
 
-# Switch Customize Modal from Dark Theme to White/Light Theme
+# Fix: Combo Slot/Replacement Architecture
 
-## Overview
+## Problem
 
-Change the Customize Modal's color scheme from the current dark theme (`#0f1217` background, white text) to a clean white/light theme that matches the POS module's existing light design language.
+When adding items to a combo, every item (including replacements like Pepsi) appears as a **separate independent row** in the combo list. The replacement relationship is lost because:
 
-## Color Mapping
+1. The "Add Item" button adds every item as a top-level entry
+2. The save logic treats all entries as flat rows (using array index to determine default)
+3. The replacements added via ReplacementModal are stored in client state but **never persisted** to the database
+4. On edit/load, replacements are not reconstructed from the database
 
-| Element | Current (Dark) | New (Light) |
-|---|---|---|
-| Modal background | `bg-[#0f1217]` | `bg-white` |
-| Text color | `text-white` | `text-gray-900` |
-| Header border | `border-gray-800` | `border-gray-200` |
-| Cards background | `bg-[#1a1f2e]` | `bg-gray-50` |
-| Card borders | `border-gray-700/50` | `border-gray-200` |
-| Section titles | `text-gray-400` | `text-gray-500` |
-| Footer border | `border-gray-800` | `border-gray-200` |
-| Close button bg | `bg-gray-800 hover:bg-gray-700` | `bg-gray-100 hover:bg-gray-200` |
-| Close button icon | `text-gray-400` | `text-gray-500` |
+## Root Cause
 
-## Files Changed (5)
+The save logic in both `ItemsAdd.tsx` and `ItemsEdit.tsx` ignores the `replacements[]` array on each sub-item mapping. It saves all `subItemMappings` as flat `item_sub_items` rows using index position to decide default vs replacement. The ReplacementModal correctly manages client-side state, but its data is discarded at save time.
 
-### 1. `CustomizeModal.tsx`
-- Modal: `bg-[#0f1217] text-white` → `bg-white text-gray-900`
-- Header title: `text-white` → `text-gray-900`
-- Header borders: `border-gray-800` → `border-gray-200`
-- Price labels: `text-gray-400` → `text-gray-500`, values: `text-white` → `text-gray-900`
-- Close button: `bg-gray-800 hover:bg-gray-700` → `bg-gray-100 hover:bg-gray-200`
-- Body cards: `bg-[#1a1f2e]` → `bg-gray-50`
-- Card header borders: `border-gray-700/50` → `border-gray-200`
-- Section titles: keep uppercase style, change `text-gray-400` → `text-gray-500`
-- Footer: `border-gray-800` → `border-gray-200`
-- Cancel button: `border-gray-600 text-gray-400 hover:bg-gray-800` → `border-gray-300 text-gray-600 hover:bg-gray-100`
-- Add to Cart button: keep `bg-primary text-white` (no change needed)
-- Dirty warning dialog: `bg-[#1a1f2e] border-gray-700 text-white` → `bg-white border-gray-200 text-gray-900`
+## Solution
 
-### 2. `IngredientRow.tsx`
-- Default card: `bg-[#111827] border-gray-700/50` → `bg-white border-gray-200`
-- Remove ON state: `bg-red-950/30 border-red-500/30` → `bg-red-50 border-red-200`
-- Extra ON state: `bg-emerald-950/20 border-emerald-500/30` → `bg-emerald-50 border-emerald-200`
-- Name text: `text-white` → `text-gray-900`
-- Removed name: `text-red-400` → `text-red-500`
-- Price text: `text-gray-400` → `text-gray-500`
-- Toggle labels: `text-gray-400` → `text-gray-500`
-- Extra badge: `bg-emerald-500/20 text-emerald-400` → `bg-emerald-100 text-emerald-700`
+### 1. Fix Save Logic (ItemsAdd.tsx + ItemsEdit.tsx)
 
-### 3. `ReplacementPills.tsx`
-- Group header: `text-gray-400` → `text-gray-500`
-- Selected row: `bg-primary/15 border-primary/30` → `bg-primary/10 border-primary/30` (keep similar)
-- Unselected row: `hover:bg-white/5` → `hover:bg-gray-50`
-- Radio circle border: `border-gray-600` → `border-gray-300`
-- Selected name: `text-white` → `text-gray-900`
-- Unselected name: `text-gray-400` → `text-gray-500`
-- Price: `text-gray-400` → `text-gray-500`
-- Default badge: `bg-gray-700 text-gray-300` → `bg-gray-200 text-gray-600`
+Change the sub-item save to flatten slots + their replacements into `item_sub_items` rows:
 
-### 4. `ChangesSummary.tsx`
-- "Changes Applied" header: `text-gray-500` → `text-gray-400`
-- Change text: `text-gray-300` → `text-gray-600`
-- Extra item names: `text-white` → `text-gray-900`
-- Price values: `text-gray-400` → `text-gray-500`
-- Separator: `border-gray-700` → `border-gray-200`
-- Total text: `text-white` → `text-gray-900`
+- For each sub-item mapping (slot), insert one row with `is_default = true`, `replacement_price = 0`
+- For each entry in that slot's `replacements[]` array, insert an additional row with `is_default = false`, `replacement_price = extra_cost`, and the replacement's `sub_item_id`
 
-### 5. `PriceAnimator.tsx`
-- No color changes needed (colors are passed via className prop)
+Before (broken):
+```
+subItemMappings.map((m, index) => ({
+  sub_item_id: m.sub_item_id,
+  is_default: index === 0,  // Only first item is default
+  replacement_price: index === 0 ? 0 : m.unit_price,
+}))
+```
 
-## No logic changes -- only CSS class swaps.
+After (correct):
+```
+For each slot in subItemMappings:
+  -> Insert default row: { sub_item_id: slot.sub_item_id, is_default: true, replacement_price: 0 }
+  -> For each replacement in slot.replacements:
+     -> Insert: { sub_item_id: replacement.item_id, is_default: false, replacement_price: replacement.extra_cost }
+```
+
+### 2. Fix Load Logic (ItemsEdit.tsx)
+
+When loading existing `item_sub_items` from the database, reconstruct the slot/replacement grouping:
+
+- Find all rows where `is_default = true` -- these are slots
+- Find all rows where `is_default = false` -- these are replacements
+- Attach non-default rows as `replacements[]` on the default slot entry
+
+### 3. UI Improvements for Clarity
+
+**ItemTable.tsx** -- Make the slot/replacement relationship obvious:
+
+- Default items show a `[Default]` badge and a locked icon (no delete button)
+- The "Replacement" column shows the count badge (already exists) linking to ReplacementModal
+- Replacement items are NOT shown as separate rows -- they only appear via the ReplacementModal or as a count badge
+
+**AddItemModal** -- Each item added via "Add Item" creates a new **slot** (always the default for that slot). The button label can stay "Add Item" since it adds a combo slot.
+
+No changes needed to ReplacementModal -- it already correctly manages the replacement list within a slot.
+
+### 4. Prevent Default Item Removal
+
+In the remove handler and ItemTable, check if the item being removed is the only default in any slot. If it has replacements, block removal with a toast: "Remove all replacements first before removing the default item."
+
+## Files Changed
+
+| File | Change |
+|---|---|
+| `src/pages/ItemsAdd.tsx` | Fix save logic to flatten slots + replacements into `item_sub_items` rows |
+| `src/pages/ItemsEdit.tsx` | Fix save logic (same as above) + fix load logic to reconstruct slots from DB |
+| `src/components/item-mapping/ItemTable.tsx` | Add [Default] badge, lock icon on default items, hide delete for defaults with replacements |
+
+## Technical Details
+
+### Save format in `item_sub_items` table
+
+For a combo "Chicken Biryani" with slot: Mango Bite (default) + Pepsi (replacement +3.50):
+
+| item_id | sub_item_id | is_default | replacement_price | sort_order |
+|---|---|---|---|---|
+| biryani | mango_bite | true | 0 | 1 |
+| biryani | pepsi | false | 3.50 | 2 |
+
+### Load reconstruction logic (ItemsEdit)
+
+```
+const defaults = itemSubItems.filter(r => r.is_default);
+const nonDefaults = itemSubItems.filter(r => !r.is_default);
+
+const mappings = defaults.map(d => ({
+  ...mapToSubItemMapping(d),
+  replacements: nonDefaults.map(nd => ({
+    id: nd.id,
+    item_id: nd.sub_item_id,
+    item_name: nd.sub_item?.name_en,
+    extra_cost: Number(nd.replacement_price),
+    is_default: false,
+  })),
+}));
+```
+
+This ensures the ReplacementModal shows existing replacements when editing, and the save logic correctly persists them.
 
