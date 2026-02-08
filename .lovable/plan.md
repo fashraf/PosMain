@@ -1,52 +1,53 @@
 
+# Merge Ingredient/Item Headers and Enhance Delete Confirmation
 
-# Fix Edit Modal Pre-fill and Item Replacement Grid
+## What Changes
 
-## Problems
+### 1. Remove separate headers from IngredientTable and ItemTable
+Both tables currently have their own header bars with title + "Add" button. These will be removed. Instead, the parent `DashedSectionCard` wrappers in `ItemsAdd.tsx` and `ItemsEdit.tsx` will be replaced with a single unified section card that has both "Add Ingredient" and "Add Item" buttons in its header.
 
-1. **Ingredient/Item dropdowns don't pre-fill on Edit**: When clicking "Edit" on a mapped ingredient or item, the modal opens but the dropdown shows "Select..." instead of the current ingredient/item. This happens because the modals initialize state inside `handleOpenChange`, which is the Dialog's internal callback -- but the parent sets `open={true}` directly via the prop, so `handleOpenChange` never fires on open.
+### 2. Unified Mapping Section
+Replace the two separate `DashedSectionCard` wrappers (one for Ingredients, one for Items) with a single section that:
+- Has a single header with title "Mapping" (or similar)
+- Shows "Add Ingredient" and "Add Item" (if combo) buttons in the top-right
+- Renders both `IngredientTable` and `ItemTable` stacked inside
 
-2. **Item Replacement grid not visible on Edit page**: The `ItemTable` (combo sub-items) section only renders when `formData.is_combo` is true, which works. However, there is no database query to load existing sub-item mappings, so the grid always appears empty. (There is currently no `item_sub_items` table in the database -- sub-items are local-only state.)
+### 3. Remove internal headers from IngredientTable and ItemTable
+- `IngredientTable`: Remove the header bar (icon + title + "Add" button) at lines 181-200. Keep only the `<table>` content.
+- `ItemTable`: Remove the header bar at lines 267-286 (and the non-combo placeholder at 248-263). Keep only the `<table>` content. The `onAdd` prop can be removed from both.
 
-## Changes
+### 4. Delete confirmation mentions replacements
+Update `RemoveConfirmModal` to accept an optional `replacementCount` prop. When deleting an item that has replacements, the confirmation message will include a note like: "This will also remove X replacement(s) associated with this item."
 
-### 1. Fix AddIngredientModal Pre-fill
+## Technical Details
 
-**File**: `src/components/item-mapping/AddIngredientModal.tsx`
-
-Add a `useEffect` that watches `open` and `editData` props. When both are truthy, initialize the local state (selectedIngredient, quantity, extraCost, canAddExtra, canRemove). Remove the initialization logic from `handleOpenChange` to avoid duplication.
-
-```typescript
-useEffect(() => {
-  if (open && editData) {
-    const ing = ingredients.find(i => i.id === editData.ingredientId);
-    setSelectedIngredient(ing || null);
-    setQuantity(editData.quantity);
-    setExtraCost(editData.extraCost);
-    setCanAddExtra(editData.canAddExtra);
-    setCanRemove(editData.canRemove);
-  }
-}, [open, editData, ingredients]);
-```
-
-### 2. Fix AddItemModal Pre-fill
-
-**File**: `src/components/item-mapping/AddItemModal.tsx`
-
-Same fix -- add a `useEffect` on `open` + `editData` to initialize selectedItem, quantity, extraCost, canAddExtra, canRemove.
-
-### 3. Ensure Replacement Grid Shows in ItemsEdit
-
-**File**: `src/pages/ItemsEdit.tsx`
-
-The combo sub-items section is already conditionally rendered. However, there is no database table to persist sub-item mappings yet, so the grid will be empty on edit. For now, the grid will display correctly (with drag-and-drop, replacement badges, etc.) for any items added during the current session. A future migration would be needed to persist combo sub-items.
-
-No code changes needed for this file -- the grid already renders when `is_combo` is true.
-
-## Files Modified
+### Files Modified
 
 | File | Change |
 |------|--------|
-| `src/components/item-mapping/AddIngredientModal.tsx` | Add `useEffect` for edit data pre-fill, remove duplicate logic from `handleOpenChange` |
-| `src/components/item-mapping/AddItemModal.tsx` | Add `useEffect` for edit data pre-fill, remove duplicate logic from `handleOpenChange` |
+| `src/components/item-mapping/IngredientTable.tsx` | Remove header div (lines 181-200), remove `onAdd` from props, render only the table directly inside the border container |
+| `src/components/item-mapping/ItemTable.tsx` | Remove header div (lines 267-286) and non-combo placeholder (lines 248-263), remove `onAdd` from props, render only the table. When `!isCombo`, render nothing (or just a disabled message without header) |
+| `src/components/item-mapping/RemoveConfirmModal.tsx` | Add optional `replacementCount?: number` prop. When > 0, append warning text about replacements being deleted |
+| `src/pages/ItemsAdd.tsx` | Replace two separate `DashedSectionCard` wrappers (ingredients + items) with one unified section. Move "Add Ingredient" and "Add Item" buttons into the section header. Pass replacement count to RemoveConfirmModal |
+| `src/pages/ItemsEdit.tsx` | Same changes as ItemsAdd.tsx -- unified section with both buttons in header, pass replacement count to RemoveConfirmModal |
+| `src/pages/ItemIngredientMappingEdit.tsx` | Same pattern -- unified section header with action buttons |
 
+### Unified Section Layout
+
+```text
++--------------------------------------------------+
+| [Carrot] Mapping    [+ Add Ingredient] [+ Add Item] |
++--------------------------------------------------+
+| Ingredients Table (drag, name, qty, etc.)         |
+|--------------------------------------------------|
+| Items Table (drag, name, replacement, qty, etc.)  |
+| (only shown when is_combo = true)                 |
++--------------------------------------------------+
+```
+
+### RemoveConfirmModal Enhancement
+
+When `itemType === "item"` and `replacementCount > 0`:
+- Show additional warning: "This will also remove {count} replacement(s) associated with this item."
+
+The replacement count is derived from the mapping's `replacements?.length` when calling `handleRequestRemove`.
