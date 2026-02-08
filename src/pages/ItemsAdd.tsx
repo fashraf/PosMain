@@ -943,6 +943,7 @@ export default function ItemsAdd() {
                 onRemove={handleIngredientRemove}
                 onAdd={() => setShowAddIngredientModal(true)}
                 onEdit={handleEditIngredient}
+                onReorder={setIngredientMappings}
               />
             </DashedSectionCard>
           </div>
