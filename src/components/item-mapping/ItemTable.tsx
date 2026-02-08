@@ -1,5 +1,5 @@
 import { useLanguage } from "@/hooks/useLanguage";
-import { PlusCircle, Trash2, Pencil, GripVertical } from "lucide-react";
+import { PlusCircle, Trash2, Pencil, GripVertical, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SubItemMappingItem } from "./SubItemMappingList";
@@ -247,11 +247,14 @@ export function ItemTable({
 
   if (!isCombo) {
     return (
-      <div className="border-2 border-dashed border-amber-300/50 rounded-lg overflow-hidden opacity-50">
-        <div className="flex items-center justify-between h-10 px-3 bg-amber-50 border-b border-amber-200/50">
-          <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
-            {t("itemMapping.items")}
-          </span>
+      <div className="border-2 border-dotted border-border rounded-lg overflow-hidden opacity-50">
+        <div className="flex items-center justify-between h-11 px-4 bg-background border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold text-foreground">
+              {t("itemMapping.items")}
+            </span>
+          </div>
         </div>
         <div className="p-6 text-center text-muted-foreground text-sm">
           {t("itemMapping.notComboItem")}
@@ -261,20 +264,24 @@ export function ItemTable({
   }
 
   return (
-    <div className="border-2 border-dashed border-amber-300/50 rounded-lg overflow-hidden shadow-sm">
+    <div className="border-2 border-dotted border-border rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between h-10 px-3 bg-amber-50 border-b border-amber-200/50">
-        <span className="text-sm font-semibold text-amber-700 uppercase tracking-wide">
-          {t("itemMapping.items")}
-        </span>
+      <div className="flex items-center justify-between h-11 px-4 bg-background border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <Package className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">
+            {t("itemMapping.items")}
+          </span>
+        </div>
         <Button
           type="button"
           onClick={onAdd}
+          variant="outline"
           size="sm"
-          className="h-7 px-3 rounded-full bg-primary hover:bg-primary/90 text-xs"
+          className="h-7 px-3 text-xs font-medium border-border"
         >
           <PlusCircle className="h-3.5 w-3.5 me-1" />
-          Add Item
+          {t("itemMapping.addItem") || "Add Item"}
         </Button>
       </div>
 
