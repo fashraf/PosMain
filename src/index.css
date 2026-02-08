@@ -272,6 +272,15 @@
   .animate-cart-flash {
     animation: cart-flash-green 2s ease-out forwards;
   }
+
+  /* Cart remove/decrement flash */
+  @keyframes cart-flash-red {
+    0% { background-color: rgb(254 202 202); }
+    100% { background-color: transparent; }
+  }
+  .animate-cart-flash-red {
+    animation: cart-flash-red 2s ease-out forwards;
+  }
 }
 
 /* ── POS Light Theme (scoped) ── */

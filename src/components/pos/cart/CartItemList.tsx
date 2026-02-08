@@ -4,7 +4,7 @@ import type { CartItem } from "@/lib/pos/types";
 
 interface CartItemListProps {
   items: CartItem[];
-  highlightedItemId?: string | null;
+  highlight?: { id: string; color: 'green' | 'red'; tick: number } | null;
   onIncrement: (itemId: string) => void;
   onDecrement: (itemId: string) => void;
   onRemove: (itemId: string) => void;
@@ -13,7 +13,7 @@ interface CartItemListProps {
 
 export function CartItemList({
   items,
-  highlightedItemId,
+  highlight,
   onIncrement,
   onDecrement,
   onRemove,
@@ -21,11 +21,14 @@ export function CartItemList({
 }: CartItemListProps) {
   return (
     <div className="flex flex-col p-3">
-      {items.map((item, idx) => (
-        <React.Fragment key={item.id}>
+      {items.map((item, idx) => {
+        const isHighlighted = highlight?.id === item.id;
+        return (
+        <React.Fragment key={isHighlighted ? `${item.id}-${highlight.tick}` : item.id}>
           <CartItemRow
             item={item}
-            isHighlighted={item.id === highlightedItemId}
+            isHighlighted={isHighlighted}
+            highlightColor={isHighlighted ? highlight.color : undefined}
             onIncrement={() => onIncrement(item.id)}
             onDecrement={() => onDecrement(item.id)}
             onRemove={() => onRemove(item.id)}
@@ -37,7 +40,8 @@ export function CartItemList({
             </div>
           )}
         </React.Fragment>
-      ))}
+        );
+      })}
     </div>
   );
 }

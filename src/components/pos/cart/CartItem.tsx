@@ -7,6 +7,7 @@ import { hasCustomization, calculateItemPrice } from "@/lib/pos/cartUtils";
 interface CartItemRowProps {
   item: CartItem;
   isHighlighted?: boolean;
+  highlightColor?: 'green' | 'red';
   onIncrement: () => void;
   onDecrement: () => void;
   onRemove: () => void;
@@ -16,6 +17,7 @@ interface CartItemRowProps {
 export function CartItemRow({
   item,
   isHighlighted,
+  highlightColor,
   onIncrement,
   onDecrement,
   onRemove,
@@ -39,7 +41,8 @@ export function CartItemRow({
       className={cn(
         "relative pl-4 pr-3 py-3 cursor-pointer hover:bg-accent/50 transition-colors",
         isCustomized && "pl-5",
-        isHighlighted && "animate-cart-flash"
+        isHighlighted && highlightColor === 'green' && "animate-cart-flash",
+        isHighlighted && highlightColor === 'red' && "animate-cart-flash-red"
       )}
     >
       {/* Red left marker for customized items */}
