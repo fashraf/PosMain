@@ -135,21 +135,28 @@ export function usePOSItemDetails(itemId: string | null) {
         throw new Error(`Failed to fetch sub-items: ${subItemsError.message}`);
       }
 
-      // Build replacements from sub-items (combo logic)
+      // Build replacements grouped by slot (each default starts a new slot)
       let replacements: POSItemReplacement[] = [];
       if (subItems && subItems.length > 0) {
-        replacements = subItems.map((si: any, index: number) => ({
-          id: si.id,
-          menu_item_id: itemId,
-          replacement_group: "combo",
-          replacement_name_en: si.sub_item?.name_en || "Unknown",
-          replacement_name_ar: si.sub_item?.name_ar || null,
-          replacement_name_ur: si.sub_item?.name_ur || null,
-          price_difference: si.is_default ? 0 : Number(si.replacement_price) || 0,
-          is_default: si.is_default ?? (index === 0),
-          sort_order: si.sort_order || index,
-          created_at: si.created_at,
-        }));
+        let currentGroup = "combo";
+        for (const si of subItems) {
+          const isDefault = si.is_default ?? false;
+          if (isDefault) {
+            currentGroup = si.sub_item?.name_en || "combo";
+          }
+          replacements.push({
+            id: si.id,
+            menu_item_id: itemId,
+            replacement_group: currentGroup,
+            replacement_name_en: si.sub_item?.name_en || "Unknown",
+            replacement_name_ar: si.sub_item?.name_ar || null,
+            replacement_name_ur: si.sub_item?.name_ur || null,
+            price_difference: isDefault ? 0 : Number(si.replacement_price) || 0,
+            is_default: isDefault,
+            sort_order: si.sort_order || 0,
+            created_at: si.created_at,
+          });
+        }
       } else {
         // Fallback: check pos_item_replacements for legacy data
         const { data: legacyReplacements } = await supabase
