@@ -48,9 +48,11 @@
    description?: string | null;
  }
  
- export interface IngredientGroupItem extends MaintenanceItem {
-   description?: string | null;
- }
+export interface IngredientGroupItem extends MaintenanceItem {
+  description?: string | null;
+}
+
+export interface ClassificationTypeItem extends MaintenanceItem {}
  
  // Helper to get localized label
  export function useLocalizedLabel() {
@@ -196,20 +198,38 @@
    });
  }
  
- // Ingredient Groups
- export function useIngredientGroups() {
-   return useQuery({
-     queryKey: ["maintenance", "ingredient_groups"],
-     queryFn: async () => {
-       const { data, error } = await supabase
-         .from("ingredient_groups")
-         .select("id, name_en, name_ar, name_ur, is_active, description")
-         .eq("is_active", true)
-         .order("name_en");
-       
-       if (error) throw error;
-       return data as IngredientGroupItem[];
-     },
-     staleTime: 5 * 60 * 1000,
-   });
- }
+// Ingredient Groups
+export function useIngredientGroups() {
+  return useQuery({
+    queryKey: ["maintenance", "ingredient_groups"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ingredient_groups")
+        .select("id, name_en, name_ar, name_ur, is_active, description")
+        .eq("is_active", true)
+        .order("name_en");
+      
+      if (error) throw error;
+      return data as IngredientGroupItem[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Classification Types
+export function useClassificationTypes() {
+  return useQuery({
+    queryKey: ["maintenance", "classification_types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("classification_types")
+        .select("id, name_en, name_ar, name_ur, is_active")
+        .eq("is_active", true)
+        .order("name_en");
+      
+      if (error) throw error;
+      return data as ClassificationTypeItem[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
