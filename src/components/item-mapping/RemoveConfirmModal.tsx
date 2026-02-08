@@ -15,6 +15,7 @@ interface RemoveConfirmModalProps {
   onConfirm: () => void;
   itemName: string;
   itemType: "ingredient" | "item";
+  replacementCount?: number;
 }
 
 export function RemoveConfirmModal({
@@ -23,6 +24,7 @@ export function RemoveConfirmModal({
   onConfirm,
   itemName,
   itemType,
+  replacementCount,
 }: RemoveConfirmModalProps) {
   const { t } = useLanguage();
 
@@ -39,10 +41,17 @@ export function RemoveConfirmModal({
             {t("common.remove")} "{itemName}"?
           </DialogTitle>
         </DialogHeader>
-        <DialogDescription className="px-4 pb-4 text-[13px]">
-          {itemType === "ingredient"
-            ? t("itemMapping.removeIngredientDescription")
-            : t("itemMapping.removeItemDescription")}
+        <DialogDescription className="px-4 pb-4 text-[13px] space-y-1">
+          <span>
+            {itemType === "ingredient"
+              ? t("itemMapping.removeIngredientDescription")
+              : t("itemMapping.removeItemDescription")}
+          </span>
+          {itemType === "item" && replacementCount != null && replacementCount > 0 && (
+            <span className="block text-destructive font-medium">
+              This will also remove {replacementCount} replacement(s) associated with this item.
+            </span>
+          )}
         </DialogDescription>
         <DialogFooter className="p-4 pt-0 gap-2">
           <Button

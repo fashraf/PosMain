@@ -980,48 +980,64 @@ export default function ItemsEdit() {
             </DashedSectionCard>
           </div>
 
-          {/* Ingredients Section */}
+          {/* Mapping Section */}
           <div ref={sectionRefs.ingredients} id="ingredients">
             <DashedSectionCard
-              title={t("itemMapping.ingredients")}
+              title={t("itemMapping.mapping") || "Mapping"}
               icon={Carrot}
               variant="muted"
               isComplete={isIngredientsComplete}
+              rightBadge={
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => setShowAddIngredientModal(true)}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-3 text-xs font-medium border-border"
+                  >
+                    <Plus className="h-3.5 w-3.5 me-1" />
+                    {t("itemMapping.addIngredient")}
+                  </Button>
+                  {formData.is_combo && (
+                    <Button
+                      type="button"
+                      onClick={() => setShowAddItemModal(true)}
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-3 text-xs font-medium border-border"
+                    >
+                      <Plus className="h-3.5 w-3.5 me-1" />
+                      {t("itemMapping.addItem")}
+                    </Button>
+                  )}
+                </div>
+              }
             >
-              <IngredientTable
-                mappings={ingredientMappings}
-                onRemove={handleIngredientRemove}
-                onAdd={() => setShowAddIngredientModal(true)}
-                onEdit={handleEditIngredient}
-                onReorder={setIngredientMappings}
-              />
+              <div className="space-y-4">
+                <IngredientTable
+                  mappings={ingredientMappings}
+                  onRemove={handleIngredientRemove}
+                  onEdit={handleEditIngredient}
+                  onReorder={setIngredientMappings}
+                />
+                {formData.is_combo && (
+                  <div ref={sectionRefs.items} id="items">
+                    <ItemTable
+                      mappings={subItemMappings}
+                      onRemove={(id) => {
+                        const mapping = subItemMappings.find((m) => m.id === id);
+                        if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+                      }}
+                      onEdit={handleEditItem}
+                      onReorder={setSubItemMappings}
+                      onOpenReplacement={handleOpenReplacementModal}
+                    />
+                  </div>
+                )}
+              </div>
             </DashedSectionCard>
           </div>
-
-          {/* Sub-Items Section (for combos) */}
-          {formData.is_combo && (
-            <div ref={sectionRefs.items} id="items">
-              <DashedSectionCard
-                title={t("itemMapping.items")}
-                icon={Package}
-                variant="muted"
-                isComplete={isItemsComplete}
-              >
-                <ItemTable
-                  mappings={subItemMappings}
-                  onRemove={(id) => {
-                    const mapping = subItemMappings.find((m) => m.id === id);
-                    if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
-                  }}
-                  onAdd={() => setShowAddItemModal(true)}
-                  onEdit={handleEditItem}
-                  onReorder={setSubItemMappings}
-                  onOpenReplacement={handleOpenReplacementModal}
-                  isCombo={formData.is_combo}
-                />
-              </DashedSectionCard>
-            </div>
-          )}
         </main>
       </div>
 
@@ -1078,6 +1094,11 @@ export default function ItemsEdit() {
         onConfirm={confirmRemove}
         itemName={removeConfirm?.name || ""}
         itemType={removeConfirm?.type || "ingredient"}
+        replacementCount={
+          removeConfirm?.type === "item"
+            ? subItemMappings.find(m => m.id === removeConfirm.id)?.replacements?.length
+            : undefined
+        }
       />
 
       <ReplacementModal
