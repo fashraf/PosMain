@@ -1,158 +1,76 @@
 
-# Plan: Fix Item Master Data Display Issues
 
-## Issues Identified
+# Ingredient Master Form -- UI Prototype
 
-### Issue 1: Item List Shows Empty
-**Root Cause**: The RLS policy on `items` table restricts SELECT to only rows where `is_active = true`. However, the network request from `/items` page returned an empty array `[]` despite your item being active.
+This is a UI-only prototype. No database changes yet -- all new fields will use local state with placeholder values. The database migration will be done separately after the UI is approved.
 
-Looking at the network logs, the query at `/items` returns `[]` while a direct database query confirms the item exists with `is_active = true`. The issue is that the Items list page (`src/pages/Items.tsx`) queries **all items** without the `is_active` filter, but the RLS policy **only allows selecting active items** for non-admin authenticated users.
+## What Will Be Built
 
-The current RLS policy:
-```sql
-Policy: "Authenticated users can view active items"
-FOR SELECT USING (is_active = true)
-```
+A fully functional 5-section form with all fields, tooltips, conditional logic, and footer actions rendered in the browser. Save actions will be wired to the existing minimal DB columns only; new fields will be visually present but not persisted until the DB migration is approved.
 
-This is intentional for POS (customers should only see active items), but for the **admin Item Master list**, admins need to see ALL items (both active and inactive) to manage them.
+## Section Layout
 
-**Fix**: The RLS policy for `items` already has "Admins can manage items" with `ALL` permission using `is_admin(auth.uid())`. However, the SELECT-specific policy may be overriding it for non-admin queries. We need to update the RLS to allow admins to see all items.
+### Section 1 -- Basic Details (Carrot icon, purple variant)
+Two-column grid with:
+- **Ingredient Name**: MultiLanguageInputWithIndicators (EN/AR/UR), required, with TooltipInfo
+- **Description**: MultiLanguageInputWithIndicators, multiline, with TooltipInfo
+- **Ingredient Group**: SearchableSelect from `useIngredientGroups()`, required, with TooltipInfo
+- **Classification Type**: SearchableSelect from new `useClassificationTypes()` hook, required, with TooltipInfo
+- **Track In Inventory**: Toggle switch, default ON, with TooltipInfo
+- **Can Be Sold**: Toggle switch, default OFF, with TooltipInfo
 
-### Issue 2: Modal Shows IDs Instead of Names
-**Root Cause**: In `ItemsEdit.tsx` lines 1047-1048, the modal receives:
-```javascript
-subcategories: formData.subcategories,  // Array of UUIDs
-serving_times: formData.serving_times,   // Array of UUIDs
-```
+### Section 2 -- Measurement & Cost (Scale icon, green variant)
+Two-column grid with:
+- **Base Unit**: SearchableSelect from `useUnits()`, required, with TooltipInfo
+- **Purchase Unit**: SearchableSelect from `useUnits()`, required, with TooltipInfo
+- **Conversion Factor**: Numeric input, required, must be > 0, with TooltipInfo
+- **Cost per Purchase Unit**: Numeric input with SAR prefix, required, with TooltipInfo
+- **Cost per Base Unit**: Read-only calculated field (cost / conversion), displayed in a disabled input with muted background, with TooltipInfo
 
-The `ItemSaveConfirmModal` displays these directly as chips without resolving the UUIDs to their human-readable names.
+### Section 3 -- Inventory & Storage (Warehouse icon, blue variant)
+- All fields inside this section become **disabled/greyed out** when "Track In Inventory" is OFF
+- **Storage Type**: SearchableSelect from `useStorageTypes()`, with TooltipInfo
+- **Min Stock Level**: Numeric input, with TooltipInfo
+- **Max Stock Level**: Numeric input (validated >= min), with TooltipInfo
+- **Shelf Life (Days)**: Numeric input, with TooltipInfo
+- **Expiry Tracking**: Toggle, only active when Track In Inventory = ON, with TooltipInfo
+- **Temperature Sensitive**: Toggle, with TooltipInfo
 
-**Fix**: Before passing to the modal, map the UUID arrays to their corresponding localized names using the already-loaded `subcategories` and `servingTimes` data.
+### Section 4 -- Status & Controls (Settings icon, amber variant)
+Three toggles in a horizontal row:
+- **Purchasable**: Toggle, default ON, with TooltipInfo
+- **Return When Order Is Canceled**: Toggle, default ON, with TooltipInfo
+- **Active**: Toggle, default ON, with TooltipInfo
 
-### Issue 3: Ingredients Not Shown in Add Ingredient Modal
-**Root Cause**: The `ingredients` table is empty (no data). Users need to first add ingredients via the Ingredient Master (`/inventory/ingredients`) before they can map them to items.
+### Section 5 -- Notes (FileText icon, muted variant)
+- **Internal Notes**: Textarea, max 500 chars, character counter, with TooltipInfo
 
-**Additional Issue**: Even when ingredients exist, the `ingredients` RLS policy only allows SELECT for `is_active = true`, which is correct.
+### Footer (fixed bottom bar)
+Three buttons:
+- **Cancel** (outline) -- navigates back
+- **Save & New** (secondary) -- saves then clears form
+- **Save** (primary) -- saves and navigates to list
 
-**Fix**: This is expected behavior - the modal is correctly showing "No data" because there are no ingredients in the database. Users need to populate the Ingredient Master first.
+## Conditional Logic (all client-side)
+- Track In Inventory = OFF disables Section 3 fields (opacity-50, pointer-events-none)
+- Expiry Tracking toggle only clickable when Track In Inventory = ON
+- Cost per Base Unit recalculates live: `costPerPurchaseUnit / conversionFactor`
+- If conversionFactor is 0 or empty, Cost per Base Unit shows "--"
 
-### Issue 4: Items Not Shown in Add Item Modal (Combo)
-**Root Cause**: In `ItemsEdit.tsx` lines 52-57 and 1006, the `AddItemModal` is passed `mockAvailableItems` (hardcoded array) instead of real database items:
-```javascript
-const mockAvailableItems: AvailableItem[] = [
-  { id: "101", name_en: "Margherita Pizza", ... },
-  ...
-];
-...
-<AddItemModal
-  items={mockAvailableItems}  // Should be real data
-  ...
-/>
-```
-
-**Fix**: Replace `mockAvailableItems` with a real query to fetch items from the database.
-
----
-
-## Implementation Plan
-
-### Step 1: Fix Items RLS Policy for Admin Visibility
-**Database Migration**:
-- Update the `items` SELECT policy to allow admins to see all items OR authenticated users to see only active items.
-
-```sql
-DROP POLICY IF EXISTS "Authenticated users can view active items" ON public.items;
-CREATE POLICY "Users can view items based on role"
-ON public.items FOR SELECT
-USING (
-  is_admin(auth.uid()) OR is_active = true
-);
-```
-
-### Step 2: Fix Modal Showing UUIDs Instead of Names
-**File**: `src/pages/ItemsEdit.tsx`
-**Changes**:
-- Map `formData.subcategories` (UUID array) to localized names using the `subcategories` data
-- Map `formData.serving_times` (UUID array) to localized names using the `servingTimes` data
-
-```javascript
-// In ItemSaveConfirmModal props:
-subcategories: formData.subcategories.map(id => {
-  const sub = subcategories?.find(s => s.id === id);
-  return sub ? getLocalizedLabel(sub) : id;
-}),
-serving_times: formData.serving_times.map(id => {
-  const st = servingTimes?.find(s => s.id === id);
-  return st ? getLocalizedLabel(st) : id;
-}),
-```
-
-**File**: `src/pages/ItemsAdd.tsx`
-**Same changes** to maintain consistency.
-
-### Step 3: Replace Mock Items with Real Database Query in Add Item Modal
-**File**: `src/pages/ItemsEdit.tsx`
-**Changes**:
-1. Remove `mockAvailableItems` constant
-2. Add a React Query hook to fetch items from database
-3. Pass the fetched items to `AddItemModal`
-
-```javascript
-// Add query for available items
-const { data: dbItems = [] } = useQuery({
-  queryKey: ["items-for-combo"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("items")
-      .select("*")
-      .eq("is_active", true)
-      .order("name_en");
-    if (error) throw error;
-    return (data || []).map(item => ({
-      id: item.id,
-      name_en: item.name_en,
-      name_ar: item.name_ar || "",
-      name_ur: item.name_ur || "",
-      base_cost: Number(item.base_cost),
-      is_combo: item.is_combo,
-    }));
-  },
-});
-
-// Pass to modal
-<AddItemModal
-  items={dbItems}
-  ...
-/>
-```
-
-**File**: `src/pages/ItemsAdd.tsx`
-**Same changes**.
-
----
+## New Hook Required
+Add `useClassificationTypes()` to `src/hooks/useMaintenanceData.ts`, following the same pattern as the existing hooks, querying `classification_types` table.
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| SQL Migration | Update RLS policy for items to allow admins to see all items |
-| `src/pages/ItemsEdit.tsx` | 1. Map subcategory/serving time IDs to names for modal<br>2. Replace mockAvailableItems with real DB query |
-| `src/pages/ItemsAdd.tsx` | Same changes as ItemsEdit.tsx |
+| File | Action |
+|------|--------|
+| `src/hooks/useMaintenanceData.ts` | Add `useClassificationTypes()` hook and `ClassificationTypeItem` interface |
+| `src/pages/inventory/IngredientMasterAdd.tsx` | Full rewrite with 5-section layout, all fields, tooltips, conditional logic, and 3-button footer |
+| `src/pages/inventory/IngredientMasterEdit.tsx` | Same 5-section layout, pre-populated from DB (new fields default to initial values since columns do not exist yet) |
+| `src/components/ingredients/IngredientSaveConfirmModal.tsx` | Update `IngredientSummary` interface to include new fields; display group name, classification, units, toggles in summary card |
 
----
+## Save Behavior (Prototype Phase)
+- Only existing DB columns (`name_en`, `name_ar`, `name_ur`, `unit_id`, `cost_per_unit`, `is_active`) will be saved
+- New fields will be in local state only, visible in the confirmation modal summary
+- A follow-up database migration will add the remaining columns and wire up persistence
 
-## Expected Results After Implementation
-
-1. **Item List**: Will show all items (active and inactive) for admin users
-2. **Save Confirmation Modal**: Will display proper names for subcategories and serving times instead of UUIDs
-3. **Add Item Modal (Combo)**: Will show real items from the database instead of hardcoded mock data
-4. **Add Ingredient Modal**: Will work correctly once ingredients are added to the Ingredient Master
-
----
-
-## Note on Empty Data
-
-The Ingredient Master (`/inventory/ingredients`) and Items database are currently empty. After these fixes are applied, you will need to:
-1. Add ingredients via `/inventory/ingredients`
-2. Add items via `/items/add`
-3. Then you can test the combo item mapping with real data
