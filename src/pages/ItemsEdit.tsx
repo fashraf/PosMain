@@ -982,44 +982,32 @@ export default function ItemsEdit() {
 
           {/* Ingredients Section */}
           <div ref={sectionRefs.ingredients} id="ingredients">
-            <DashedSectionCard
-              title={t("itemMapping.ingredients")}
-              icon={Carrot}
-              variant="muted"
+            <IngredientTable
+              mappings={ingredientMappings}
+              onRemove={handleIngredientRemove}
+              onAdd={() => setShowAddIngredientModal(true)}
+              onEdit={handleEditIngredient}
+              onReorder={setIngredientMappings}
               isComplete={isIngredientsComplete}
-            >
-              <IngredientTable
-                mappings={ingredientMappings}
-                onRemove={handleIngredientRemove}
-                onAdd={() => setShowAddIngredientModal(true)}
-                onEdit={handleEditIngredient}
-                onReorder={setIngredientMappings}
-              />
-            </DashedSectionCard>
+            />
           </div>
 
           {/* Sub-Items Section (for combos) */}
           {formData.is_combo && (
             <div ref={sectionRefs.items} id="items">
-              <DashedSectionCard
-                title={t("itemMapping.items")}
-                icon={Package}
-                variant="muted"
+              <ItemTable
+                mappings={subItemMappings}
+                onRemove={(id) => {
+                  const mapping = subItemMappings.find((m) => m.id === id);
+                  if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
+                }}
+                onAdd={() => setShowAddItemModal(true)}
+                onEdit={handleEditItem}
+                onReorder={setSubItemMappings}
+                onOpenReplacement={handleOpenReplacementModal}
+                isCombo={formData.is_combo}
                 isComplete={isItemsComplete}
-              >
-                <ItemTable
-                  mappings={subItemMappings}
-                  onRemove={(id) => {
-                    const mapping = subItemMappings.find((m) => m.id === id);
-                    if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
-                  }}
-                  onAdd={() => setShowAddItemModal(true)}
-                  onEdit={handleEditItem}
-                  onReorder={setSubItemMappings}
-                  onOpenReplacement={handleOpenReplacementModal}
-                  isCombo={formData.is_combo}
-                />
-              </DashedSectionCard>
+              />
             </div>
           )}
         </main>
