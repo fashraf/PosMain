@@ -1016,6 +1016,7 @@ export default function ItemsEdit() {
                   onAdd={() => setShowAddItemModal(true)}
                   onEdit={handleEditItem}
                   onReorder={setSubItemMappings}
+                  onOpenReplacement={handleOpenReplacementModal}
                   isCombo={formData.is_combo}
                 />
               </DashedSectionCard>

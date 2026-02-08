@@ -426,6 +426,7 @@ export default function ItemIngredientMappingEdit() {
               if (mapping) handleRequestRemove(id, mapping.sub_item_name, "item");
             }}
             onAdd={() => setShowAddItemModal(true)}
+            onOpenReplacement={handleOpenReplacementModal}
             isCombo={item.is_combo}
           />
         </div>
