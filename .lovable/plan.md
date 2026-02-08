@@ -1,37 +1,52 @@
 
 
-# Add Replacement Button + Tooltip to Item Grid
+# Fix Edit Modal Pre-fill and Item Replacement Grid
 
-## What Changes
+## Problems
 
-The "Replacement" column in the Item grid will become interactive:
-- **No replacements**: Shows a grey "+" icon button (click opens the Replacement Modal)
-- **Has replacements**: Shows a green "2x +" badge (count of replacements) with a tooltip listing the replacement item names and their extra costs; clicking opens the Replacement Modal for editing
+1. **Ingredient/Item dropdowns don't pre-fill on Edit**: When clicking "Edit" on a mapped ingredient or item, the modal opens but the dropdown shows "Select..." instead of the current ingredient/item. This happens because the modals initialize state inside `handleOpenChange`, which is the Dialog's internal callback -- but the parent sets `open={true}` directly via the prop, so `handleOpenChange` never fires on open.
 
-## Technical Details
+2. **Item Replacement grid not visible on Edit page**: The `ItemTable` (combo sub-items) section only renders when `formData.is_combo` is true, which works. However, there is no database query to load existing sub-item mappings, so the grid always appears empty. (There is currently no `item_sub_items` table in the database -- sub-items are local-only state.)
 
-### 1. Update ItemTable Component
+## Changes
 
-**File**: `src/components/item-mapping/ItemTable.tsx`
+### 1. Fix AddIngredientModal Pre-fill
 
-- Add `onOpenReplacement?: (mappingId: string) => void` prop to `ItemTableProps`
-- Pass it down to `SortableItemRow`
-- Replace the current static text in the Replacement column (line 82-84) with:
-  - If `mapping.replacements` has items: a green badge showing `{count}x` with a `+` icon, wrapped in a Tooltip that lists each replacement name and extra cost
-  - If no replacements: a grey `PlusCircle` icon button
-  - Both click to call `onOpenReplacement(mapping.id)`
+**File**: `src/components/item-mapping/AddIngredientModal.tsx`
 
-### 2. Wire Up in Parent Pages
+Add a `useEffect` that watches `open` and `editData` props. When both are truthy, initialize the local state (selectedIngredient, quantity, extraCost, canAddExtra, canRemove). Remove the initialization logic from `handleOpenChange` to avoid duplication.
 
-**Files**: `src/pages/ItemsAdd.tsx`, `src/pages/ItemsEdit.tsx`, `src/pages/ItemIngredientMappingEdit.tsx`
+```typescript
+useEffect(() => {
+  if (open && editData) {
+    const ing = ingredients.find(i => i.id === editData.ingredientId);
+    setSelectedIngredient(ing || null);
+    setQuantity(editData.quantity);
+    setExtraCost(editData.extraCost);
+    setCanAddExtra(editData.canAddExtra);
+    setCanRemove(editData.canRemove);
+  }
+}, [open, editData, ingredients]);
+```
 
-- Pass `onOpenReplacement={handleOpenReplacementModal}` prop to `<ItemTable>` (the handler already exists in all three pages)
+### 2. Fix AddItemModal Pre-fill
+
+**File**: `src/components/item-mapping/AddItemModal.tsx`
+
+Same fix -- add a `useEffect` on `open` + `editData` to initialize selectedItem, quantity, extraCost, canAddExtra, canRemove.
+
+### 3. Ensure Replacement Grid Shows in ItemsEdit
+
+**File**: `src/pages/ItemsEdit.tsx`
+
+The combo sub-items section is already conditionally rendered. However, there is no database table to persist sub-item mappings yet, so the grid will be empty on edit. For now, the grid will display correctly (with drag-and-drop, replacement badges, etc.) for any items added during the current session. A future migration would be needed to persist combo sub-items.
+
+No code changes needed for this file -- the grid already renders when `is_combo` is true.
 
 ## Files Modified
 
-| File | Changes |
-|------|---------|
-| `src/components/item-mapping/ItemTable.tsx` | Add `onOpenReplacement` prop, interactive replacement column with count badge, tooltip, and "+" button |
-| `src/pages/ItemsAdd.tsx` | Pass `onOpenReplacement` to ItemTable |
-| `src/pages/ItemsEdit.tsx` | Pass `onOpenReplacement` to ItemTable |
-| `src/pages/ItemIngredientMappingEdit.tsx` | Pass `onOpenReplacement` to ItemTable |
+| File | Change |
+|------|--------|
+| `src/components/item-mapping/AddIngredientModal.tsx` | Add `useEffect` for edit data pre-fill, remove duplicate logic from `handleOpenChange` |
+| `src/components/item-mapping/AddItemModal.tsx` | Add `useEffect` for edit data pre-fill, remove duplicate logic from `handleOpenChange` |
+
