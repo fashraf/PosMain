@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Settings2 } from "lucide-react";
+import { Plus, Settings2, ImageIcon } from "lucide-react";
 import type { POSMenuItem } from "@/lib/pos/types";
 
 interface POSItemCardProps {
@@ -15,7 +15,6 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
   const isCustomizable = !!item.is_customizable;
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Only open details if click is on the card body, not buttons
     const target = e.target as HTMLElement;
     if (target.closest("button")) return;
     onViewDetails();
@@ -25,77 +24,67 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
     <div
       onClick={handleCardClick}
       className={cn(
-        "relative flex flex-col rounded-xl border border-dashed border-border bg-card overflow-hidden",
+        "flex flex-col rounded-xl border border-dashed border-border bg-card overflow-hidden",
         "touch-manipulation cursor-pointer",
         "active:scale-[0.98] transition-all duration-100"
       )}
     >
-      {/* Customizable badge */}
-      {isCustomizable && (
-        <div className="absolute top-2 right-2 z-10 rounded-full bg-accent px-2 py-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
-            Customizable
-          </span>
-        </div>
-      )}
+      {/* Top row: image + text */}
+      <div className="flex items-center gap-2.5 p-2.5 pb-1.5">
+        {/* Small square image */}
+        {hasImage && (
+          <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+            <img
+              src={item.image_url!}
+              alt={item.name_en}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
 
-      {/* Image or text-only header */}
-      {hasImage ? (
-        <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
-          <img
-            src={item.image_url!}
-            alt={item.name_en}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+        {/* Name + price */}
+        <div className="flex flex-1 flex-col min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-semibold leading-tight text-card-foreground truncate">
+              {item.name_en}
+            </h3>
+            {isCustomizable && (
+              <span className="flex-shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent-foreground">
+                Custom
+              </span>
+            )}
+          </div>
+          <p className="text-sm font-bold text-foreground mt-0.5">
+            Rs. {item.base_price.toFixed(2)}
+          </p>
         </div>
-      ) : null}
-
-      {/* Info section */}
-      <div className={cn("flex flex-1 flex-col p-3", !hasImage && "justify-center py-6")}>
-        <h3
-          className={cn(
-            "font-semibold leading-tight text-card-foreground truncate",
-            hasImage ? "text-sm" : "text-base text-center"
-          )}
-        >
-          {item.name_en}
-        </h3>
-        <p
-          className={cn(
-            "mt-1 font-bold",
-            hasImage ? "text-sm" : "text-base text-center",
-            "text-foreground font-bold"
-          )}
-        >
-          Rs. {item.base_price.toFixed(2)}
-        </p>
       </div>
 
       {/* Action buttons */}
-      <div className="p-2 pt-0">
+      <div className="px-2.5 pb-2 pt-0.5">
         {isCustomizable ? (
           <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-lg",
+                "flex items-center justify-center gap-1 rounded-lg",
                 "bg-primary text-primary-foreground font-semibold text-xs",
-                "h-11 active:scale-95 transition-transform duration-100"
+                "h-8 active:scale-95 transition-transform duration-100"
               )}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-3 w-3" />
               ADD
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onCustomize(); }}
               className={cn(
-                "flex items-center justify-center gap-1.5 rounded-lg",
-                "border border-muted-foreground/30 text-muted-foreground font-semibold text-xs",
-                "h-11 active:scale-95 transition-transform duration-100"
+                "flex items-center justify-center gap-1 rounded-lg",
+                "border border-primary/30 text-primary font-semibold text-xs",
+                "h-8 active:scale-95 transition-transform duration-100"
               )}
             >
-              <Settings2 className="h-3.5 w-3.5" />
+              <Settings2 className="h-3 w-3" />
               CUSTOMIZE
             </button>
           </div>
@@ -103,12 +92,12 @@ export function POSItemCard({ item, onAdd, onCustomize, onViewDetails }: POSItem
           <button
             onClick={(e) => { e.stopPropagation(); onAdd(); }}
             className={cn(
-              "flex w-full items-center justify-center gap-1.5 rounded-lg",
-              "bg-primary text-primary-foreground font-semibold text-sm",
-              "h-11 active:scale-95 transition-transform duration-100"
+              "flex w-full items-center justify-center gap-1 rounded-lg",
+              "bg-primary text-primary-foreground font-semibold text-xs",
+              "h-8 active:scale-95 transition-transform duration-100"
             )}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3" />
             ADD
           </button>
         )}
