@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { SplitPanelContainer } from "@/components/pos/layout";
 import { CategoryBar } from "@/components/pos/category";
 import { POSItemGrid } from "@/components/pos/items";
@@ -8,11 +9,17 @@ import { usePOSCategories, usePOSItems } from "@/hooks/pos";
 import { CustomizeDrawer } from "@/components/pos/customization";
 import { ItemDetailsModal, CustomizeModal } from "@/components/pos/modals";
 import { CheckoutModal } from "@/components/pos/checkout";
+import { supabase } from "@/integrations/supabase/client";
 import type { POSMenuItem } from "@/lib/pos/types";
 
 export default function POSMain() {
+  const location = useLocation();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
+
+  // Edit mode state
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editingOrderNumber, setEditingOrderNumber] = useState<number | null>(null);
 
   // Modal states
   const [detailsItem, setDetailsItem] = useState<POSMenuItem | null>(null);
@@ -24,6 +31,49 @@ export default function POSMain() {
   const highlightTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const cart = usePOSCart();
+
+  // Detect edit mode from navigation state
+  useEffect(() => {
+    const state = location.state as { editOrderId?: string } | null;
+    if (!state?.editOrderId) return;
+
+    const orderId = state.editOrderId;
+    // Clear the state so refreshing doesn't re-trigger
+    window.history.replaceState({}, document.title);
+
+    const loadOrder = async () => {
+      const { data: order } = await supabase
+        .from("pos_orders")
+        .select("id, order_number")
+        .eq("id", orderId)
+        .single();
+
+      if (!order) return;
+
+      const { data: orderItems } = await supabase
+        .from("pos_order_items")
+        .select("*")
+        .eq("order_id", orderId);
+
+      if (!orderItems) return;
+
+      cart.clearCart();
+      for (const item of orderItems) {
+        cart.addItem({
+          menuItemId: item.menu_item_id || "",
+          name: item.item_name,
+          basePrice: item.unit_price,
+          quantity: item.quantity,
+        });
+      }
+
+      setEditingOrderId(order.id);
+      setEditingOrderNumber(order.order_number);
+    };
+
+    loadOrder();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const triggerHighlight = useCallback((id: string, color: 'green' | 'red') => {
     clearTimeout(highlightTimer.current);
@@ -106,6 +156,8 @@ export default function POSMain() {
   const handleCloseCheckout = () => setShowCheckout(false);
   const handleOrderComplete = () => {
     cart.clearCart();
+    setEditingOrderId(null);
+    setEditingOrderNumber(null);
     setShowCheckout(false);
   };
 
@@ -145,6 +197,7 @@ export default function POSMain() {
       onEditCustomization={handleEditCartItemCustomization}
       onClearAll={cart.clearCart}
       onPay={handlePay}
+      editingOrderNumber={editingOrderNumber}
     />
   );
 
@@ -176,6 +229,8 @@ export default function POSMain() {
         cart={cart}
         onOrderComplete={handleOrderComplete}
         onEditCustomization={handleEditCartItemCustomization}
+        editingOrderId={editingOrderId}
+        editingOrderNumber={editingOrderNumber}
       />
     </>
   );

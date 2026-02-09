@@ -281,6 +281,15 @@
   .animate-cart-flash-red {
     animation: cart-flash-red 2s ease-out forwards;
   }
+
+  /* Edit order blinking badge */
+  @keyframes pulse-red {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .animate-pulse-red {
+    animation: pulse-red 1.5s ease-in-out infinite;
+  }
 }
 
 /* ── POS Light Theme (scoped) ── */
