@@ -8,12 +8,14 @@ interface OrderItemCardProps {
 
 export function OrderItemCard({ item, compact = false }: OrderItemCardProps) {
   const cust = item.customization_json;
-  const removed: string[] = cust?.removedIngredients || [];
-  const added: { name: string; price?: number }[] = (cust?.addedIngredients || []).map(
+  const removed: string[] = (cust?.removals || []).map(
+    (r: any) => (typeof r === "string" ? r : r.name || r)
+  );
+  const added: { name: string; price?: number }[] = (cust?.extras || []).map(
     (a: any) => (typeof a === "string" ? { name: a } : { name: a.name || a, price: a.price })
   );
   const replacements: { name: string; price?: number }[] = (cust?.replacements || []).map(
-    (r: any) => (typeof r === "string" ? { name: r } : { name: r.name || r, price: r.price_difference ?? r.price })
+    (r: any) => (typeof r === "string" ? { name: r } : { name: r.name || r, price: r.priceDiff ?? r.price_difference ?? r.price })
   );
   const hasCustom = removed.length > 0 || added.length > 0 || replacements.length > 0;
 
@@ -59,10 +61,10 @@ export function OrderItemCard({ item, compact = false }: OrderItemCardProps) {
       {hasCustom && (
         <div className="mt-1 space-y-0.5 text-xs">
           {added.map((a, i) => (
-            <div key={`a-${i}`} className="text-emerald-500">+ {a.name}</div>
+            <div key={`a-${i}`} className="text-emerald-500">+ {a.name}{a.price ? ` (+${a.price.toFixed(2)})` : ''}</div>
           ))}
           {replacements.map((r, i) => (
-            <div key={`rp-${i}`} className="text-blue-500">→ {r.name}</div>
+            <div key={`rp-${i}`} className="text-blue-500">→ {r.name}{r.price ? ` (+${r.price.toFixed(2)})` : ''}</div>
           ))}
           {removed.map((r, i) => (
             <div key={`r-${i}`} className="text-red-400">– No {r}</div>
