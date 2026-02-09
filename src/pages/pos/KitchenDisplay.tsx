@@ -1,10 +1,36 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useKitchenOrders } from "@/hooks/pos/useKitchenOrders";
 import { KitchenStatusBar, KitchenFilters, KitchenOrderCard, type KDSFilter } from "@/components/pos/kitchen";
 
 export default function KitchenDisplay() {
   const { orders, isLoading, handleMarkComplete, handleUndoComplete, handleMarkAllComplete } = useKitchenOrders();
   const [filter, setFilter] = useState<KDSFilter>("all");
+  const [bellEnabled, setBellEnabled] = useState(true);
+  const previousOrderIds = useRef<Set<string>>(new Set());
+  const isFirstLoad = useRef(true);
+  const bellAudio = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    bellAudio.current = new Audio("/sounds/new-order-bell.mp3");
+  }, []);
+
+  useEffect(() => {
+    if (!orders.length) return;
+    const currentIds = new Set(orders.map((o) => o.id));
+    if (isFirstLoad.current) {
+      previousOrderIds.current = currentIds;
+      isFirstLoad.current = false;
+      return;
+    }
+    const newIds = [...currentIds].filter((id) => !previousOrderIds.current.has(id));
+    if (newIds.length > 0 && bellEnabled && bellAudio.current) {
+      bellAudio.current.currentTime = 0;
+      bellAudio.current.play().catch(() => {});
+    }
+    previousOrderIds.current = currentIds;
+  }, [orders, bellEnabled]);
+
+  const toggleBell = useCallback(() => setBellEnabled((prev) => !prev), []);
 
   const filteredOrders = useMemo(() => {
     if (filter === "all") return orders;
@@ -25,7 +51,7 @@ export default function KitchenDisplay() {
 
   return (
     <div className="flex flex-col h-screen">
-      <KitchenStatusBar pendingCount={pendingCount} urgentCount={urgentCount} />
+      <KitchenStatusBar pendingCount={pendingCount} urgentCount={urgentCount} bellEnabled={bellEnabled} onToggleBell={toggleBell} />
 
       <div className="flex-1 overflow-y-auto bg-slate-100 p-3">
         {isLoading ? (

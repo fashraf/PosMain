@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { ChefHat, AlertTriangle } from "lucide-react";
+import { ChefHat, AlertTriangle, Bell, BellOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface KitchenStatusBarProps {
   pendingCount: number;
   urgentCount: number;
+  bellEnabled: boolean;
+  onToggleBell: () => void;
 }
 
-export function KitchenStatusBar({ pendingCount, urgentCount }: KitchenStatusBarProps) {
+export function KitchenStatusBar({ pendingCount, urgentCount, bellEnabled, onToggleBell }: KitchenStatusBarProps) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -42,8 +45,18 @@ export function KitchenStatusBar({ pendingCount, urgentCount }: KitchenStatusBar
         )}
       </div>
 
-      <div className="text-[17px] text-slate-400" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
-        {format(now, "EEE MMM dd yyyy  HH:mm:ss")}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {bellEnabled ? (
+            <Bell className="h-5 w-5 text-amber-400" />
+          ) : (
+            <BellOff className="h-5 w-5 text-slate-500" />
+          )}
+          <Switch checked={bellEnabled} onCheckedChange={onToggleBell} />
+        </div>
+        <div className="text-[17px] text-slate-400" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
+          {format(now, "EEE MMM dd yyyy  HH:mm:ss")}
+        </div>
       </div>
     </div>
   );
