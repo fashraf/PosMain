@@ -20,6 +20,7 @@ export default function POSMain() {
   // Edit mode state
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editingOrderNumber, setEditingOrderNumber] = useState<number | null>(null);
+  const [previousOrderTotal, setPreviousOrderTotal] = useState<number | null>(null);
 
   // Modal states
   const [detailsItem, setDetailsItem] = useState<POSMenuItem | null>(null);
@@ -44,7 +45,7 @@ export default function POSMain() {
     const loadOrder = async () => {
       const { data: order } = await supabase
         .from("pos_orders")
-        .select("id, order_number")
+        .select("id, order_number, total_amount")
         .eq("id", orderId)
         .single();
 
@@ -69,6 +70,7 @@ export default function POSMain() {
 
       setEditingOrderId(order.id);
       setEditingOrderNumber(order.order_number);
+      setPreviousOrderTotal(order.total_amount);
     };
 
     loadOrder();
@@ -158,6 +160,7 @@ export default function POSMain() {
     cart.clearCart();
     setEditingOrderId(null);
     setEditingOrderNumber(null);
+    setPreviousOrderTotal(null);
     setShowCheckout(false);
   };
 
@@ -231,6 +234,7 @@ export default function POSMain() {
         onEditCustomization={handleEditCartItemCustomization}
         editingOrderId={editingOrderId}
         editingOrderNumber={editingOrderNumber}
+        previousOrderTotal={previousOrderTotal}
       />
     </>
   );
