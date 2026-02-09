@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -298,6 +299,46 @@
   }
   .animate-new-order-blink {
     animation: new-order-blink 1.5s ease-in-out 5;
+  }
+
+  /* POS Orders — Roboto Condensed font scope */
+  .pos-orders-font {
+    font-family: 'Roboto Condensed', 'Inter', sans-serif;
+  }
+
+  /* POS underline tab */
+  .pos-tab {
+    @apply relative px-3 py-2 text-sm font-medium transition-colors;
+    color: hsl(215 16% 47%);
+  }
+  .pos-tab:hover {
+    color: hsl(215 25% 27%);
+  }
+  .pos-tab::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-[2px] rounded-full transition-all;
+    background: transparent;
+  }
+  .pos-tab.active {
+    color: hsl(215 25% 27%);
+    font-weight: 600;
+  }
+  .pos-tab.active::after {
+    background: hsl(215 25% 27%);
+  }
+  .pos-tab.unpaid-tab {
+    color: hsl(0 72% 51% / 0.7);
+  }
+  .pos-tab.unpaid-tab.active {
+    color: hsl(0 72% 51%);
+  }
+  .pos-tab.unpaid-tab.active::after {
+    background: hsl(0 72% 51%);
+  }
+
+  /* Unpaid row left indicator */
+  .pos-unpaid-row {
+    border-left: 3px solid hsl(0 72% 51% / 0.5);
   }
 }
 

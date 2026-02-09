@@ -23,9 +23,9 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
-        <span className="cursor-default text-[14px]">
-          <span className="font-medium">{count} Items</span>
-          <span className="text-muted-foreground ml-1 hidden lg:inline">
+        <span className="cursor-default text-[13px]">
+          <span className="font-medium text-slate-700">{count} Items</span>
+          <span className="text-slate-400 ml-1 hidden lg:inline">
             ({preview}{suffix})
           </span>
         </span>
@@ -33,7 +33,7 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
       <TooltipContent
         side="bottom"
         align="start"
-        className="max-w-sm min-w-[320px] p-4 text-sm space-y-3"
+        className="pos-orders-font max-w-sm min-w-[320px] p-4 text-sm space-y-3"
       >
         {items.map((item) => {
           const cust = item.customization_json;

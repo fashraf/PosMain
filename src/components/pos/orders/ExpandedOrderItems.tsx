@@ -7,11 +7,11 @@ interface ExpandedOrderItemsProps {
 export function ExpandedOrderItems({ items }: ExpandedOrderItemsProps) {
   return (
     <tr>
-      <td colSpan={8} className="p-0">
-        <div className="bg-muted/30 border-t-2 border-dotted border-border px-6 py-2">
+      <td colSpan={10} className="p-0">
+        <div className="mx-4 my-2 rounded-lg bg-[#FAFAFA] shadow-sm border border-slate-100 px-4 py-2">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="text-muted-foreground">
+              <tr className="text-slate-500">
                 <th className="text-left py-1 font-medium w-[40%]">Item Name</th>
                 <th className="text-left py-1 font-medium w-[35%]">Customization</th>
                 <th className="text-center py-1 font-medium w-[10%]">Qty</th>
@@ -31,13 +31,13 @@ export function ExpandedOrderItems({ items }: ExpandedOrderItemsProps) {
                 ];
 
                 return (
-                  <tr key={item.id} className="border-t border-border/50">
-                    <td className="py-1.5 font-medium text-foreground">{item.item_name}</td>
-                    <td className="py-1.5 text-muted-foreground">
+                  <tr key={item.id} className="border-t border-slate-100">
+                    <td className="py-1.5 font-medium text-slate-700">{item.item_name}</td>
+                    <td className="py-1.5 text-slate-500">
                       {tags.length > 0 ? tags.join(", ") : "—"}
                     </td>
-                    <td className="py-1.5 text-center">{item.quantity}</td>
-                    <td className="py-1.5 text-right tabular-nums">{item.line_total.toFixed(2)}</td>
+                    <td className="py-1.5 text-center text-slate-600">{item.quantity}</td>
+                    <td className="py-1.5 text-right tabular-nums text-slate-700">{item.line_total.toFixed(2)}</td>
                   </tr>
                 );
               })}
