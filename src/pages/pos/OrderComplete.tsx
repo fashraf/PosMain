@@ -228,7 +228,12 @@ export default function OrderComplete() {
 }
 
 function PaymentDetailsCard({ state }: { state: OrderCompleteState }) {
-  const { paymentMethod, paymentStatus } = state;
+  const { paymentMethod } = state;
+  const total = state.total ?? 0;
+  const tenderedAmount = state.tenderedAmount ?? 0;
+  const changeAmount = state.changeAmount ?? 0;
+  const cashAmount = state.cashAmount ?? 0;
+  const cardAmount = state.cardAmount ?? 0;
 
   if (paymentMethod === "pay_later") {
     return (
@@ -237,7 +242,7 @@ function PaymentDetailsCard({ state }: { state: OrderCompleteState }) {
           <Clock className="h-4 w-4" />
           Payment Pending
         </div>
-        <p className="text-amber-600/80 text-xs">Customer has not yet paid. Amount due: {state.total.toFixed(2)} SAR</p>
+        <p className="text-amber-600/80 text-xs">Customer has not yet paid. Amount due: {total.toFixed(2)} SAR</p>
       </div>
     );
   }
@@ -251,7 +256,7 @@ function PaymentDetailsCard({ state }: { state: OrderCompleteState }) {
         </div>
         <div className="flex justify-between text-foreground/60">
           <span>Charged to Card</span>
-          <span className="font-medium text-foreground/80">{state.total.toFixed(2)} SAR</span>
+          <span className="font-medium text-foreground/80">{total.toFixed(2)} SAR</span>
         </div>
       </div>
     );
@@ -266,11 +271,11 @@ function PaymentDetailsCard({ state }: { state: OrderCompleteState }) {
         </div>
         <div className="flex justify-between text-foreground/60">
           <span>Cash Portion</span>
-          <span className="font-medium text-foreground/80">{state.cashAmount.toFixed(2)} SAR</span>
+          <span className="font-medium text-foreground/80">{cashAmount.toFixed(2)} SAR</span>
         </div>
         <div className="flex justify-between text-foreground/60">
           <span>Card Portion</span>
-          <span className="font-medium text-foreground/80">{state.cardAmount.toFixed(2)} SAR</span>
+          <span className="font-medium text-foreground/80">{cardAmount.toFixed(2)} SAR</span>
         </div>
       </div>
     );
@@ -285,11 +290,11 @@ function PaymentDetailsCard({ state }: { state: OrderCompleteState }) {
       </div>
       <div className="flex justify-between text-foreground/60">
         <span>Tendered</span>
-        <span className="font-medium text-foreground/80">{state.tenderedAmount.toFixed(2)} SAR</span>
+        <span className="font-medium text-foreground/80">{tenderedAmount.toFixed(2)} SAR</span>
       </div>
       <div className="flex justify-between text-emerald-600">
         <span>Change Given</span>
-        <span className="font-semibold">{state.changeAmount.toFixed(2)} SAR</span>
+        <span className="font-semibold">{changeAmount.toFixed(2)} SAR</span>
       </div>
     </div>
   );
