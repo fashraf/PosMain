@@ -689,6 +689,8 @@ export type Database = {
       pos_orders: {
         Row: {
           branch_id: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
           change_amount: number | null
           created_at: string
           customer_mobile: string | null
@@ -710,6 +712,8 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
           change_amount?: number | null
           created_at?: string
           customer_mobile?: string | null
@@ -731,6 +735,8 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
           change_amount?: number | null
           created_at?: string
           customer_mobile?: string | null

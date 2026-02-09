@@ -132,9 +132,18 @@ export function CheckoutModal({
       if (itemsError) throw itemsError;
 
       onOpenChange(false);
+
+      const changeAmount = formData.paymentMethod === "cash"
+        ? Math.max(0, formData.tenderedAmount - cart.total)
+        : 0;
+      const cardAmount = formData.paymentMethod === "both"
+        ? cart.total - formData.cashAmount
+        : 0;
+
       navigate("/pos/order-complete", {
         state: {
           mode: "new",
+          orderId: order.id,
           orderNumber: order.order_number,
           items: cart.items.map((item) => ({
             name: item.name,
@@ -147,6 +156,11 @@ export function CheckoutModal({
           total: cart.total,
           orderType: formData.orderType,
           paymentMethod: formData.paymentMethod,
+          paymentStatus: paymentStatus,
+          tenderedAmount: formData.paymentMethod === "cash" ? formData.tenderedAmount : 0,
+          changeAmount,
+          cashAmount: formData.paymentMethod === "both" ? formData.cashAmount : 0,
+          cardAmount,
         },
       });
     } catch (error: any) {
