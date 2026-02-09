@@ -4,6 +4,7 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import type { OrderItemRow } from "@/hooks/pos/usePOSOrders";
+import { cn } from "@/lib/utils";
 
 interface OrderItemsTooltipProps {
   items: OrderItemRow[];
@@ -19,17 +20,25 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
     return (cust.removedIngredients?.length > 0) || (cust.addedIngredients?.length > 0);
   };
 
-  const preview = items
-    .slice(0, 3)
-    .map((i) => `${i.quantity} x ${i.item_name}${hasCustomization(i) ? " (c)" : ""}`)
-    .join(", ");
-  const suffix = items.length > 3 ? ", …" : "";
+  const previewItems = items.slice(0, 3);
+  const hasMore = items.length > 3;
 
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
-        <span className="cursor-default text-[14px] text-slate-600">
-          {preview}{suffix}
+        <span className="cursor-default flex flex-wrap gap-1 items-center">
+          {previewItems.map((i, idx) => (
+            <span
+              key={i.id}
+              className={cn(
+                "inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-[14px] font-medium",
+                hasCustomization(i) && "underline"
+              )}
+            >
+              {i.quantity} x {i.item_name}
+            </span>
+          ))}
+          {hasMore && <span className="text-[14px] text-slate-400">…</span>}
         </span>
       </TooltipTrigger>
       <TooltipContent

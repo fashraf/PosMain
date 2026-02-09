@@ -1,4 +1,4 @@
-import { ClipboardList, Layers, CheckSquare, BadgeDollarSign } from "lucide-react";
+import { ClipboardList, Layers, CheckSquare, AlertCircle } from "lucide-react";
 import type { OrderStats, OrderStatusTab } from "@/hooks/pos/usePOSOrders";
 import { cn } from "@/lib/utils";
 
@@ -16,12 +16,11 @@ const cards: {
   bg: string;
   iconColor: string;
   tab: OrderStatusTab;
-  isCurrency?: boolean;
 }[] = [
   { key: "total", label: "Total Orders", icon: ClipboardList, bg: "bg-slate-100", iconColor: "text-slate-600", tab: "all" },
   { key: "inProcess", label: "In Process", icon: Layers, bg: "bg-amber-50", iconColor: "text-amber-600", tab: "unpaid" },
   { key: "completed", label: "Completed", icon: CheckSquare, bg: "bg-emerald-50", iconColor: "text-emerald-600", tab: "completed" },
-  { key: "totalSales", label: "Total Sales", icon: BadgeDollarSign, bg: "bg-rose-50", iconColor: "text-rose-600", tab: "completed", isCurrency: true },
+  { key: "paymentPending", label: "Total Unpaid", icon: AlertCircle, bg: "bg-red-50", iconColor: "text-red-500", tab: "unpaid" },
 ];
 
 export function OrderStatCards({ stats, isLoading, activeTab, onCardClick }: OrderStatCardsProps) {
@@ -30,7 +29,7 @@ export function OrderStatCards({ stats, isLoading, activeTab, onCardClick }: Ord
       {cards.map((card) => {
         const Icon = card.icon;
         const raw = isLoading ? null : stats[card.key];
-        const value = raw == null ? "—" : card.isCurrency ? `${Number(raw).toFixed(0)}` : raw;
+        const value = raw == null ? "—" : raw;
         const isActive = activeTab === card.tab;
         return (
           <div

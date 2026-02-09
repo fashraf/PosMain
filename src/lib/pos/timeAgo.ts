@@ -11,14 +11,14 @@ export function getTimeAgo(createdAt: string, isUnpaid: boolean): TimeAgoResult 
   const diffMs = now - created;
   const diffMin = Math.floor(diffMs / 60000);
 
-  if (diffMin < 1) return { text: "Just now", level: "normal" };
-  if (diffMin < 15) return { text: `${diffMin}m ago`, level: "normal" };
-  if (diffMin < 30) return { text: `${diffMin}m ago`, level: "warning" };
-  if (diffMin < 60) return { text: `${diffMin}m ago`, level: isUnpaid ? "urgent" : "warning" };
+  if (diffMin < 1) return { text: "- 0m", level: "normal" };
+  if (diffMin < 15) return { text: `- ${diffMin}m`, level: "normal" };
+  if (diffMin < 30) return { text: `- ${diffMin}m`, level: "warning" };
+  if (diffMin < 60) return { text: `- ${diffMin}m`, level: isUnpaid ? "urgent" : "warning" };
 
   const hours = Math.floor(diffMin / 60);
   const remainMin = diffMin % 60;
-  const text = remainMin > 0 ? `${hours}h ${remainMin}m ago` : `${hours}h ago`;
+  const text = remainMin > 0 ? `- ${hours}h ${remainMin}m` : `- ${hours}h`;
   return { text, level: "critical" };
 }
 
