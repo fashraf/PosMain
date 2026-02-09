@@ -1,40 +1,84 @@
 
 
-# Fix Order Type Check Constraint Mismatch
+# Enhanced Order Complete Page
 
-## Problem
+## Overview
 
-The database has a check constraint on `pos_orders.order_type` that only allows these values:
-- `pay_order`
-- `delivery`
-- `takeaway`
-- `dine_in`
+Upgrade the `/pos/order-complete` page with two additions:
+1. **Payment details section** -- show exactly how the customer paid (tendered amount, change given, cash/card split, or pending status)
+2. **Three action buttons** -- Edit Order, New Order, Cancel Order (with reason selection)
 
-But the app code defines the order type `self_pickup`, which is not in the allowed list. When a user selects "Self Pickup" and submits, the insert fails.
+## What Changes
 
-## Solution
+### 1. Pass Additional Payment Data from CheckoutModal
 
-Update the database constraint to replace `pay_order` with `self_pickup`, since:
-- The UI uses `self_pickup` consistently across 5 files
-- The original `OrderTypeSelector` had "Pay & Order" mapped to `dine_in` (duplicate), suggesting `pay_order` was a leftover that was never properly used
-- `self_pickup` is the meaningful order type alongside dine-in, takeaway, and delivery
+The `navigate()` call in `CheckoutModal.tsx` currently passes only `paymentMethod`. We need to also pass:
+- `tenderedAmount` (for cash payments)
+- `changeAmount` (cash change returned)
+- `cashAmount` / `cardAmount` (for split payments)
+- `paymentStatus` ("paid" or "pending")
+- `orderId` (needed for cancel/edit operations)
+
+### 2. Payment Summary Section on OrderComplete Page
+
+Below the totals card, add a new "Payment Details" card that adapts to the payment method:
+
+- **Cash**: Shows Tendered Amount, Change Given (green highlight)
+- **Card**: Shows "Charged to Card" with the total
+- **Both (Split)**: Shows Cash portion and Card portion
+- **Pay Later**: Shows "Payment Pending" amber warning
+
+### 3. Replace Current Action Buttons with Three Buttons
+
+Replace the current "Print Receipt" + "New Order" with:
+
+- **Edit Order** (outline, violet) -- navigates back to `/pos` and re-opens the checkout modal with this order's data loaded (placeholder for now -- navigates to `/pos` with state indicating edit mode)
+- **New Order** (primary) -- navigates to `/pos` and clears the cart
+- **Cancel Order** (outline, destructive) -- opens a modal asking for a cancellation reason
+
+### 4. Cancel Order Modal
+
+A small dialog with predefined cancellation reasons:
+- Customer changed mind
+- Duplicate order
+- Wrong items entered
+- Customer didn't pay
+- Other (free text)
+
+On confirm, updates the order in the database:
+- Sets `payment_status` to `'cancelled'`
+- Navigates back to `/pos`
+
+### 5. Database: Add cancellation columns
+
+Add two columns to `pos_orders`:
+- `cancelled_at` (timestamptz, nullable)
+- `cancel_reason` (text, nullable)
 
 ## Technical Details
 
 ### Database Migration
 
-Drop and re-create the check constraint:
-
 ```sql
 ALTER TABLE public.pos_orders
-  DROP CONSTRAINT pos_orders_order_type_check;
-
-ALTER TABLE public.pos_orders
-  ADD CONSTRAINT pos_orders_order_type_check
-  CHECK (order_type IN ('dine_in', 'takeaway', 'self_pickup', 'delivery'));
+  ADD COLUMN cancelled_at timestamptz,
+  ADD COLUMN cancel_reason text;
 ```
 
-### No Code Changes Needed
+### Files Modified
 
-The TypeScript type definition and all UI components already use `self_pickup` correctly. Only the database constraint needs updating.
+1. **`src/pages/pos/OrderComplete.tsx`**
+   - Expand `OrderCompleteState` interface with payment detail fields (`tenderedAmount`, `changeAmount`, `cashAmount`, `cardAmount`, `paymentStatus`, `orderId`)
+   - Add a "Payment Details" card section between totals and actions
+   - Replace action buttons with Edit Order / New Order / Cancel Order
+   - Add cancel reason modal state and handler
+   - Cancel handler: calls Supabase update on `pos_orders`, sets `payment_status='cancelled'`, `cancelled_at=now()`, `cancel_reason`
 
+2. **`src/components/pos/checkout/CheckoutModal.tsx`**
+   - Add `orderId`, `tenderedAmount`, `changeAmount`, `cashAmount`, `cardAmount`, `paymentStatus` to the navigation state passed to `/pos/order-complete`
+
+3. **New: `src/components/pos/modals/CancelOrderModal.tsx`**
+   - A small AlertDialog with reason radio buttons + optional free text
+   - Calls `onConfirm(reason: string)`
+
+### No changes needed to types, routing, or layout files.
