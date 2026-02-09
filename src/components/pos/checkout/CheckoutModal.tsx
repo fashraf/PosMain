@@ -57,23 +57,30 @@ export function CheckoutModal({
     notes: "",
   });
 
+  const isEditMode = !!editingOrderId;
+
+  const balanceDue = isEditMode && previousOrderTotal != null
+    ? cart.total - previousOrderTotal
+    : cart.total;
+  const needsPayment = !isEditMode || balanceDue > 0.01;
+
   const canSubmit = () => {
     if (cart.isEmpty) return false;
     if (formData.orderType === "delivery" && !formData.deliveryAddress.trim()) return false;
-    if (formData.paymentMethod === "cash" && formData.tenderedAmount < cart.total) return false;
-    if (formData.paymentMethod === "both" && (formData.cashAmount <= 0 || formData.cashAmount > cart.total)) return false;
+    if (!needsPayment) return true;
+    if (formData.paymentMethod === "cash" && formData.tenderedAmount < balanceDue) return false;
+    if (formData.paymentMethod === "both" && (formData.cashAmount <= 0 || formData.cashAmount > balanceDue)) return false;
     return true;
   };
 
   const getSubmitHint = (): string => {
     if (cart.isEmpty) return "Add items to your cart";
     if (formData.orderType === "delivery" && !formData.deliveryAddress.trim()) return "Enter delivery address";
-    if (formData.paymentMethod === "cash" && formData.tenderedAmount < cart.total) return "Enter tendered amount ≥ total";
-    if (formData.paymentMethod === "both" && (formData.cashAmount <= 0 || formData.cashAmount > cart.total)) return "Enter valid cash split amount";
+    if (!needsPayment) return "✓ Ready to update!";
+    if (formData.paymentMethod === "cash" && formData.tenderedAmount < balanceDue) return `Enter tendered amount ≥ ${balanceDue.toFixed(2)}`;
+    if (formData.paymentMethod === "both" && (formData.cashAmount <= 0 || formData.cashAmount > balanceDue)) return "Enter valid cash split amount";
     return "✓ Ready to submit!";
   };
-
-  const isEditMode = !!editingOrderId;
 
   const handleSubmit = async () => {
     if (!canSubmit()) {
@@ -283,6 +290,7 @@ export function CheckoutModal({
               onPaymentMethodChange={(m) => setFormData((p) => ({ ...p, paymentMethod: m }))}
               onTenderedAmountChange={(a) => setFormData((p) => ({ ...p, tenderedAmount: a }))}
               onCashAmountChange={(a) => setFormData((p) => ({ ...p, cashAmount: a }))}
+              previousTotal={isEditMode ? previousOrderTotal ?? undefined : undefined}
             />
           </div>
         </div>
