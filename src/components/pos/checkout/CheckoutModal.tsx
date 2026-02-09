@@ -58,6 +58,14 @@ export function CheckoutModal({
     return true;
   };
 
+  const getSubmitHint = (): string => {
+    if (cart.isEmpty) return "Add items to your cart";
+    if (formData.orderType === "delivery" && !formData.deliveryAddress.trim()) return "Enter delivery address";
+    if (formData.paymentMethod === "cash" && formData.tenderedAmount < cart.total) return "Enter tendered amount ≥ total";
+    if (formData.paymentMethod === "both" && (formData.cashAmount <= 0 || formData.cashAmount > cart.total)) return "Enter valid cash split amount";
+    return "✓ Ready to submit!";
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit()) {
       if (formData.orderType === "delivery" && !formData.deliveryAddress.trim()) {
@@ -173,11 +181,14 @@ export function CheckoutModal({
     onOpenChange(newOpen);
   };
 
+  const isReady = canSubmit();
+  const hint = getSubmitHint();
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[90vw] w-[90vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 py-4 border-b shrink-0">
-          <DialogTitle className="text-xl font-bold">Complete Order</DialogTitle>
+      <DialogContent className="max-w-[90vw] w-[90vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-dotted border-violet-200/60 shrink-0 bg-violet-50/20">
+          <DialogTitle className="text-xl font-bold text-foreground/80">Complete Order</DialogTitle>
         </DialogHeader>
 
         {orderResult ? (
@@ -189,9 +200,9 @@ export function CheckoutModal({
           />
         ) : (
           <>
-            {/* 3-column grid */}
-            <div className="flex-1 overflow-hidden grid grid-cols-12 divide-x">
-              <div className="col-span-4 p-4 flex flex-col overflow-hidden">
+            {/* 3-column grid with dotted dividers */}
+            <div className="flex-1 overflow-hidden grid grid-cols-12">
+              <div className="col-span-4 p-4 flex flex-col overflow-hidden border-r border-dotted border-violet-200/60">
                 <OrderReviewColumn
                   items={cart.items}
                   subtotal={cart.subtotal}
@@ -204,7 +215,7 @@ export function CheckoutModal({
                 />
               </div>
 
-              <div className="col-span-4 p-4 flex flex-col overflow-auto bg-muted/20">
+              <div className="col-span-4 p-4 flex flex-col overflow-auto bg-violet-50/30 border-r border-dotted border-violet-200/60">
                 <OrderTypeColumn
                   selected={formData.orderType}
                   onChange={(type) => {
@@ -243,21 +254,27 @@ export function CheckoutModal({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-dotted border-violet-200/60 shrink-0 bg-violet-50/10">
               <TouchButton
                 variant="outline"
-                className={showConfirmClear ? "border-destructive text-destructive" : ""}
+                className={`rounded-xl ${showConfirmClear ? "border-destructive text-destructive" : "border-violet-200 text-muted-foreground hover:text-foreground"}`}
                 onClick={handleClearOrder}
               >
                 {showConfirmClear ? "Confirm Clear?" : "Clear Order"}
               </TouchButton>
-              <TouchButton
-                onClick={handleSubmit}
-                disabled={!canSubmit() || isSubmitting}
-                className="min-w-[200px] h-12 text-base font-semibold"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Order"}
-              </TouchButton>
+
+              <div className="flex items-center gap-3">
+                <span className={`text-xs italic ${isReady ? "text-emerald-500" : "text-muted-foreground"}`}>
+                  {hint}
+                </span>
+                <TouchButton
+                  onClick={handleSubmit}
+                  disabled={!isReady || isSubmitting}
+                  className="min-w-[200px] h-12 text-base font-semibold rounded-xl shadow-sm"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Order"}
+                </TouchButton>
+              </div>
             </div>
           </>
         )}
