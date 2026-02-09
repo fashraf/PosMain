@@ -18,8 +18,8 @@ function hasCustomization(item: OrderItemRow) {
   const cust = item.customization_json;
   if (!cust) return false;
   return (
-    (cust.removedIngredients?.length > 0) ||
-    (cust.addedIngredients?.length > 0) ||
+    (cust.removals?.length > 0) ||
+    (cust.extras?.length > 0) ||
     (cust.replacements?.length > 0)
   );
 }
