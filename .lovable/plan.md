@@ -1,165 +1,99 @@
 
 
-# POS Order List -- Modern Redesign with Roboto Condensed
+# POS Order List -- Refined Polish Pass
 
 ## Overview
 
-Complete visual overhaul of the Order List page to create a calm, professional POS interface using Roboto Condensed font, muted colors, subtle shadows, and a refined layout. Replaces the current bright/bold design with a sophisticated, minimal aesthetic optimized for high-volume cashier workflows.
-
-## Visual Design System
-
-### Color Palette (Muted, Professional)
-- **Background**: White (#FFFFFF) with #FAFAFA for nested areas
-- **Text primary**: Muted navy (#1E293B)
-- **Text secondary**: Slate gray (#64748B)
-- **Active tab underline**: Muted navy (#334155)
-- **Unpaid indicator**: Muted red (#DC2626 at low opacity)
-- **Stat card icons**: Soft muted backgrounds (slate-100, amber-50, emerald-50, rose-50)
-- **Shadows**: `shadow-sm` only -- barely visible depth
-- **Borders**: #E2E8F0 (very light slate)
-
-### Typography
-- Import **Roboto Condensed** from Google Fonts
-- Applied globally to the POS layout via a `.pos-orders-font` class
-- Dense, condensed feel ideal for data-heavy POS screens
+Incremental polish of the existing Order List to match the latest spec: +2px font sizing, refined Items column format, dotted nested grid separators, clickable stat cards, "Last Updated" indicator, column header icons, and width tuning for Type/Time Ago columns.
 
 ## Changes
 
-### 1. Font Integration
-- Add Roboto Condensed Google Font import to `index.css`
-- Apply it to the Order List page via a wrapper class
+### 1. Font Size Bump (+2px globally within `.pos-orders-font`)
 
-### 2. Redesigned Stat Cards
-- Smaller, more compact cards with soft pastel icon backgrounds (not solid dark)
-- Subtle `shadow-sm` and rounded-lg (8px)
-- Icon in a soft-colored circle (e.g., slate-100 bg with slate-600 icon)
-- 4th card becomes **Total Sales** (sum of paid order totals) instead of duplicating "Payment Pending"
-- Dense typography: medium-weight number, small muted label
+**File: `src/index.css`**
+- Update `.pos-orders-font` to set `font-size: 15px` (base 13px + 2px) as the root size for the POS orders scope
+- All `text-[12px]` cells in the table become `text-[14px]`
+- All `text-[13px]` become `text-[15px]`
+- Tab text stays `text-sm` (14px) which is already appropriate at +2px from 12px
+- Tooltip inherits the larger base from `.pos-orders-font`
 
-### 3. Tabs with Dynamic Counts
-- Remove the filled TabsList background -- use plain text tabs with bottom underline
-- Active tab: muted navy underline (2px), semibold text
-- Unpaid tab: muted red text with a small red dot indicator
-- Each tab shows its count in parentheses: "All (5)", "Active (2)", etc.
-- Hover: subtle underline fade-in
-- Counts fetched from the existing `useOrderStats` hook (extended with per-tab counts)
+### 2. Items Column Format Change
 
-### 4. "Time Ago" Column
-- New column showing relative time ("2 min ago", "1h ago")
-- Color logic:
-  - Less than 15 min: muted gray (#94A3B8)
-  - 15-30 min: soft amber (#D97706)
-  - More than 30 min AND unpaid: muted orange (#EA580C)
-  - More than 60 min: orange text + small AlertTriangle icon
-- Replaces or supplements the existing "Time" column (keep both: Time shows HH:mm, Time Ago shows relative)
+**File: `src/components/pos/orders/OrderItemsTooltip.tsx`**
+- Change the inline preview text from `"3 Items (Mango Bite, Curd, ...)"` to the format: `"1 x Mango Bite, 2 x Curd, 1 x Chicken Biryani (c)"`
+- Each item shows `{qty} x {name}`
+- If an item has customizations, append `(c)` after its name
+- Items joined by `, ` with ellipsis if more than 3 items
+- Remove the separate "3 Items" count prefix -- the format itself conveys quantity
 
-### 5. Single "View" Button Replaces Row Actions
-- Remove the multi-icon action column (Edit, Pay, Cancel, Delete)
-- Replace with a single **"View"** button per row (subtle outline, small)
-- Clicking "View" opens the **right slide panel** (50% width, full height)
-- The panel contains ALL actions: Edit, Collect Payment, Cancel, Delete, Print
+### 3. Nested Grid Dotted Row Separators
 
-### 6. Right Slide Panel (Redesigned OrderDetailDrawer)
-- Width: 50% of screen (`w-1/2`) instead of current 420px
-- Full height with light overlay
-- Structured in 3 sections:
+**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
+- Change row borders from `border-t border-slate-100` (solid) to `border-t border-dotted border-slate-200`
+- Keep the `#FAFAFA` background and shadow styling
 
-  **Header**: Order #, type badge, time, status badge
+### 4. Nested Grid Width: 50%
 
-  **Section 1 -- Order Items** (scrollable):
-  - Compact item cards with name, qty, price
-  - Customizations listed as bullet points
-  - Inline quantity +/- controls and remove button (for edit mode)
+**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
+- The nested grid container gets `max-w-[50%]` so it only spans half the parent row width (left-aligned)
+- Keeps it compact and unobtrusive
 
-  **Section 2 -- Payment** (priority section):
-  - Subtotal, tax, discount, total breakdown
-  - Payment method buttons (Cash, Card, Wallet)
-  - If unpaid: "Mark as Paid" primary button
-  - If paid: locked fields with "Paid" badge
+### 5. Clickable Stat Cards (Filter Action)
 
-  **Section 3 -- Actions** (bottom, light bg #F8FAFC):
-  - Large touch-friendly buttons with icons:
-    - Print Bill (Printer icon)
-    - Print to Kitchen (ChefHat icon)
-    - Edit Order (Pencil icon)
-    - Cancel Order (XCircle, soft red text, requires confirmation)
+**File: `src/components/pos/orders/OrderStatCards.tsx`**
+- Accept an `onCardClick(tab: OrderStatusTab)` prop
+- Map each card to a tab: Total -> "all", In Process -> "unpaid", Completed -> "completed", Total Sales -> "completed"
+- Add `cursor-pointer` and `hover:shadow-md` transition
+- Active card gets a subtle ring/border highlight
 
-### 7. Unpaid Row Indicator
-- Instead of full-row blinking, unpaid rows get a thin **left border line** (3px, muted red)
-- Much calmer than the current pulse animation
-- Status badge still shows "Unpaid" in muted red
+**File: `src/pages/pos/OrderList.tsx`**
+- Pass `onCardClick={(tab) => updateFilter("tab", tab)}` to `OrderStatCards`
 
-### 8. Compact Table Rows
-- Hover: very light gray background (#F8FAFC), no lavender
-- Row height stays at 42px
-- Tighter padding throughout
-- Chevron expand toggle retained for nested grid
+### 6. "Last Updated" Indicator
 
-### 9. Nested Grid Polish
-- Background: #FAFAFA (instead of muted/30)
-- Very light `shadow-inner` or `shadow-sm` behind nested area
-- Rounded corners on the nested container
-- Per-item edit (Pencil) and remove (Trash2) icons (small, muted)
+**File: `src/pages/pos/OrderList.tsx`**
+- Add a small `"Last updated: X min ago"` text next to the stat cards row (right-aligned)
+- Calculated from `dataUpdatedAt` returned by TanStack Query's `useQuery` result
+- Updates every 30s via the existing tick interval
 
-## Technical Details
+### 7. Column Header Icons
 
-### Files Modified
+**File: `src/pages/pos/OrderList.tsx`**
+- Add tiny icons (14px) next to column header text:
+  - Order #: `Hash` icon
+  - Items: `ShoppingBag` icon
+  - Type: `Utensils` icon
+  - Payment: `CreditCard` icon
+  - Total: `DollarSign` icon
+  - Time: `Clock` icon
+  - Time Ago: `Timer` icon
+  - Status: `Activity` icon
+- Icons are `text-slate-400` and `h-3.5 w-3.5`, inline with the header text
 
-1. **`src/index.css`**
-   - Add Roboto Condensed Google Font import
-   - Add `.pos-orders-font` class with `font-family: 'Roboto Condensed'`
-   - Soften `.animate-pulse-red` to be less aggressive (reduce to left-border indicator style)
-   - Add `.pos-tab-underline` custom tab styles
+### 8. Type and Time Ago Column Width Increase
 
-2. **`src/pages/pos/OrderList.tsx`** (major rewrite)
-   - Wrap in `.pos-orders-font` class
-   - Replace Tabs component with custom underline-style tabs with counts
-   - Add "Time Ago" column with color-coded relative time
-   - Replace Actions column with single "View" button
-   - Unpaid rows: add `border-l-3 border-red-400` instead of full pulse
-   - Update stat cards section to use redesigned component
+**File: `src/pages/pos/OrderList.tsx`**
+- Type column: increase from `w-[75px]` to `w-[95px]` so "Self Pickup" fits on one line
+- Time Ago column: increase from `w-[75px]` to `w-[95px]` so "1h 23m ago" fits on one line
+- Type cell font stays at the new `text-[14px]`
 
-3. **`src/components/pos/orders/OrderStatCards.tsx`**
-   - Redesign with soft pastel icon backgrounds
-   - Add `shadow-sm` and rounded-lg
-   - Change 4th card to "Total Sales" (sum)
-   - Apply Roboto Condensed font
+### 9. Table Cell Font Size Updates
 
-4. **`src/hooks/pos/usePOSOrders.ts`**
-   - Extend `OrderStats` to include `totalSales: number` (sum of paid totals)
-   - Add per-tab counts: `allCount`, `activeCount`, `unpaidCount`, `completedCount`, `cancelledCount`
+**File: `src/pages/pos/OrderList.tsx`**
+- All `text-[12px]` table cells -> `text-[14px]`
+- Order # cell `text-sm` -> `text-[15px]`
+- Total cell `text-sm` -> `text-[15px]`
+- View button text `text-[11px]` -> `text-[13px]`
+- Header cells `text-xs` -> `text-[13px]`
 
-5. **`src/components/pos/orders/OrderDetailDrawer.tsx`** (major rewrite)
-   - Change width to 50% (`w-1/2`)
-   - Add 3-section layout: Items (scrollable), Payment (with action buttons), Actions (bottom bar)
-   - Add inline payment collection (move CollectPaymentModal logic into the panel)
-   - Add action buttons: Print Bill, Print Kitchen, Edit, Cancel
-   - Add quantity +/- controls on items
+## Summary of Files Modified
 
-6. **`src/components/pos/orders/OrderStatusBadge.tsx`**
-   - Soften colors to match muted palette
-   - Remove pulse animation from badge (handled by row border instead)
-
-7. **`src/components/pos/orders/ExpandedOrderItems.tsx`**
-   - Update background to #FAFAFA
-   - Add subtle shadow and rounded corners
-   - Add small edit/remove icons per item row
-
-8. **`src/components/pos/orders/OrderItemsTooltip.tsx`**
-   - Apply Roboto Condensed font
-   - Match the muted color scheme
-
-### Time Ago Logic (utility)
-```text
-function getTimeAgo(createdAt: string): { text: string; level: 'normal' | 'warning' | 'urgent' | 'critical' }
-  diff = now - createdAt (in minutes)
-  < 1 min  -> "Just now", normal
-  < 15 min -> "X min ago", normal
-  < 30 min -> "X min ago", warning (amber)
-  < 60 min -> "X min ago", urgent (orange, only if unpaid)
-  >= 60    -> "Xh ago", critical (orange + icon)
-```
-
-### Tab Counts Data Flow
-The existing `useOrderStats` hook will be extended to return counts per tab. Since it already fetches all `payment_status` values for the date range, we just add the counting logic client-side -- no additional queries needed.
+| File | Change |
+|------|--------|
+| `src/index.css` | Bump `.pos-orders-font` base font-size to 15px |
+| `src/pages/pos/OrderList.tsx` | Column widths, font sizes, header icons, last-updated text, stat card click handler |
+| `src/components/pos/orders/OrderItemsTooltip.tsx` | Items format: `1 x Name (c), 2 x Name` |
+| `src/components/pos/orders/ExpandedOrderItems.tsx` | Dotted row borders, 50% max width |
+| `src/components/pos/orders/OrderStatCards.tsx` | Clickable cards with `onCardClick` prop |
+| `src/hooks/pos/usePOSOrders.ts` | Expose `dataUpdatedAt` from query result |
 
