@@ -88,12 +88,12 @@ export function useKitchenOrders() {
         return { ...order, items: orderItems };
       });
 
-      // Sort: orders with most urgent (oldest uncompleted) items first
+      // Sort: completed orders sink to bottom, then newest first
       result.sort((a, b) => {
         const aAllDone = a.items.every((i) => i.is_completed);
         const bAllDone = b.items.every((i) => i.is_completed);
         if (aAllDone !== bAllDone) return aAllDone ? 1 : -1;
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
       return result;
@@ -155,6 +155,31 @@ export function useKitchenOrders() {
     },
   });
 
+  const markAllComplete = useMutation({
+    mutationFn: async (orderItemIds: string[]) => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "")
+        .single();
+
+      const rows = orderItemIds.map((id) => ({
+        order_item_id: id,
+        is_completed: true,
+        completed_at: new Date().toISOString(),
+        completed_by: profile?.id || null,
+      }));
+
+      const { error } = await supabase
+        .from("kds_item_status")
+        .upsert(rows, { onConflict: "order_item_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kds-orders"] });
+    },
+  });
+
   const handleMarkComplete = useCallback(
     (orderItemId: string, itemName: string) => {
       markItemComplete.mutate(orderItemId);
@@ -167,5 +192,27 @@ export function useKitchenOrders() {
     [markItemComplete]
   );
 
-  return { orders, isLoading, refetch, handleMarkComplete, undoItemComplete };
+  const handleUndoComplete = useCallback(
+    (orderItemId: string, itemName: string) => {
+      undoItemComplete.mutate(orderItemId);
+      toast({
+        title: `${itemName} undone`,
+        duration: 2000,
+      });
+    },
+    [undoItemComplete]
+  );
+
+  const handleMarkAllComplete = useCallback(
+    (orderItemIds: string[], orderNumber: number) => {
+      markAllComplete.mutate(orderItemIds);
+      toast({
+        title: `Order #${orderNumber} — all items done`,
+        duration: 3000,
+      });
+    },
+    [markAllComplete]
+  );
+
+  return { orders, isLoading, refetch, handleMarkComplete, handleUndoComplete, handleMarkAllComplete };
 }

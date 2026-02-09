@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
+import { Bell, CheckCheck } from "lucide-react";
 import { KitchenItemRow } from "./KitchenItemRow";
 import { KitchenItemModal } from "./KitchenItemModal";
 import type { KDSOrder, KDSOrderItem } from "@/hooks/pos/useKitchenOrders";
@@ -31,12 +31,18 @@ function isNewOrder(createdAt: string) {
   return Date.now() - new Date(createdAt).getTime() < 60000;
 }
 
+function getElapsedMinutes(createdAt: string) {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+}
+
 interface KitchenOrderCardProps {
   order: KDSOrder;
   onMarkComplete: (orderItemId: string, itemName: string) => void;
+  onUndoComplete: (orderItemId: string, itemName: string) => void;
+  onMarkAllComplete: (orderItemIds: string[], orderNumber: number) => void;
 }
 
-export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProps) {
+export function KitchenOrderCard({ order, onMarkComplete, onUndoComplete, onMarkAllComplete }: KitchenOrderCardProps) {
   const [selectedItem, setSelectedItem] = useState<KDSOrderItem | null>(null);
   const [showComplete, setShowComplete] = useState(false);
 
@@ -44,6 +50,7 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
   const total = order.items.length;
   const allDone = completed === total && total > 0;
   const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const incompleteIds = order.items.filter((i) => !i.is_completed).map((i) => i.id);
 
   const progressBarColor =
     progressPct > 66 ? "bg-emerald-500" : progressPct > 33 ? "bg-amber-500" : "bg-red-500";
@@ -58,6 +65,16 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
 
   const barGradient = ORDER_TYPE_GRADIENTS[order.order_type] || "bg-gradient-to-r from-slate-500 to-slate-600";
   const newOrder = isNewOrder(order.created_at);
+  const elapsed = getElapsedMinutes(order.created_at);
+  const isOverdue = elapsed >= 30 && !allDone;
+
+  const handleItemTap = (item: KDSOrderItem) => {
+    if (item.is_completed) {
+      onUndoComplete(item.id, item.item_name);
+    } else {
+      setSelectedItem(item);
+    }
+  };
 
   return (
     <>
@@ -66,7 +83,7 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
           "flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all duration-500",
           "hover:shadow-md hover:-translate-y-0.5",
           allDone && "opacity-40 scale-[0.98]",
-          newOrder && !allDone && "ring-2 ring-amber-400/50 animate-pulse"
+          newOrder && !allDone && "ring-2 ring-amber-400 animate-kds-blink"
         )}
       >
         {/* Gradient top bar */}
@@ -82,7 +99,14 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
               {total} items
             </span>
           </div>
-          <span className="text-[15px] text-white/80">{getTimeAgoShort(order.created_at)}</span>
+          <div className="flex items-center gap-2">
+            {isOverdue && (
+              <Bell className="h-5 w-5 text-orange-300 animate-kds-bell-ring" />
+            )}
+            <span className={cn("text-[15px] text-white/80", isOverdue && "text-orange-200 font-semibold")}>
+              {getTimeAgoShort(order.created_at)}
+            </span>
+          </div>
         </div>
 
         {/* Customer info for delivery */}
@@ -93,15 +117,19 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
           </div>
         )}
 
-        {/* Items list */}
-        <div className="flex flex-col gap-0.5 p-2">
-          {order.items.map((item) => (
-            <KitchenItemRow
-              key={item.id}
-              item={item}
-              orderCreatedAt={order.created_at}
-              onTap={setSelectedItem}
-            />
+        {/* Items list with dotted dividers */}
+        <div className="flex flex-col p-2">
+          {order.items.map((item, idx) => (
+            <div key={item.id}>
+              {idx > 0 && (
+                <div className="mx-auto w-3/4 border-t border-dotted border-slate-300 my-0.5" />
+              )}
+              <KitchenItemRow
+                item={item}
+                orderCreatedAt={order.created_at}
+                onTap={handleItemTap}
+              />
+            </div>
           ))}
         </div>
 
@@ -120,6 +148,19 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
             />
           </div>
         </div>
+
+        {/* Mark All Done button */}
+        {incompleteIds.length > 0 && (
+          <div className="px-4 pb-3">
+            <button
+              onClick={() => onMarkAllComplete(incompleteIds, order.order_number)}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-[15px] py-2 transition-colors touch-manipulation"
+            >
+              <CheckCheck className="h-5 w-5" />
+              Mark All Done
+            </button>
+          </div>
+        )}
 
         {/* ORDER COMPLETE overlay */}
         {showComplete && (
