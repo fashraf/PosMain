@@ -1,51 +1,75 @@
 
-# Payment Reconciliation on Order Edit
+
+# Smart Payment for Order Edits
 
 ## Overview
 
-When an order is edited and the total changes, the order-complete page should show a clear, icon-driven reconciliation banner telling the cashier exactly what to do:
+When editing an existing order, the Payment column in the checkout modal will calculate the **balance difference** between the previous total and the new total, and adjust the payment logic accordingly:
 
-- **Total increased** (red/orange): "Collect 15.50 SAR more" with an upward arrow icon
-- **Total decreased** (green): "Return 8.25 SAR to customer" with a downward arrow icon  
-- **No change** (neutral): "No payment action needed" with a checkmark icon
+- **New total = Previous total**: No payment needed -- show a green checkmark with "No payment action needed"
+- **New total < Previous total** (items removed): No payment to collect -- show a green refund banner with "Return X.XX SAR to customer"
+- **New total > Previous total** (items added): Only collect the **balance** -- show the difference as the amount due, not the full total
 
 ## What Changes
 
-### 1. Track Previous Total
+### PaymentColumn
 
-When entering edit mode, `POSMain.tsx` will also fetch and store the **previous total** from the original order. This gets passed through to `CheckoutModal`, which passes it in the navigation state to the order-complete page.
+Pass `previousOrderTotal` as a new optional prop. When in edit mode (i.e. `previousOrderTotal` is provided):
 
-### 2. CheckoutModal -- Pass Previous Total
+1. Calculate `balanceDue = total - previousOrderTotal`
+2. **If balanceDue <= 0** (equal or refund scenario):
+   - Hide all payment method buttons and tendered amount inputs
+   - Show a reconciliation banner:
+     - Equal: Green `CheckCircle2` icon -- "No payment action needed"
+     - Refund: Green `TrendingDown` icon -- "Return X.XX SAR to customer"
+3. **If balanceDue > 0** (additional payment needed):
+   - Show an orange `TrendingUp` banner: "Collect X.XX SAR additional"
+   - Show payment method buttons but use `balanceDue` as the effective amount for cash tendered validation and change calculation
+   - The "Exact" quick-add button fills the balance amount, not the full total
+   - Cash change is calculated against the balance, not the full total
 
-Add `previousTotal` to the navigation state when in edit mode so the order-complete page can calculate the difference.
+### CheckoutModal
 
-### 3. OrderComplete -- Payment Reconciliation Card
+- Pass `previousOrderTotal` to `PaymentColumn`
+- Update `canSubmit()` validation:
+  - If editing and balance <= 0, always allow submission (no payment validation needed)
+  - If editing and balance > 0, validate tendered amount against the **balance**, not the full total
+- Update `getSubmitHint()` to reflect balance-based messages
 
-Add a new `PaymentReconciliationCard` component that only appears when `mode === "update"`. It compares `previousTotal` vs `total` and shows one of three states:
+### No other files change
 
-- **Collect More** -- Orange/red card with `TrendingUp` icon and the exact amount to collect
-- **Return to Customer** -- Green card with `TrendingDown` icon and the exact amount to refund
-- **No Action** -- Neutral card with `CheckCircle2` icon confirming totals match
-
-This card will appear prominently between the totals section and the payment details section, with clear large text and intuitive icons.
+The `PaymentReconciliationCard` on the order-complete page remains as-is -- it already handles the post-submission summary.
 
 ## Technical Details
 
 ### Files Modified
 
-1. **`src/pages/pos/POSMain.tsx`**
-   - Fetch `total_amount` when loading the order for editing
-   - Store it in a new state variable `previousOrderTotal`
-   - Pass it to `CheckoutModal` as a new prop
+1. **`src/components/pos/checkout/PaymentColumn.tsx`**
+   - Add optional `previousTotal?: number` prop
+   - Compute `balanceDue = total - (previousTotal ?? total)`
+   - When `balanceDue <= 0`: render a reconciliation card (reuse icons from `PaymentReconciliationCard`) and hide payment inputs
+   - When `balanceDue > 0`: show an "Additional payment" banner above payment methods, use `balanceDue` for cash change calculation and the Exact button
 
 2. **`src/components/pos/checkout/CheckoutModal.tsx`**
-   - Accept new `previousOrderTotal` prop
-   - Include `previousTotal` in the navigation state to `/pos/order-complete` (only in edit mode)
+   - Pass `previousOrderTotal` to `PaymentColumn`
+   - Update `canSubmit()`: if edit mode and `balanceDue <= 0`, skip cash/split validation
+   - Update `canSubmit()`: if edit mode and `balanceDue > 0`, validate tendered amount against `balanceDue` instead of `cart.total`
+   - Update `getSubmitHint()` accordingly
 
-3. **`src/pages/pos/OrderComplete.tsx`**
-   - Extend `OrderCompleteState` interface with `previousTotal?: number`
-   - Add a `PaymentReconciliationCard` component that renders between totals and payment details
-   - Three visual states:
-     - **Collect more**: Orange border, `TrendingUp` icon, bold amount in orange
-     - **Return**: Green border, `TrendingDown` icon, bold amount in green
-     - **No action**: Neutral border, `CheckCircle2` icon, "Totals match" message
+### Payment Logic Summary
+
+```text
+balanceDue = newTotal - previousTotal
+
+balanceDue <= 0:
+  - No payment fields shown
+  - Submit always enabled (cart not empty + address ok)
+  - Banner shows refund amount or "no action"
+
+balanceDue > 0:
+  - Payment methods shown
+  - Cash: tendered must >= balanceDue
+  - Change = tendered - balanceDue
+  - Exact button = Math.ceil(balanceDue)
+  - Split: cashAmount validated against balanceDue
+```
