@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { OrderItemRow } from "@/hooks/pos/usePOSOrders";
 import { cn } from "@/lib/utils";
+import { OrderItemCard } from "./OrderItemCard";
 
 interface OrderItemsTooltipProps {
   items: OrderItemRow[];
@@ -13,13 +14,17 @@ interface OrderItemsTooltipProps {
   total: number;
 }
 
-export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderItemsTooltipProps) {
-  const hasCustomization = (item: OrderItemRow) => {
-    const cust = item.customization_json;
-    if (!cust) return false;
-    return (cust.removedIngredients?.length > 0) || (cust.addedIngredients?.length > 0);
-  };
+function hasCustomization(item: OrderItemRow) {
+  const cust = item.customization_json;
+  if (!cust) return false;
+  return (
+    (cust.removedIngredients?.length > 0) ||
+    (cust.addedIngredients?.length > 0) ||
+    (cust.replacements?.length > 0)
+  );
+}
 
+export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderItemsTooltipProps) {
   const previewItems = items.slice(0, 3);
   const hasMore = items.length > 3;
 
@@ -27,15 +32,18 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
         <span className="cursor-default flex flex-wrap gap-1 items-center">
-          {previewItems.map((i, idx) => (
+          {previewItems.map((i) => (
             <span
               key={i.id}
               className={cn(
-                "inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-[16px] font-medium",
+                "inline-flex items-center gap-1 bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-[16px] font-medium",
                 hasCustomization(i) && "underline decoration-orange-400 decoration-2 underline-offset-2"
               )}
             >
               {i.quantity} x {i.item_name}
+              {hasCustomization(i) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
+              )}
             </span>
           ))}
           {hasMore && <span className="text-[14px] text-slate-400">…</span>}
@@ -44,47 +52,26 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
       <TooltipContent
         side="bottom"
         align="start"
-        className="pos-orders-font max-w-sm min-w-[320px] p-4 text-sm space-y-3"
+        className="pos-orders-font max-w-sm min-w-[320px] p-0 text-sm"
       >
-        {items.map((item) => {
-          const cust = item.customization_json;
-          const removedIngredients: string[] = cust?.removedIngredients || [];
-          const addedIngredients: string[] = (cust?.addedIngredients || []).map(
-            (a: any) => a.name || a
-          );
-          const hasCustom = removedIngredients.length > 0 || addedIngredients.length > 0;
+        {/* Items */}
+        <div className="divide-y divide-dotted divide-slate-200">
+          {items.map((item) => (
+            <OrderItemCard key={item.id} item={item} />
+          ))}
+        </div>
 
-          return (
-            <div key={item.id}>
-              <div className="flex justify-between font-medium">
-                <span>
-                  {item.item_name} x{item.quantity}
-                </span>
-                <span>{item.line_total.toFixed(2)}</span>
-              </div>
-              {hasCustom && (
-                <div className="pl-3 text-muted-foreground space-y-0.5 mt-0.5">
-                  {removedIngredients.map((r, i) => (
-                    <div key={i}>– No {r}</div>
-                  ))}
-                  {addedIngredients.map((a, i) => (
-                    <div key={i}>+ Extra {a}</div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-        <div className="border-t border-border pt-1.5 mt-1.5 space-y-0.5">
-          <div className="flex justify-between text-muted-foreground">
+        {/* Totals */}
+        <div className="border-t border-border px-3 py-2 space-y-0.5">
+          <div className="flex justify-between text-muted-foreground text-xs">
             <span>Subtotal</span>
             <span>{subtotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-muted-foreground">
+          <div className="flex justify-between text-muted-foreground text-xs">
             <span>Tax</span>
             <span>{vatAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between font-semibold">
+          <div className="flex justify-between font-semibold text-sm">
             <span>Total</span>
             <span>{total.toFixed(2)}</span>
           </div>

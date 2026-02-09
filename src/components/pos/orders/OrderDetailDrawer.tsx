@@ -13,6 +13,7 @@ import {
 import { format } from "date-fns";
 import { TouchButton } from "@/components/pos/shared";
 import { cn } from "@/lib/utils";
+import { OrderItemCard } from "./OrderItemCard";
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
   dine_in: "Dine In",
@@ -80,42 +81,10 @@ export function OrderDetailDrawer({
           {/* Section 1: Items */}
           <div>
             <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Order Items</h3>
-            <div className="rounded-lg border border-slate-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs">
-                    <th className="text-left px-3 py-2 font-medium">Item</th>
-                    <th className="text-center px-2 py-2 font-medium">Qty</th>
-                    <th className="text-right px-3 py-2 font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item) => {
-                    const cust = item.customization_json;
-                    const removed: string[] = cust?.removedIngredients || [];
-                    const added: string[] = (cust?.addedIngredients || []).map((a: any) => a.name || a);
-                    const replacements: string[] = (cust?.replacements || []).map((r: any) => r.name || r);
-                    const hasCustom = removed.length > 0 || added.length > 0 || replacements.length > 0;
-
-                    return (
-                      <tr key={item.id} className="border-t border-slate-100">
-                        <td className="px-3 py-2">
-                          <div className={cn("text-slate-700 font-medium", hasCustom && "underline decoration-orange-400 decoration-2 underline-offset-2")}>{item.item_name}</div>
-                          {hasCustom && (
-                            <div className="text-xs mt-0.5 space-y-0.5">
-                              {removed.map((r, i) => <div key={`r-${i}`} className="text-red-400">– No {r}</div>)}
-                              {added.map((a, i) => <div key={`a-${i}`} className="text-emerald-500">+ Extra {a}</div>)}
-                              {replacements.map((r, i) => <div key={`rp-${i}`} className="text-blue-500">↻ {r}</div>)}
-                            </div>
-                          )}
-                        </td>
-                        <td className="text-center px-2 py-2 text-slate-500">{item.quantity}</td>
-                        <td className="text-right px-3 py-2 font-medium tabular-nums text-slate-700">{item.line_total.toFixed(2)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="rounded-lg border border-slate-200 overflow-hidden divide-y divide-dotted divide-slate-200">
+              {order.items.map((item) => (
+                <OrderItemCard key={item.id} item={item} />
+              ))}
             </div>
           </div>
 
