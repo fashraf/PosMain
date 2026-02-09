@@ -62,7 +62,7 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
       {/* Checkbox area */}
       <div
         className={cn(
-          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-colors",
           item.is_completed
             ? "border-emerald-500 bg-emerald-500 text-white"
             : "border-slate-300"
@@ -75,13 +75,13 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {item.quantity > 1 && (
-            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-bold text-slate-700">
+            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[15px] font-bold text-slate-700">
               ×{item.quantity}
             </span>
           )}
           <span
             className={cn(
-              "font-semibold text-[15px]",
+              "font-semibold text-[18px]",
               item.is_completed ? "line-through text-slate-400" : "text-slate-800"
             )}
           >
@@ -90,7 +90,7 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
         </div>
 
         {hasCustomizations && !item.is_completed && (
-          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
+          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[15px]">
             {removals.map((r: any, i: number) => (
               <span key={`r-${i}`} className="text-red-500">- {r.name || r}</span>
             ))}
@@ -108,7 +108,7 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
         )}
 
         {item.is_completed && item.completed_at && (
-          <span className="text-xs text-slate-400">
+          <span className="text-[15px] text-slate-400">
             Done at {format(new Date(item.completed_at), "HH:mm")}
           </span>
         )}
@@ -116,7 +116,7 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
 
       {/* Timer */}
       {!item.is_completed && (
-        <span className={cn("shrink-0 text-sm font-bold tabular-nums", getTimerColor(elapsed))}>
+        <span className={cn("shrink-0 text-[17px] font-bold tabular-nums", getTimerColor(elapsed))}>
           {formatTimer(elapsed)}
         </span>
       )}

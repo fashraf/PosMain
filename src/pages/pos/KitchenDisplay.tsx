@@ -27,7 +27,7 @@ export default function KitchenDisplay() {
     <div className="flex flex-col h-screen">
       <KitchenStatusBar pendingCount={pendingCount} urgentCount={urgentCount} />
 
-      <div className="flex-1 overflow-y-auto bg-slate-100 p-4">
+      <div className="flex-1 overflow-y-auto bg-slate-100 p-3">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <span className="text-slate-400 text-lg">Loading orders...</span>
@@ -38,7 +38,7 @@ export default function KitchenDisplay() {
             <span className="text-slate-400 text-lg">No active orders</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 auto-rows-min">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 auto-rows-min">
             {filteredOrders.map((order) => (
               <div key={order.id} className="relative">
                 <KitchenOrderCard order={order} onMarkComplete={handleMarkComplete} />
