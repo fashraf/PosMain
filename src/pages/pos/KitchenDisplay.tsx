@@ -3,7 +3,7 @@ import { useKitchenOrders } from "@/hooks/pos/useKitchenOrders";
 import { KitchenStatusBar, KitchenFilters, KitchenOrderCard, type KDSFilter } from "@/components/pos/kitchen";
 
 export default function KitchenDisplay() {
-  const { orders, isLoading, handleMarkComplete } = useKitchenOrders();
+  const { orders, isLoading, handleMarkComplete, handleUndoComplete, handleMarkAllComplete } = useKitchenOrders();
   const [filter, setFilter] = useState<KDSFilter>("all");
 
   const filteredOrders = useMemo(() => {
@@ -41,7 +41,12 @@ export default function KitchenDisplay() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 auto-rows-min">
             {filteredOrders.map((order) => (
               <div key={order.id} className="relative">
-                <KitchenOrderCard order={order} onMarkComplete={handleMarkComplete} />
+                <KitchenOrderCard
+                  order={order}
+                  onMarkComplete={handleMarkComplete}
+                  onUndoComplete={handleUndoComplete}
+                  onMarkAllComplete={handleMarkAllComplete}
+                />
               </div>
             ))}
           </div>

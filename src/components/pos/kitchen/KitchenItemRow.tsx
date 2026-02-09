@@ -49,8 +49,7 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
 
   return (
     <button
-      onClick={() => !item.is_completed && onTap(item)}
-      disabled={item.is_completed}
+      onClick={() => onTap(item)}
       className={cn(
         "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-all",
         "touch-manipulation select-none min-h-[56px]",
