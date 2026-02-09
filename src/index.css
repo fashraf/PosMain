@@ -290,6 +290,15 @@
   .animate-pulse-red {
     animation: pulse-red 1.5s ease-in-out infinite;
   }
+
+  /* New order blink (5 times then stop) */
+  @keyframes new-order-blink {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: hsl(var(--primary) / 0.12); }
+  }
+  .animate-new-order-blink {
+    animation: new-order-blink 1.5s ease-in-out 5;
+  }
 }
 
 /* ── POS Light Theme (scoped) ── */

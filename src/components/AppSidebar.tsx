@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 const mainNavItems = [
   { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
   { titleKey: "nav.order", url: "/pos", icon: ShoppingCart },
+  { titleKey: "nav.orderList", url: "/pos/orders", icon: ClipboardList },
   { titleKey: "nav.salesChannels", url: "/sales-channels", icon: Store },
   { titleKey: "nav.ingredients", url: "/inventory/ingredients", icon: Carrot },
 ];
