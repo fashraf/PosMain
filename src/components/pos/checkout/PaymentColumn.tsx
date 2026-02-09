@@ -41,14 +41,15 @@ export function PaymentColumn({
 
   return (
     <div className="flex h-full flex-col">
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="h-2 w-2 rounded-full bg-primary/40" />
         Payment
       </h3>
 
       {/* Total display */}
-      <div className="mb-4 rounded-xl bg-primary/5 p-3 text-center">
+      <div className="mb-4 rounded-2xl border-2 border-dotted border-violet-200/60 bg-gradient-to-br from-violet-50 to-blue-50/30 p-3 text-center">
         <p className="text-xs text-muted-foreground">Total Amount</p>
-        <p className="text-2xl font-bold text-primary">{total.toFixed(2)} SAR</p>
+        <p className="text-2xl font-bold text-primary/85">{total.toFixed(2)} SAR</p>
       </div>
 
       {/* Payment method buttons */}
@@ -61,12 +62,12 @@ export function PaymentColumn({
               disabled={disabled}
               onClick={() => onPaymentMethodChange(method)}
               className={cn(
-                "rounded-xl border-2 px-3 py-3 text-xs font-semibold transition-all min-h-[48px]",
+                "rounded-2xl border-2 px-3 py-3 text-xs font-semibold transition-all min-h-[48px]",
                 "hover:border-primary/50 active:scale-95",
                 disabled && "opacity-40 cursor-not-allowed",
                 paymentMethod === method
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-dotted border-border text-foreground"
+                  ? "border-primary bg-gradient-to-br from-primary/5 to-violet-50 text-primary shadow-md shadow-primary/10"
+                  : "border-dotted border-violet-200/60 text-foreground"
               )}
             >
               {label}
@@ -86,7 +87,7 @@ export function PaymentColumn({
               step={0.01}
               value={tenderedAmount || ""}
               onChange={(e) => onTenderedAmountChange(parseFloat(e.target.value) || 0)}
-              className="h-12 text-lg font-bold text-center"
+              className="h-12 text-lg font-bold text-center rounded-xl border-violet-200/60"
               placeholder="0.00"
             />
           </div>
@@ -97,7 +98,7 @@ export function PaymentColumn({
                 key={amt}
                 variant="outline"
                 size="sm"
-                className="flex-1 min-h-[40px] text-xs font-semibold"
+                className="flex-1 min-h-[40px] text-xs font-semibold rounded-xl border-violet-200/60"
                 onClick={() => onTenderedAmountChange(tenderedAmount + amt)}
               >
                 +{amt}
@@ -106,7 +107,7 @@ export function PaymentColumn({
             <TouchButton
               variant="outline"
               size="sm"
-              className="flex-1 min-h-[40px] text-xs font-semibold"
+              className="flex-1 min-h-[40px] text-xs font-semibold rounded-xl border-violet-200/60"
               onClick={() => onTenderedAmountChange(Math.ceil(total))}
             >
               Exact
@@ -115,10 +116,10 @@ export function PaymentColumn({
 
           <div
             className={cn(
-              "rounded-lg p-3 text-center font-bold",
+              "rounded-xl p-3 text-center font-bold",
               change >= 0
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-red-50 text-destructive"
+                ? "bg-emerald-50/80 text-emerald-600"
+                : "bg-red-50/80 text-red-500"
             )}
           >
             <p className="text-xs font-normal text-muted-foreground">Change</p>
@@ -141,11 +142,11 @@ export function PaymentColumn({
                 const val = parseFloat(e.target.value) || 0;
                 onCashAmountChange(Math.min(val, total));
               }}
-              className="h-11 text-base font-bold text-center"
+              className="h-11 text-base font-bold text-center rounded-xl border-violet-200/60"
               placeholder="0.00"
             />
           </div>
-          <div className="rounded-lg bg-muted/50 p-3">
+          <div className="rounded-xl border-2 border-dotted border-violet-200/60 bg-violet-50/20 p-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Card Amount</span>
               <span className="font-bold">{cardAmount >= 0 ? cardAmount.toFixed(2) : "0.00"} SAR</span>
@@ -155,13 +156,13 @@ export function PaymentColumn({
       )}
 
       {paymentMethod === "pay_later" && (
-        <div className="rounded-lg bg-amber-50 p-3 text-center text-sm text-amber-700">
+        <div className="rounded-xl border-2 border-dotted border-amber-200/60 bg-amber-50/50 p-3 text-center text-sm text-amber-700">
           Payment will be collected later. Order will be marked as pending.
         </div>
       )}
 
       {paymentMethod === "card" && (
-        <div className="rounded-lg bg-muted/50 p-3 text-center text-sm text-muted-foreground">
+        <div className="rounded-xl border-2 border-dotted border-violet-200/60 bg-violet-50/20 p-3 text-center text-sm text-muted-foreground">
           Card payment — charge {total.toFixed(2)} SAR
         </div>
       )}

@@ -38,7 +38,8 @@ export function OrderTypeColumn({
 }: OrderTypeColumnProps) {
   return (
     <div className="flex h-full flex-col">
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="h-2 w-2 rounded-full bg-primary/40" />
         Order Type
       </h3>
 
@@ -48,11 +49,11 @@ export function OrderTypeColumn({
             key={type}
             onClick={() => onChange(type)}
             className={cn(
-              "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-4 transition-all min-h-[80px]",
+              "flex flex-col items-center justify-center gap-2 rounded-2xl border-2 p-4 transition-all min-h-[80px]",
               "hover:border-primary/50 active:scale-95",
               selected === type
-                ? "border-primary bg-primary/5 shadow-sm"
-                : "border-dotted border-border bg-background"
+                ? "border-primary bg-gradient-to-br from-primary/5 to-violet-50 shadow-md shadow-primary/10"
+                : "border-dotted border-violet-200/60 bg-background"
             )}
           >
             <Icon className={cn("h-6 w-6", selected === type ? "text-primary" : "text-muted-foreground")} />
@@ -65,7 +66,7 @@ export function OrderTypeColumn({
 
       {/* Delivery address */}
       {selected === "delivery" && (
-        <div className="mt-4 space-y-1.5">
+        <div className="mt-4 rounded-xl border-2 border-dotted border-violet-200/60 bg-violet-50/20 p-3 space-y-1.5">
           <Label className="text-xs font-semibold">
             Delivery Address <span className="text-destructive">*</span>
           </Label>
@@ -74,7 +75,7 @@ export function OrderTypeColumn({
             value={deliveryAddress}
             onChange={(e) => onAddressChange(e.target.value)}
             className={cn(
-              "min-h-[60px] text-sm",
+              "min-h-[60px] text-sm rounded-xl border-violet-200/60",
               showAddressError && !deliveryAddress.trim() && "border-destructive"
             )}
           />
@@ -85,7 +86,7 @@ export function OrderTypeColumn({
       )}
 
       {/* Customer details */}
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 rounded-xl border-2 border-dotted border-violet-200/60 bg-violet-50/10 p-3 space-y-3">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Customer Details
         </h4>
@@ -96,7 +97,7 @@ export function OrderTypeColumn({
               placeholder="05XXXXXXXX"
               value={customerMobile}
               onChange={(e) => onMobileChange(e.target.value)}
-              className="h-10 text-sm"
+              className="h-10 text-sm rounded-xl border-violet-200/60"
             />
           </div>
           <div>
@@ -105,7 +106,7 @@ export function OrderTypeColumn({
               placeholder="Customer name"
               value={customerName}
               onChange={(e) => onNameChange(e.target.value)}
-              className="h-10 text-sm"
+              className="h-10 text-sm rounded-xl border-violet-200/60"
             />
           </div>
         </div>
