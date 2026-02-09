@@ -52,7 +52,7 @@ import StorageTypesPage from "@/pages/maintenance/StorageTypes";
 import IngredientGroupsPage from "@/pages/maintenance/IngredientGroups";
 import Users from "@/pages/Users";
 // POS Module
-import { POSMain } from "@/pages/pos";
+import { POSMain, OrderComplete } from "@/pages/pos";
 import { POSLayout } from "@/components/pos/layout";
 const queryClient = new QueryClient();
 
@@ -74,6 +74,16 @@ const App = () => (
                 <ProtectedRoute>
                   <POSLayout>
                     <POSMain />
+                  </POSLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pos/order-complete"
+              element={
+                <ProtectedRoute>
+                  <POSLayout>
+                    <OrderComplete />
                   </POSLayout>
                 </ProtectedRoute>
               }

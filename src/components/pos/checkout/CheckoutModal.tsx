@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import { TouchButton } from "@/components/pos/shared";
 import { OrderReviewColumn } from "./OrderReviewColumn";
 import { OrderTypeColumn } from "./OrderTypeColumn";
 import { PaymentColumn } from "./PaymentColumn";
-import { OrderConfirmation } from "./OrderConfirmation";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -33,10 +33,11 @@ export function CheckoutModal({
   onEditCustomization,
 }: CheckoutModalProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [showAddressError, setShowAddressError] = useState(false);
-  const [orderResult, setOrderResult] = useState<{ orderNumber: number; itemCount: number; total: number } | null>(null);
+  
 
   const [formData, setFormData] = useState<CheckoutFormData>({
     orderType: "dine_in",
@@ -130,10 +131,23 @@ export function CheckoutModal({
 
       if (itemsError) throw itemsError;
 
-      setOrderResult({
-        orderNumber: order.order_number,
-        itemCount: cart.items.length,
-        total: cart.total,
+      onOpenChange(false);
+      navigate("/pos/order-complete", {
+        state: {
+          mode: "new",
+          orderNumber: order.order_number,
+          items: cart.items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            basePrice: item.basePrice,
+            lineTotal: item.lineTotal,
+          })),
+          subtotal: cart.subtotal,
+          vatAmount: cart.vatAmount,
+          total: cart.total,
+          orderType: formData.orderType,
+          paymentMethod: formData.paymentMethod,
+        },
       });
     } catch (error: any) {
       toast({
@@ -144,22 +158,6 @@ export function CheckoutModal({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleNewOrder = () => {
-    setOrderResult(null);
-    setFormData({
-      orderType: "dine_in",
-      customerMobile: "",
-      customerName: "",
-      deliveryAddress: "",
-      paymentMethod: "cash",
-      tenderedAmount: 0,
-      cashAmount: 0,
-      takenBy: "",
-      notes: "",
-    });
-    onOrderComplete();
   };
 
   const handleClearOrder = () => {
@@ -174,7 +172,6 @@ export function CheckoutModal({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      setOrderResult(null);
       setShowConfirmClear(false);
       setShowAddressError(false);
     }
@@ -191,93 +188,82 @@ export function CheckoutModal({
           <DialogTitle className="text-xl font-bold text-foreground/80">Complete Order</DialogTitle>
         </DialogHeader>
 
-        {orderResult ? (
-          <OrderConfirmation
-            orderNumber={orderResult.orderNumber}
-            itemCount={orderResult.itemCount}
-            total={orderResult.total}
-            onNewOrder={handleNewOrder}
-          />
-        ) : (
-          <>
-            {/* 3-column grid with dotted dividers */}
-            <div className="flex-1 overflow-hidden grid grid-cols-12">
-              <div className="col-span-4 p-4 flex flex-col overflow-hidden border-r border-dotted border-violet-200/60">
-                <OrderReviewColumn
-                  items={cart.items}
-                  subtotal={cart.subtotal}
-                  vatRate={cart.vatRate}
-                  vatAmount={cart.vatAmount}
-                  total={cart.total}
-                  onIncrement={cart.incrementItem}
-                  onDecrement={cart.decrementItem}
-                  onEditCustomization={onEditCustomization}
-                />
-              </div>
+        {/* 3-column grid with dotted dividers */}
+        <div className="flex-1 overflow-hidden grid grid-cols-12">
+          <div className="col-span-4 p-4 flex flex-col overflow-hidden border-r border-dotted border-violet-200/60">
+            <OrderReviewColumn
+              items={cart.items}
+              subtotal={cart.subtotal}
+              vatRate={cart.vatRate}
+              vatAmount={cart.vatAmount}
+              total={cart.total}
+              onIncrement={cart.incrementItem}
+              onDecrement={cart.decrementItem}
+              onEditCustomization={onEditCustomization}
+            />
+          </div>
 
-              <div className="col-span-4 p-4 flex flex-col overflow-auto bg-violet-50/30 border-r border-dotted border-violet-200/60">
-                <OrderTypeColumn
-                  selected={formData.orderType}
-                  onChange={(type) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      orderType: type,
-                      paymentMethod:
-                        (type === "takeaway" || type === "self_pickup") && prev.paymentMethod === "pay_later"
-                          ? "cash"
-                          : prev.paymentMethod,
-                    }));
-                    setShowAddressError(false);
-                  }}
-                  customerMobile={formData.customerMobile}
-                  customerName={formData.customerName}
-                  deliveryAddress={formData.deliveryAddress}
-                  onMobileChange={(v) => setFormData((p) => ({ ...p, customerMobile: v }))}
-                  onNameChange={(v) => setFormData((p) => ({ ...p, customerName: v }))}
-                  onAddressChange={(v) => setFormData((p) => ({ ...p, deliveryAddress: v }))}
-                  showAddressError={showAddressError}
-                />
-              </div>
+          <div className="col-span-4 p-4 flex flex-col overflow-auto bg-violet-50/30 border-r border-dotted border-violet-200/60">
+            <OrderTypeColumn
+              selected={formData.orderType}
+              onChange={(type) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  orderType: type,
+                  paymentMethod:
+                    (type === "takeaway" || type === "self_pickup") && prev.paymentMethod === "pay_later"
+                      ? "cash"
+                      : prev.paymentMethod,
+                }));
+                setShowAddressError(false);
+              }}
+              customerMobile={formData.customerMobile}
+              customerName={formData.customerName}
+              deliveryAddress={formData.deliveryAddress}
+              onMobileChange={(v) => setFormData((p) => ({ ...p, customerMobile: v }))}
+              onNameChange={(v) => setFormData((p) => ({ ...p, customerName: v }))}
+              onAddressChange={(v) => setFormData((p) => ({ ...p, deliveryAddress: v }))}
+              showAddressError={showAddressError}
+            />
+          </div>
 
-              <div className="col-span-4 p-4 flex flex-col overflow-auto">
-                <PaymentColumn
-                  total={cart.total}
-                  paymentMethod={formData.paymentMethod}
-                  orderType={formData.orderType}
-                  tenderedAmount={formData.tenderedAmount}
-                  cashAmount={formData.cashAmount}
-                  onPaymentMethodChange={(m) => setFormData((p) => ({ ...p, paymentMethod: m }))}
-                  onTenderedAmountChange={(a) => setFormData((p) => ({ ...p, tenderedAmount: a }))}
-                  onCashAmountChange={(a) => setFormData((p) => ({ ...p, cashAmount: a }))}
-                />
-              </div>
-            </div>
+          <div className="col-span-4 p-4 flex flex-col overflow-auto">
+            <PaymentColumn
+              total={cart.total}
+              paymentMethod={formData.paymentMethod}
+              orderType={formData.orderType}
+              tenderedAmount={formData.tenderedAmount}
+              cashAmount={formData.cashAmount}
+              onPaymentMethodChange={(m) => setFormData((p) => ({ ...p, paymentMethod: m }))}
+              onTenderedAmountChange={(a) => setFormData((p) => ({ ...p, tenderedAmount: a }))}
+              onCashAmountChange={(a) => setFormData((p) => ({ ...p, cashAmount: a }))}
+            />
+          </div>
+        </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-dotted border-violet-200/60 shrink-0 bg-violet-50/10">
-              <TouchButton
-                variant="outline"
-                className={`rounded-xl ${showConfirmClear ? "border-destructive text-destructive" : "border-violet-200 text-muted-foreground hover:text-foreground"}`}
-                onClick={handleClearOrder}
-              >
-                {showConfirmClear ? "Confirm Clear?" : "Clear Order"}
-              </TouchButton>
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-dotted border-violet-200/60 shrink-0 bg-violet-50/10">
+          <TouchButton
+            variant="outline"
+            className={`rounded-xl ${showConfirmClear ? "border-destructive text-destructive" : "border-violet-200 text-muted-foreground hover:text-foreground"}`}
+            onClick={handleClearOrder}
+          >
+            {showConfirmClear ? "Confirm Clear?" : "Clear Order"}
+          </TouchButton>
 
-              <div className="flex items-center gap-3">
-                <span className={`text-xs italic ${isReady ? "text-emerald-500" : "text-muted-foreground"}`}>
-                  {hint}
-                </span>
-                <TouchButton
-                  onClick={handleSubmit}
-                  disabled={!isReady || isSubmitting}
-                  className="min-w-[200px] h-12 text-base font-semibold rounded-xl shadow-sm"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Order"}
-                </TouchButton>
-              </div>
-            </div>
-          </>
-        )}
+          <div className="flex items-center gap-3">
+            <span className={`text-xs italic ${isReady ? "text-emerald-500" : "text-muted-foreground"}`}>
+              {hint}
+            </span>
+            <TouchButton
+              onClick={handleSubmit}
+              disabled={!isReady || isSubmitting}
+              className="min-w-[200px] h-12 text-base font-semibold rounded-xl shadow-sm"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Order"}
+            </TouchButton>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
