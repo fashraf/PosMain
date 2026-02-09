@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TouchButton } from "@/components/pos/shared";
 import { cn } from "@/lib/utils";
+import { TrendingUp, TrendingDown, CheckCircle2 } from "lucide-react";
 import type { PaymentMethod, OrderType } from "@/lib/pos/types";
 
 interface PaymentColumnProps {
@@ -14,6 +15,7 @@ interface PaymentColumnProps {
   onPaymentMethodChange: (method: PaymentMethod) => void;
   onTenderedAmountChange: (amount: number) => void;
   onCashAmountChange: (amount: number) => void;
+  previousTotal?: number;
 }
 
 const PAYMENT_METHODS: { method: PaymentMethod; label: string }[] = [
@@ -34,10 +36,63 @@ export function PaymentColumn({
   onPaymentMethodChange,
   onTenderedAmountChange,
   onCashAmountChange,
+  previousTotal,
 }: PaymentColumnProps) {
+  const isEditMode = previousTotal != null;
+  const balanceDue = isEditMode ? total - previousTotal : total;
   const isPayLaterDisabled = orderType === "takeaway" || orderType === "self_pickup";
-  const change = tenderedAmount - total;
-  const cardAmount = total - cashAmount;
+
+  // For edit mode with no additional payment needed
+  if (isEditMode && balanceDue <= 0.01) {
+    const isRefund = balanceDue < -0.01;
+    const absDiff = Math.abs(balanceDue);
+
+    return (
+      <div className="flex h-full flex-col">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="h-2 w-2 rounded-full bg-primary/40" />
+          Payment
+        </h3>
+
+        {/* Total display */}
+        <div className="mb-4 rounded-2xl border-2 border-dotted border-violet-200/60 bg-gradient-to-br from-violet-50 to-blue-50/30 p-3 text-center">
+          <p className="text-xs text-muted-foreground">New Total</p>
+          <p className="text-2xl font-bold text-primary/85">{total.toFixed(2)} SAR</p>
+          <p className="text-xs text-muted-foreground mt-1">Previous: {previousTotal.toFixed(2)} SAR</p>
+        </div>
+
+        {/* Reconciliation banner */}
+        {isRefund ? (
+          <div className="rounded-2xl border-2 border-emerald-300/70 bg-emerald-50/40 p-5 flex items-center gap-4">
+            <div className="rounded-full bg-emerald-100 p-3 shrink-0">
+              <TrendingDown className="h-7 w-7 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-emerald-700/80">Refund to Customer</p>
+              <p className="text-2xl font-bold text-emerald-700">
+                Return {absDiff.toFixed(2)} SAR
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border-2 border-violet-200/60 bg-violet-50/20 p-5 flex items-center gap-4">
+            <div className="rounded-full bg-violet-100 p-3 shrink-0">
+              <CheckCircle2 className="h-7 w-7 text-violet-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground/60">No Payment Action Needed</p>
+              <p className="text-lg font-semibold text-foreground/70">Totals match — no change required</p>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Normal mode OR edit mode with balance > 0
+  const effectiveAmount = isEditMode ? balanceDue : total;
+  const change = tenderedAmount - effectiveAmount;
+  const cardAmount = effectiveAmount - cashAmount;
 
   return (
     <div className="flex h-full flex-col">
@@ -48,9 +103,34 @@ export function PaymentColumn({
 
       {/* Total display */}
       <div className="mb-4 rounded-2xl border-2 border-dotted border-violet-200/60 bg-gradient-to-br from-violet-50 to-blue-50/30 p-3 text-center">
-        <p className="text-xs text-muted-foreground">Total Amount</p>
-        <p className="text-2xl font-bold text-primary/85">{total.toFixed(2)} SAR</p>
+        {isEditMode ? (
+          <>
+            <p className="text-xs text-muted-foreground">New Total</p>
+            <p className="text-lg font-bold text-primary/85">{total.toFixed(2)} SAR</p>
+            <p className="text-xs text-muted-foreground mt-1">Previous: {previousTotal!.toFixed(2)} SAR</p>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-muted-foreground">Total Amount</p>
+            <p className="text-2xl font-bold text-primary/85">{total.toFixed(2)} SAR</p>
+          </>
+        )}
       </div>
+
+      {/* Additional payment banner for edit mode */}
+      {isEditMode && (
+        <div className="mb-4 rounded-2xl border-2 border-orange-300/70 bg-orange-50/40 p-4 flex items-center gap-3">
+          <div className="rounded-full bg-orange-100 p-2.5 shrink-0">
+            <TrendingUp className="h-6 w-6 text-orange-600" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-orange-700/80">Additional Payment</p>
+            <p className="text-xl font-bold text-orange-700">
+              Collect {effectiveAmount.toFixed(2)} SAR
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Payment method buttons */}
       <div className="grid grid-cols-2 gap-2 mb-4">
@@ -108,7 +188,7 @@ export function PaymentColumn({
               variant="outline"
               size="sm"
               className="flex-1 min-h-[40px] text-xs font-semibold rounded-xl border-violet-200/60"
-              onClick={() => onTenderedAmountChange(Math.ceil(total))}
+              onClick={() => onTenderedAmountChange(Math.ceil(effectiveAmount))}
             >
               Exact
             </TouchButton>
@@ -135,12 +215,12 @@ export function PaymentColumn({
             <Input
               type="number"
               min={0}
-              max={total}
+              max={effectiveAmount}
               step={0.01}
               value={cashAmount || ""}
               onChange={(e) => {
                 const val = parseFloat(e.target.value) || 0;
-                onCashAmountChange(Math.min(val, total));
+                onCashAmountChange(Math.min(val, effectiveAmount));
               }}
               className="h-11 text-base font-bold text-center rounded-xl border-violet-200/60"
               placeholder="0.00"
@@ -163,7 +243,7 @@ export function PaymentColumn({
 
       {paymentMethod === "card" && (
         <div className="rounded-xl border-2 border-dotted border-violet-200/60 bg-violet-50/20 p-3 text-center text-sm text-muted-foreground">
-          Card payment — charge {total.toFixed(2)} SAR
+          Card payment — charge {effectiveAmount.toFixed(2)} SAR
         </div>
       )}
     </div>
