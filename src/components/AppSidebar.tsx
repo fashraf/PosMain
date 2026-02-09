@@ -21,6 +21,7 @@ import {
   Wrench,
   Users,
   ShoppingCart,
+  ChefHat,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -47,6 +48,7 @@ const mainNavItems = [
   { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
   { titleKey: "nav.order", url: "/pos", icon: ShoppingCart },
   { titleKey: "nav.orderList", url: "/pos/orders", icon: ClipboardList },
+  { titleKey: "nav.kitchen", url: "/pos/kitchen", icon: ChefHat },
   { titleKey: "nav.salesChannels", url: "/sales-channels", icon: Store },
   { titleKey: "nav.ingredients", url: "/inventory/ingredients", icon: Carrot },
 ];

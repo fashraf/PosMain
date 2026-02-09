@@ -5,11 +5,11 @@ import { KitchenItemRow } from "./KitchenItemRow";
 import { KitchenItemModal } from "./KitchenItemModal";
 import type { KDSOrder, KDSOrderItem } from "@/hooks/pos/useKitchenOrders";
 
-const ORDER_TYPE_COLORS: Record<string, string> = {
-  dine_in: "bg-blue-500",
-  delivery: "bg-red-500",
-  takeaway: "bg-orange-500",
-  self_pickup: "bg-emerald-500",
+const ORDER_TYPE_GRADIENTS: Record<string, string> = {
+  dine_in: "bg-gradient-to-r from-blue-500 to-blue-600",
+  delivery: "bg-gradient-to-r from-red-500 to-red-600",
+  takeaway: "bg-gradient-to-r from-orange-500 to-orange-600",
+  self_pickup: "bg-gradient-to-r from-emerald-500 to-emerald-600",
 };
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
@@ -27,6 +27,10 @@ function getTimeAgoShort(createdAt: string) {
   return `${h}h ${min % 60}m ago`;
 }
 
+function isNewOrder(createdAt: string) {
+  return Date.now() - new Date(createdAt).getTime() < 60000;
+}
+
 interface KitchenOrderCardProps {
   order: KDSOrder;
   onMarkComplete: (orderItemId: string, itemName: string) => void;
@@ -41,7 +45,9 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
   const allDone = completed === total && total > 0;
   const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  // Auto-fade when all done
+  const progressBarColor =
+    progressPct > 66 ? "bg-emerald-500" : progressPct > 33 ? "bg-amber-500" : "bg-red-500";
+
   useEffect(() => {
     if (allDone) {
       setShowComplete(true);
@@ -50,32 +56,38 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
     }
   }, [allDone]);
 
-  const barColor = ORDER_TYPE_COLORS[order.order_type] || "bg-slate-500";
+  const barGradient = ORDER_TYPE_GRADIENTS[order.order_type] || "bg-gradient-to-r from-slate-500 to-slate-600";
+  const newOrder = isNewOrder(order.created_at);
 
   return (
     <>
       <div
         className={cn(
           "flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all duration-500",
-          allDone && "opacity-40 scale-[0.98]"
+          "hover:shadow-md hover:-translate-y-0.5",
+          allDone && "opacity-40 scale-[0.98]",
+          newOrder && !allDone && "ring-2 ring-amber-400/50 animate-pulse"
         )}
       >
-        {/* Colored top bar */}
-        <div className={cn("px-4 py-2.5 flex items-center justify-between", barColor)}>
+        {/* Gradient top bar */}
+        <div className={cn("px-4 py-2.5 flex items-center justify-between", barGradient)}>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white text-base" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
+            <span className="font-bold text-white text-[19px]" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
               #{order.order_number}
             </span>
-            <span className="rounded bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
+            <span className="rounded bg-white/20 px-2 py-0.5 text-[15px] font-medium text-white">
               {ORDER_TYPE_LABELS[order.order_type] || order.order_type}
             </span>
+            <span className="rounded bg-white/15 px-1.5 py-0.5 text-[13px] font-medium text-white/80">
+              {total} items
+            </span>
           </div>
-          <span className="text-xs text-white/80">{getTimeAgoShort(order.created_at)}</span>
+          <span className="text-[15px] text-white/80">{getTimeAgoShort(order.created_at)}</span>
         </div>
 
         {/* Customer info for delivery */}
         {order.order_type === "delivery" && order.customer_name && (
-          <div className="px-4 py-1.5 bg-red-50 text-xs text-red-700 font-medium">
+          <div className="px-4 py-1.5 bg-red-50 text-[15px] text-red-700 font-medium">
             📦 {order.customer_name}
             {order.customer_mobile && ` · ${order.customer_mobile}`}
           </div>
@@ -94,14 +106,19 @@ export function KitchenOrderCard({ order, onMarkComplete }: KitchenOrderCardProp
         </div>
 
         {/* Progress bar */}
-        <div className="px-4 pb-3 pt-1">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+        <div className="px-4 pb-2 pt-1">
+          <div className="flex items-center justify-between text-[15px] text-slate-400 mb-1">
             <span>
               {completed} / {total}
             </span>
             <span>{progressPct}%</span>
           </div>
-          <Progress value={progressPct} className="h-2" />
+          <div className="relative h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+            <div
+              className={cn("h-full rounded-full transition-all duration-500", progressBarColor)}
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
 
         {/* ORDER COMPLETE overlay */}

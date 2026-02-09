@@ -22,6 +22,7 @@ export const translations = {
       reportsAlerts: "Reports & Alerts",
       users: "Users",
       orderList: "Orders",
+      kitchen: "Kitchen",
     },
     // Maintenance
     maintenance: {
@@ -845,6 +846,7 @@ export const translations = {
       settings: "الإعدادات",
       users: "المستخدمون",
       orderList: "الطلبات",
+      kitchen: "المطبخ",
     },
     // Common
     common: {

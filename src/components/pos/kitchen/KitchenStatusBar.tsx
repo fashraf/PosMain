@@ -16,15 +16,15 @@ export function KitchenStatusBar({ pendingCount, urgentCount }: KitchenStatusBar
   }, []);
 
   return (
-    <div className="flex items-center justify-between bg-slate-900 text-white px-6 py-3">
+    <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-4 py-2">
       <div className="flex items-center gap-3">
-        <ChefHat className="h-6 w-6 text-amber-400" />
-        <span className="text-lg font-bold tracking-wide" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
+        <ChefHat className="h-7 w-7 text-amber-400" />
+        <span className="text-[21px] font-bold tracking-wide" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
           KITCHEN DISPLAY
         </span>
       </div>
 
-      <div className="flex items-center gap-6 text-sm">
+      <div className="flex items-center gap-6 text-[17px]">
         <div className="flex items-center gap-2">
           <span className="text-slate-400">Pending:</span>
           <span className="rounded bg-amber-500/20 px-2 py-0.5 font-bold text-amber-400">
@@ -33,7 +33,7 @@ export function KitchenStatusBar({ pendingCount, urgentCount }: KitchenStatusBar
         </div>
         {urgentCount > 0 && (
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
+            <AlertTriangle className="h-5 w-5 text-red-400" />
             <span className="text-slate-400">Urgent:</span>
             <span className="rounded bg-red-500/20 px-2 py-0.5 font-bold text-red-400 animate-pulse">
               {urgentCount}
@@ -42,7 +42,7 @@ export function KitchenStatusBar({ pendingCount, urgentCount }: KitchenStatusBar
         )}
       </div>
 
-      <div className="text-sm text-slate-400" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
+      <div className="text-[17px] text-slate-400" style={{ fontFamily: "Roboto Condensed, sans-serif" }}>
         {format(now, "EEE MMM dd yyyy  HH:mm:ss")}
       </div>
     </div>

@@ -18,13 +18,13 @@ const filters: { value: KDSFilter; label: string }[] = [
 
 export function KitchenFilters({ active, onChange }: KitchenFiltersProps) {
   return (
-    <div className="flex items-center justify-center gap-2 bg-slate-900 px-6 py-3">
+    <div className="flex items-center justify-center gap-2 bg-slate-900 px-4 py-2">
       {filters.map((f) => (
         <button
           key={f.value}
           onClick={() => onChange(f.value)}
           className={cn(
-            "rounded-full px-5 py-2 text-sm font-medium transition-all",
+            "rounded-full px-5 py-2 text-[17px] font-medium transition-all",
             "touch-manipulation select-none",
             active === f.value
               ? "bg-white text-slate-900 shadow-md"

@@ -26,12 +26,12 @@ export function KitchenItemModal({ item, open, onClose, onConfirm }: KitchenItem
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm mx-auto p-0 overflow-hidden rounded-2xl">
         <DialogHeader className="bg-slate-50 px-6 pt-6 pb-4">
-          <DialogTitle className="text-lg font-bold text-slate-800">
+          <DialogTitle className="text-[21px] font-bold text-slate-800">
             {item.quantity > 1 && <span className="mr-1">×{item.quantity}</span>}
             {item.item_name}
           </DialogTitle>
           {(removals.length > 0 || extras.length > 0 || replacements.length > 0) && (
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[17px]">
               {removals.map((r: any, i: number) => (
                 <span key={i} className="text-red-500">- {r.name || r}</span>
               ))}
@@ -52,7 +52,7 @@ export function KitchenItemModal({ item, open, onClose, onConfirm }: KitchenItem
               onConfirm(item.id, item.item_name);
               onClose();
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-lg font-bold text-white shadow-lg transition-all hover:bg-emerald-600 active:scale-[0.98] touch-manipulation"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-4 text-[21px] font-bold text-white shadow-lg transition-all hover:bg-emerald-600 active:scale-[0.98] touch-manipulation"
           >
             <Check className="h-6 w-6" />
             YES — DONE
