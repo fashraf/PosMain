@@ -689,9 +689,11 @@ export type Database = {
       pos_orders: {
         Row: {
           branch_id: string | null
+          change_amount: number | null
           created_at: string
           customer_mobile: string | null
           customer_name: string | null
+          delivery_address: string | null
           id: string
           notes: string | null
           order_number: number
@@ -700,6 +702,7 @@ export type Database = {
           payment_status: string
           subtotal: number
           taken_by: string | null
+          tendered_amount: number | null
           total_amount: number
           updated_at: string
           vat_amount: number
@@ -707,9 +710,11 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          change_amount?: number | null
           created_at?: string
           customer_mobile?: string | null
           customer_name?: string | null
+          delivery_address?: string | null
           id?: string
           notes?: string | null
           order_number?: number
@@ -718,6 +723,7 @@ export type Database = {
           payment_status?: string
           subtotal: number
           taken_by?: string | null
+          tendered_amount?: number | null
           total_amount: number
           updated_at?: string
           vat_amount: number
@@ -725,9 +731,11 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          change_amount?: number | null
           created_at?: string
           customer_mobile?: string | null
           customer_name?: string | null
+          delivery_address?: string | null
           id?: string
           notes?: string | null
           order_number?: number
@@ -736,6 +744,7 @@ export type Database = {
           payment_status?: string
           subtotal?: number
           taken_by?: string | null
+          tendered_amount?: number | null
           total_amount?: number
           updated_at?: string
           vat_amount?: number

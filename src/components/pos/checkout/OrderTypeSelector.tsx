@@ -13,7 +13,7 @@ const ORDER_TYPES: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-  { value: "pay_order", label: "Pay & Order", icon: <CreditCard className="h-4 w-4" /> },
+  { value: "dine_in" as OrderType, label: "Pay & Order", icon: <CreditCard className="h-4 w-4" /> },
   { value: "delivery", label: "Delivery", icon: <Truck className="h-4 w-4" /> },
   { value: "takeaway", label: "Take Away", icon: <ShoppingBag className="h-4 w-4" /> },
   { value: "dine_in", label: "Dine-In", icon: <UtensilsCrossed className="h-4 w-4" /> },

@@ -1,4 +1,9 @@
+export { CheckoutModal } from "./CheckoutModal";
 export { CheckoutDrawer } from "./CheckoutDrawer";
+export { OrderReviewColumn } from "./OrderReviewColumn";
+export { OrderTypeColumn } from "./OrderTypeColumn";
+export { PaymentColumn } from "./PaymentColumn";
+export { OrderConfirmation } from "./OrderConfirmation";
 export { OrderSummary } from "./OrderSummary";
 export { OrderTypeSelector } from "./OrderTypeSelector";
 export { CustomerForm } from "./CustomerForm";

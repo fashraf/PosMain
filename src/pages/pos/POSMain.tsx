@@ -7,7 +7,7 @@ import { usePOSCart } from "@/hooks/pos";
 import { usePOSCategories, usePOSItems } from "@/hooks/pos";
 import { CustomizeDrawer } from "@/components/pos/customization";
 import { ItemDetailsModal, CustomizeModal } from "@/components/pos/modals";
-import { CheckoutDrawer } from "@/components/pos/checkout";
+import { CheckoutModal } from "@/components/pos/checkout";
 import type { POSMenuItem } from "@/lib/pos/types";
 
 export default function POSMain() {
@@ -167,6 +167,15 @@ export default function POSMain() {
         cart={cart}
         onClose={handleCloseCustomizeModal}
         editingCartItemId={editingCartItemIdForModal}
+      />
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        open={showCheckout}
+        onOpenChange={setShowCheckout}
+        cart={cart}
+        onOrderComplete={handleOrderComplete}
+        onEditCustomization={handleEditCartItemCustomization}
       />
     </>
   );

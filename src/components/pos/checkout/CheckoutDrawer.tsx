@@ -37,10 +37,13 @@ export function CheckoutDrawer({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<CheckoutFormData>({
-    orderType: "pay_order",
+    orderType: "dine_in",
     customerMobile: "",
     customerName: "",
-    paymentMethod: "now",
+    deliveryAddress: "",
+    paymentMethod: "cash",
+    tenderedAmount: 0,
+    cashAmount: 0,
     takenBy: "",
     notes: "",
   });
@@ -49,7 +52,7 @@ export function CheckoutDrawer({
     setFormData((prev) => ({ ...prev, orderType: type }));
   };
 
-  const handlePaymentMethodChange = (method: "now" | "later") => {
+  const handlePaymentMethodChange = (method: "cash" | "card" | "both" | "pay_later") => {
     setFormData((prev) => ({ ...prev, paymentMethod: method }));
   };
 
@@ -77,8 +80,8 @@ export function CheckoutDrawer({
           vat_rate: cart.vatRate,
           vat_amount: cart.vatAmount,
           total_amount: cart.total,
-          payment_status: formData.paymentMethod === "now" ? "paid" : "pending",
-          payment_method: formData.paymentMethod === "now" ? "cash" : null,
+          payment_status: formData.paymentMethod === "pay_later" ? "pending" : "paid",
+          payment_method: formData.paymentMethod === "pay_later" ? null : formData.paymentMethod,
           taken_by: profile?.id || null,
           notes: formData.notes || null,
         })

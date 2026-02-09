@@ -120,7 +120,8 @@ export interface CartState {
 }
 
 // Enum types
-export type OrderType = 'pay_order' | 'delivery' | 'takeaway' | 'dine_in';
+export type OrderType = 'dine_in' | 'takeaway' | 'self_pickup' | 'delivery';
+export type PaymentMethod = 'cash' | 'card' | 'both' | 'pay_later';
 export type PaymentStatus = 'pending' | 'paid' | 'cancelled';
 
 // Category type (from maintenance)
@@ -137,9 +138,9 @@ export interface POSCategory {
 // Customization state for the drawer
 export interface CustomizationState {
   menuItem: POSMenuItem | null;
-  extras: Set<string>; // ingredient IDs marked as extra
-  removals: Set<string>; // ingredient IDs marked as removed
-  replacement: string | null; // selected replacement ID
+  extras: Set<string>;
+  removals: Set<string>;
+  replacement: string | null;
 }
 
 // Checkout form data
@@ -147,7 +148,10 @@ export interface CheckoutFormData {
   orderType: OrderType;
   customerMobile: string;
   customerName: string;
-  paymentMethod: 'now' | 'later';
+  deliveryAddress: string;
+  paymentMethod: PaymentMethod;
+  tenderedAmount: number;
+  cashAmount: number;
   takenBy: string;
   notes: string;
 }
