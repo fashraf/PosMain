@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle2, Plus, Minus, Printer } from "lucide-react";
+import { CheckCircle2, Plus, Minus, Pencil, ShoppingCart, XCircle, Banknote, CreditCard, Clock } from "lucide-react";
 import { TouchButton } from "@/components/pos/shared";
+import { CancelOrderModal } from "@/components/pos/modals/CancelOrderModal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface OrderItem {
   name: string;
@@ -17,6 +20,7 @@ interface OrderChange {
 
 interface OrderCompleteState {
   mode: "new" | "update";
+  orderId: string;
   orderNumber: number;
   items: OrderItem[];
   subtotal: number;
@@ -24,6 +28,11 @@ interface OrderCompleteState {
   total: number;
   orderType: string;
   paymentMethod: string;
+  paymentStatus: string;
+  tenderedAmount: number;
+  changeAmount: number;
+  cashAmount: number;
+  cardAmount: number;
   changes?: OrderChange[];
 }
 
@@ -45,6 +54,8 @@ export default function OrderComplete() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as OrderCompleteState | null;
+  const [showCancel, setShowCancel] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   if (!state) {
     return (
@@ -60,6 +71,29 @@ export default function OrderComplete() {
   }
 
   const isUpdate = state.mode === "update";
+
+  const handleCancelOrder = async (reason: string) => {
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from("pos_orders")
+        .update({
+          payment_status: "cancelled",
+          cancelled_at: new Date().toISOString(),
+          cancel_reason: reason,
+        })
+        .eq("id", state.orderId);
+
+      if (error) throw error;
+
+      toast({ title: "Order Cancelled", description: `Order #${state.orderNumber} has been cancelled.` });
+      navigate("/pos");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to cancel order", variant: "destructive" });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col items-center justify-center p-6 overflow-auto">
@@ -152,16 +186,110 @@ export default function OrderComplete() {
           </div>
         </div>
 
+        {/* Payment Details */}
+        <PaymentDetailsCard state={state} />
+
         {/* Actions */}
         <div className="flex justify-center gap-3 pt-2">
-          <TouchButton variant="outline" className="min-w-[140px] rounded-xl shadow-sm" disabled>
-            <Printer className="h-4 w-4 mr-2" />
-            Print Receipt
+          <TouchButton
+            variant="outline"
+            className="min-w-[120px] rounded-xl shadow-sm border-violet-200 text-violet-700 hover:bg-violet-50"
+            onClick={() => navigate("/pos", { state: { editOrderId: state.orderId } })}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Order
           </TouchButton>
-          <TouchButton className="min-w-[140px] rounded-xl shadow-sm" onClick={() => navigate("/pos")}>
+          <TouchButton
+            className="min-w-[120px] rounded-xl shadow-sm"
+            onClick={() => navigate("/pos")}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
             New Order
           </TouchButton>
+          <TouchButton
+            variant="outline"
+            className="min-w-[120px] rounded-xl shadow-sm border-destructive/40 text-destructive hover:bg-destructive/5"
+            onClick={() => setShowCancel(true)}
+          >
+            <XCircle className="h-4 w-4 mr-2" />
+            Cancel Order
+          </TouchButton>
         </div>
+      </div>
+
+      <CancelOrderModal
+        open={showCancel}
+        onOpenChange={setShowCancel}
+        onConfirm={handleCancelOrder}
+        isSubmitting={isCancelling}
+      />
+    </div>
+  );
+}
+
+function PaymentDetailsCard({ state }: { state: OrderCompleteState }) {
+  const { paymentMethod, paymentStatus } = state;
+
+  if (paymentMethod === "pay_later") {
+    return (
+      <div className="rounded-2xl border border-dotted border-amber-200/60 bg-amber-50/30 p-4 space-y-1 text-sm">
+        <div className="flex items-center gap-2 font-semibold text-amber-700">
+          <Clock className="h-4 w-4" />
+          Payment Pending
+        </div>
+        <p className="text-amber-600/80 text-xs">Customer has not yet paid. Amount due: {state.total.toFixed(2)} SAR</p>
+      </div>
+    );
+  }
+
+  if (paymentMethod === "card") {
+    return (
+      <div className="rounded-2xl border border-dotted border-violet-200/60 bg-violet-50/20 p-4 space-y-1 text-sm">
+        <div className="flex items-center gap-2 font-semibold text-foreground/70">
+          <CreditCard className="h-4 w-4" />
+          Payment Details
+        </div>
+        <div className="flex justify-between text-foreground/60">
+          <span>Charged to Card</span>
+          <span className="font-medium text-foreground/80">{state.total.toFixed(2)} SAR</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (paymentMethod === "both") {
+    return (
+      <div className="rounded-2xl border border-dotted border-violet-200/60 bg-violet-50/20 p-4 space-y-1 text-sm">
+        <div className="flex items-center gap-2 font-semibold text-foreground/70">
+          <Banknote className="h-4 w-4" />
+          Payment Details — Split
+        </div>
+        <div className="flex justify-between text-foreground/60">
+          <span>Cash Portion</span>
+          <span className="font-medium text-foreground/80">{state.cashAmount.toFixed(2)} SAR</span>
+        </div>
+        <div className="flex justify-between text-foreground/60">
+          <span>Card Portion</span>
+          <span className="font-medium text-foreground/80">{state.cardAmount.toFixed(2)} SAR</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: cash
+  return (
+    <div className="rounded-2xl border border-dotted border-violet-200/60 bg-violet-50/20 p-4 space-y-1 text-sm">
+      <div className="flex items-center gap-2 font-semibold text-foreground/70">
+        <Banknote className="h-4 w-4" />
+        Payment Details
+      </div>
+      <div className="flex justify-between text-foreground/60">
+        <span>Tendered</span>
+        <span className="font-medium text-foreground/80">{state.tenderedAmount.toFixed(2)} SAR</span>
+      </div>
+      <div className="flex justify-between text-emerald-600">
+        <span>Change Given</span>
+        <span className="font-semibold">{state.changeAmount.toFixed(2)} SAR</span>
       </div>
     </div>
   );
