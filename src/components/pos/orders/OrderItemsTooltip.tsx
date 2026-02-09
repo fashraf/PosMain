@@ -31,8 +31,8 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
             <span
               key={i.id}
               className={cn(
-                "inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-[14px] font-medium",
-                hasCustomization(i) && "underline"
+                "inline-flex items-center bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 text-[16px] font-medium",
+                hasCustomization(i) && "underline decoration-orange-400 decoration-2 underline-offset-2"
               )}
             >
               {i.quantity} x {i.item_name}

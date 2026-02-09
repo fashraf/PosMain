@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { TouchButton } from "@/components/pos/shared";
+import { cn } from "@/lib/utils";
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
   dine_in: "Dine In",
@@ -93,15 +94,18 @@ export function OrderDetailDrawer({
                     const cust = item.customization_json;
                     const removed: string[] = cust?.removedIngredients || [];
                     const added: string[] = (cust?.addedIngredients || []).map((a: any) => a.name || a);
+                    const replacements: string[] = (cust?.replacements || []).map((r: any) => r.name || r);
+                    const hasCustom = removed.length > 0 || added.length > 0 || replacements.length > 0;
 
                     return (
                       <tr key={item.id} className="border-t border-slate-100">
                         <td className="px-3 py-2">
-                          <div className="text-slate-700 font-medium">{item.item_name}</div>
-                          {(removed.length > 0 || added.length > 0) && (
+                          <div className={cn("text-slate-700 font-medium", hasCustom && "underline decoration-orange-400 decoration-2 underline-offset-2")}>{item.item_name}</div>
+                          {hasCustom && (
                             <div className="text-xs mt-0.5 space-y-0.5">
-                              {removed.map((r, i) => <div key={i} className="text-red-400">– No {r}</div>)}
-                              {added.map((a, i) => <div key={i} className="text-emerald-500">+ Extra {a}</div>)}
+                              {removed.map((r, i) => <div key={`r-${i}`} className="text-red-400">– No {r}</div>)}
+                              {added.map((a, i) => <div key={`a-${i}`} className="text-emerald-500">+ Extra {a}</div>)}
+                              {replacements.map((r, i) => <div key={`rp-${i}`} className="text-blue-500">↻ {r}</div>)}
                             </div>
                           )}
                         </td>
