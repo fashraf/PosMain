@@ -1,153 +1,84 @@
 
 
-# Kitchen Display System (KDS) -- Phase 1
+# KDS Visual Enhancement + Sidebar Kitchen Link
 
-## Overview
+## 1. Font Size Increase (+3px across all KDS components)
 
-Build a full-screen Kitchen Display System at `/pos/kitchen` that shows active (unpaid/pending) orders as visual cards in a responsive grid. Kitchen staff can tap individual items to mark them as completed, with real-time updates via Supabase Realtime.
+| Component | Current | New |
+|-----------|---------|-----|
+| **KitchenStatusBar** title | `text-lg` (18px) | `text-[21px]` |
+| **KitchenStatusBar** stats | `text-sm` (14px) | `text-[17px]` |
+| **KitchenStatusBar** clock | `text-sm` (14px) | `text-[17px]` |
+| **KitchenOrderCard** order number | `text-base` (16px) | `text-[19px]` |
+| **KitchenOrderCard** type badge | `text-xs` (12px) | `text-[15px]` |
+| **KitchenOrderCard** time ago | `text-xs` (12px) | `text-[15px]` |
+| **KitchenOrderCard** progress text | `text-xs` (12px) | `text-[15px]` |
+| **KitchenItemRow** item name | `text-[15px]` | `text-[18px]` |
+| **KitchenItemRow** quantity badge | `text-xs` (12px) | `text-[15px]` |
+| **KitchenItemRow** customizations | `text-xs` (12px) | `text-[15px]` |
+| **KitchenItemRow** timer | `text-sm` (14px) | `text-[17px]` |
+| **KitchenItemRow** "Done at" | `text-xs` (12px) | `text-[15px]` |
+| **KitchenFilters** pills | `text-sm` (14px) | `text-[17px]` |
+| **KitchenItemModal** title | `text-lg` (18px) | `text-[21px]` |
+| **KitchenItemModal** customization | `text-sm` (14px) | `text-[17px]` |
+| **KitchenItemModal** YES button | `text-lg` (18px) | `text-[21px]` |
 
-This is a significant new module. Phase 1 focuses on the core display and item completion workflow. Advanced features (station filtering, sound alerts, offline mode, dark mode) are deferred to future phases.
+## 2. Reduce Margins/Padding (tighter, more compact)
 
-## What You Will See
+- **KitchenDisplay** grid: `gap-4` becomes `gap-3`, `p-4` becomes `p-3`
+- **KitchenOrderCard** items list: `p-2` stays, `gap-0.5` stays (already compact)
+- **KitchenOrderCard** progress section: `pb-3` becomes `pb-2`
+- **KitchenStatusBar**: `py-3` becomes `py-2`, `px-6` becomes `px-4`
+- **KitchenFilters**: `py-3` becomes `py-2`, `px-6` becomes `px-4`
 
-- A full-screen page with a top status bar showing pending count, urgent count, and current time
-- Order cards in a responsive grid (2-4 columns depending on screen width)
-- Each card has a colored top bar (blue = dine-in, red = delivery, orange = takeaway, green = self-pickup)
-- Items listed with checkboxes -- tap to mark done
-- Per-item timer with color coding (green/yellow/orange/red)
-- Progress bar per order showing completion percentage
-- When all items are done, the order card auto-fades and moves to a "completed" state
-- Filter bar at the bottom: All / Urgent / by order type
+## 3. Add "Kitchen" to Sidebar Menu
 
-## Database Changes
+Add a new entry in the `mainNavItems` array right after "Order List":
 
-### New table: `kds_item_status`
+```text
+{ titleKey: "nav.kitchen", url: "/pos/kitchen", icon: ChefHat }
+```
 
-Tracks per-item completion state separately from the POS order data (non-destructive).
+Also add the translation key `"nav.kitchen": "Kitchen"` (and Arabic equivalent) to the translations file.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | uuid PK | Auto-generated |
-| `order_item_id` | uuid FK -> pos_order_items(id) | Unique constraint |
-| `is_completed` | boolean | Default false |
-| `completed_at` | timestamptz | Null until done |
-| `completed_by` | uuid FK -> profiles(id) | Who marked it done |
-| `created_at` | timestamptz | Default now() |
+## 4. Visual Enhancements (making it more attractive)
 
-- Realtime enabled on this table
-- RLS: authenticated users can select, insert, and update
+### a) Gradient top bar on order cards
+Replace flat color headers with subtle gradients (e.g., `bg-gradient-to-r from-blue-500 to-blue-600` for dine-in) for a more polished look.
 
-### Why a separate table?
+### b) Glassmorphism status bar
+Add a subtle gradient to the top status bar: `bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900`.
 
-The existing `pos_order_items` table stores order/financial data. Mixing kitchen workflow state into it would complicate the POS module. A separate table keeps concerns clean and allows independent realtime subscriptions.
+### c) Card hover glow effect
+Add a subtle shadow lift on hover: `hover:shadow-md hover:-translate-y-0.5 transition-all` on order cards for depth.
 
-## New Files
+### d) Animated progress bar color
+Change progress bar color based on completion: green when >66%, amber when 33-66%, red when <33%.
 
-### 1. `src/pages/pos/KitchenDisplay.tsx` -- Main page
+### e) Pulsing new-order indicator
+Add a subtle `animate-pulse` ring on cards that arrived in the last 60 seconds: `ring-2 ring-amber-400/50 animate-pulse`.
 
-- Full-screen layout (no sidebar, no scroll -- uses POSLayout)
-- Top bar: "KITCHEN DISPLAY" title, date/time (auto-updating), pending count, urgent count
-- Responsive card grid using CSS grid (`grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4`)
-- Bottom filter bar: All / Urgent / Dine-in / Delivery / Takeaway
-- Auto-refresh every 10s + Supabase Realtime for instant updates
+### f) Larger checkboxes
+Increase checkbox from `h-6 w-6` to `h-7 w-7` with `rounded-lg` for easier touch targets.
 
-### 2. `src/components/pos/kitchen/KitchenOrderCard.tsx` -- Order card
+### g) Total order time in card header
+Show total elapsed time for the entire order next to the "Xm ago" text, making urgency more visible.
 
-- Colored top bar based on order type
-- Order number, order type label, time since creation
-- Customer name (for delivery orders)
-- List of items with checkboxes and timers
-- Progress bar at the bottom (completed / total items, percentage)
+### h) Item count badge in header
+Show a small item count badge (e.g., "3 items") in the colored header bar.
 
-### 3. `src/components/pos/kitchen/KitchenItemRow.tsx` -- Single item row
+## Technical Details
 
-- Large touch target (min 56px height)
-- Checkbox area on the left
-- Item name (bold) with customization details below (same color-coded format: extras in green, removals in red, replacements in blue)
-- Per-item timer on the right with color coding
-- When completed: row becomes gray, shows "Done at HH:MM", checkbox filled
-- Tap anywhere on the row to trigger completion
+### Files Modified
 
-### 4. `src/components/pos/kitchen/KitchenItemModal.tsx` -- Confirmation modal
-
-- Appears on tap of an item row
-- Shows item name + customizations
-- Large green "YES -- DONE" button
-- Smaller gray "No" button
-- Auto-closes on confirm
-- 3-second undo toast at bottom after completion
-
-### 5. `src/components/pos/kitchen/KitchenStatusBar.tsx` -- Top status bar
-
-- Left: "KITCHEN DISPLAY" + optional station name
-- Center: Pending orders count, Urgent count (red badge)
-- Right: Current date/time (updates every second)
-
-### 6. `src/components/pos/kitchen/KitchenFilters.tsx` -- Bottom filter bar
-
-- Pill-style buttons: All / Urgent / Dine-in / Delivery / Takeaway
-- Active filter highlighted
-
-### 7. `src/components/pos/kitchen/index.ts` -- Barrel export
-
-### 8. `src/hooks/pos/useKitchenOrders.ts` -- Data hook
-
-- Fetches active orders (payment_status = 'pending' OR 'paid') from today
-- Joins `kds_item_status` to get completion state per item
-- Sorts: overdue first, then by creation time
-- Realtime subscription on both `pos_orders` and `kds_item_status`
-- Mutation: `markItemComplete(orderItemId)` -- upserts into `kds_item_status`
-- Mutation: `undoItemComplete(orderItemId)` -- deletes from `kds_item_status`
-
-## Routing
-
-Add `/pos/kitchen` route in `App.tsx` using the existing `POSLayout` wrapper, same pattern as `/pos/orders`.
-
-Update `src/pages/pos/index.ts` to export `KitchenDisplay`.
-
-## Timer Logic
-
-Per-item timer counts UP from the order's `created_at` timestamp (since we do not have per-item prep time estimates yet):
-
-| Elapsed | Color | Style |
-|---------|-------|-------|
-| 0-5 min | Green | Normal |
-| 5-10 min | Yellow/Amber | Normal |
-| 10-15 min | Orange | Normal |
-| 15+ min | Red | Pulse animation |
-
-## Order Card Top Bar Colors
-
-| Order Type | Color |
-|-----------|-------|
-| dine_in | Blue (`bg-blue-500`) |
-| delivery | Red (`bg-red-500`) |
-| takeaway | Orange (`bg-orange-500`) |
-| self_pickup | Green (`bg-emerald-500`) |
-
-## Interaction Flow
-
-1. Kitchen staff sees grid of active order cards
-2. Cards sorted by urgency (red timers first)
-3. Tap any uncompleted item row
-4. Modal appears: "Was it completed?" with big green "YES -- DONE" button
-5. Tap YES: item turns gray with "Done at HH:MM", progress bar updates
-6. 3-second undo toast appears at bottom
-7. When all items in an order are done, card shows "ORDER COMPLETE" overlay and fades after 5 seconds
-
-## Files Summary
-
-| File | Action |
-|------|--------|
-| Migration SQL | Create `kds_item_status` table + RLS + realtime |
-| `src/pages/pos/KitchenDisplay.tsx` | New -- main KDS page |
-| `src/components/pos/kitchen/KitchenOrderCard.tsx` | New -- order card component |
-| `src/components/pos/kitchen/KitchenItemRow.tsx` | New -- item row with timer |
-| `src/components/pos/kitchen/KitchenItemModal.tsx` | New -- tap-to-complete modal |
-| `src/components/pos/kitchen/KitchenStatusBar.tsx` | New -- top status bar |
-| `src/components/pos/kitchen/KitchenFilters.tsx` | New -- bottom filter pills |
-| `src/components/pos/kitchen/index.ts` | New -- barrel export |
-| `src/hooks/pos/useKitchenOrders.ts` | New -- data fetching + realtime hook |
-| `src/App.tsx` | Add `/pos/kitchen` route |
-| `src/pages/pos/index.ts` | Export KitchenDisplay |
+| File | Changes |
+|------|---------|
+| `src/components/pos/kitchen/KitchenStatusBar.tsx` | Font +3px, reduced padding, gradient bg |
+| `src/components/pos/kitchen/KitchenOrderCard.tsx` | Font +3px, gradient headers, hover glow, new-order pulse, item count badge, progress bar color logic |
+| `src/components/pos/kitchen/KitchenItemRow.tsx` | Font +3px, larger checkboxes |
+| `src/components/pos/kitchen/KitchenItemModal.tsx` | Font +3px |
+| `src/components/pos/kitchen/KitchenFilters.tsx` | Font +3px, reduced padding |
+| `src/pages/pos/KitchenDisplay.tsx` | Reduced grid gap/padding |
+| `src/components/AppSidebar.tsx` | Add Kitchen nav item with ChefHat icon |
+| `src/lib/i18n/translations.ts` | Add `nav.kitchen` key |
 
