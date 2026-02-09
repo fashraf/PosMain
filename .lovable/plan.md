@@ -1,93 +1,107 @@
 
 
-# POS Order List -- 10-Point Refinement
+# Nested Grid & Tooltip Item Layout Redesign + Orange Underline Consistency
 
 ## Overview
 
-Apply 10 specific tweaks to the Order List page based on the user's feedback. This is a focused polish pass -- no new features, just corrections and visual adjustments.
+Redesign the item display in all 3 places (nested grid, tooltip, right drawer) to match the reference image layout. Add orange underline and orange dot indicator for customized items consistently across all views.
+
+## Reference Image Layout (Per Item)
+
+```text
++-----------------------------------------------+
+| Chicken Biryani          [  1  ]       35.00   |
+| 35.00 (unit price, muted green)    +3.00 SAR   |
+| + Tomato                                       |
+| -> Pepsi                                       |
++-----------------------------------------------+
+```
+
+- Item name: bold, left-aligned, orange underline if customized
+- Unit price: small muted text below name
+- Qty: centered in a subtle bordered box
+- Line total: bold, right-aligned
+- Customizations below: extras in green (`+ Name`), replacements in blue (`-> Name`), removals in red (`- Name`)
+- Replacement/extra price diff shown on the right (`+3.00 SAR`)
 
 ## Changes
 
-### 1. Move "Last updated" next to stat cards (reference image style)
+### 1. Nested Grid (`ExpandedOrderItems.tsx`) -- Card-style layout
 
-**File: `src/pages/pos/OrderList.tsx`**
-- The "updated: Just now" text is already positioned next to the stat cards (line 138-140). Adjust styling to match the reference image: lighter color, slightly smaller text, placed inline right of the first stat card row (not below).
+- Replace the current 4-column table with a stacked card layout per item
+- Each item card:
+  - **Row 1**: Item name (bold, orange underline if customized) | Qty in bordered box | Line total (bold)
+  - **Row 2**: Unit price in muted green below item name | Price diff on right (if any extras/replacements add cost)
+  - **Row 3+**: Customization lines:
+    - `+ {name}` in emerald for extras
+    - `-> {name}` in blue for replacements  
+    - `- No {name}` in red for removals
+  - Orange dot indicator next to item name if customized
+- Items separated by dotted lines
+- Keep `#FAFAFA` background, `max-w-[50%]`, rounded corners
 
-### 2. Replace "Total Sales" card with "Total Unpaid Orders"
+### 2. Tooltip (`OrderItemsTooltip.tsx`)
 
-**File: `src/components/pos/orders/OrderStatCards.tsx`**
-- Change the 4th card from `totalSales` / "Total Sales" to `paymentPending` / "Total Unpaid"
-- Remove the `isCurrency` flag
-- Change icon to `AlertCircle` with soft red background (`bg-red-50`, `text-red-500`)
+**Inline preview (trigger):**
+- Keep badge pills (`bg-blue-50`, `text-[16px]`)
+- Add orange underline (`decoration-orange-400`) for customized items (already present)
+- Add small orange dot (`w-1.5 h-1.5 rounded-full bg-orange-400`) next to customized item badges
 
-### 3. Change "Order #" column header to just "#"
+**Tooltip content:**
+- Match the same card layout as nested grid
+- Item name with orange underline if customized + orange dot
+- Show all 3 customization types: extras, removals, replacements
+- Include replacements (currently missing from tooltip -- only shows removed/added)
+- Price breakdown at bottom (subtotal, tax, total)
 
-**File: `src/pages/pos/OrderList.tsx`**
-- Change header text from `Order #` to just `#`
-- Keep the `Hash` icon
-- Reduce column width from `w-[70px]` to `w-[50px]`
+### 3. Right Drawer (`OrderDetailDrawer.tsx`)
 
-### 4. Add dotted lines between ALL table rows
+- Redesign items table to match card layout:
+  - Item name (orange underline if customized) + orange dot
+  - Unit price below name in muted text
+  - Qty in bordered box
+  - Line total bold right
+  - Customizations listed below with colored labels
+- Keep existing payment section and actions unchanged
 
-**File: `src/pages/pos/OrderList.tsx`**
-- Change `TableRow` border class from `border-slate-100` to `border-dotted border-slate-200` on every order row
-- The main table header row keeps its solid border
+### 4. Orange Underline + Orange Dot -- All 3 Places
 
-### 5. Remove "Orders" header and "New Order" button
+Applied consistently when `hasCustom === true`:
+- **Orange underline**: `underline decoration-orange-400 decoration-2 underline-offset-2` on item name
+- **Orange dot**: small `w-1.5 h-1.5 rounded-full bg-orange-400 inline-block ml-1` next to the item name
 
-**File: `src/pages/pos/OrderList.tsx`**
-- Remove the entire sticky header block (lines 117-126) containing the ClipboardList icon, "Orders" title, and "New Order" button
-- The stat cards become the top element
-- Update the sticky tabs `top` offset from `top-[57px]` to `top-0`
+### 5. `hasCustomization` Check -- Include Replacements
 
-### 6. Items column: badge design with light blue, 16px, underline for customized
+Update the `hasCustomization` helper in `OrderItemsTooltip.tsx` to also check `cust.replacements?.length > 0`, not just removed and added.
 
-**File: `src/components/pos/orders/OrderItemsTooltip.tsx`**
-- Change the inline preview to render each item as a small badge/pill: light blue background (`bg-blue-50 text-blue-700`), rounded, `text-[16px]` font
-- Format stays `{qty} x {name}`
-- If an item has customizations, the item text gets `underline` decoration instead of `(c)` suffix
-- Remove the `(c)` marker entirely
-
-### 7. Fix customization data in nested grid AND right slider
-
-**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
-- Ensure `removedIngredients` and `addedIngredients` from `customization_json` are properly displayed
-- Show removed as "- {name}" in red-ish muted text
-- Show added as "+ {name}" in green-ish muted text
-- If no customizations, show nothing (no dash)
-
-**File: `src/components/pos/orders/OrderDetailDrawer.tsx`**
-- Already shows customizations (lines 101-106), but verify the data path works correctly
-- Format removed ingredients as "- No {name}" and added as "+ Extra {name}" consistently
-- Ensure `customization_json` is properly parsed (handle both object and string formats)
-
-### 8. Time Ago format: remove "ago", use dash separator
-
-**File: `src/lib/pos/timeAgo.ts`**
-- Change format from `"4m ago"` to `"- 4m"`
-- Change from `"1h 23m ago"` to `"- 1h 23m"`  
-- Change "Just now" to `"- 0m"`
-- The dash acts as a visual prefix
-
-### 9. Curved corners (already 8px / rounded-lg, but ensure consistency)
-
-**File: `src/pages/pos/OrderList.tsx`**
-- Ensure the main table container has `rounded-lg overflow-hidden`
-- All filter selects, buttons, and inputs use `rounded-lg` (8px)
-
-### 10. Light grey background for nested gridview
-
-**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
-- Already using `bg-[#FAFAFA]` -- confirmed correct. No change needed here.
-
-## Summary of Files Modified
+## Files Modified
 
 | File | Changes |
 |------|---------|
-| `src/pages/pos/OrderList.tsx` | Remove header, "#" column, dotted row borders, rounded table |
-| `src/components/pos/orders/OrderStatCards.tsx` | Replace Total Sales with Total Unpaid |
-| `src/components/pos/orders/OrderItemsTooltip.tsx` | Badge pills, light blue, 16px, underline for customized |
-| `src/components/pos/orders/ExpandedOrderItems.tsx` | Fix customization display with add/remove labels |
-| `src/components/pos/orders/OrderDetailDrawer.tsx` | Verify/fix customization data display |
-| `src/lib/pos/timeAgo.ts` | Change format to "- Xh Xm" without "ago" |
+| `src/components/pos/orders/ExpandedOrderItems.tsx` | Card-style item layout matching reference image, orange underline + dot |
+| `src/components/pos/orders/OrderItemsTooltip.tsx` | Add orange dot to badges, include replacements in tooltip content, card layout inside tooltip |
+| `src/components/pos/orders/OrderDetailDrawer.tsx` | Card-style item layout in drawer, orange underline + dot, unit price display |
+
+## Technical Details
+
+### Shared customization rendering pattern (used in all 3 files):
+
+```text
+// Extract customization data
+const removed = cust?.removedIngredients || []
+const added = (cust?.addedIngredients || []).map(a => a.name || a)  
+const replacements = (cust?.replacements || []).map(r => r.name || r)
+const hasCustom = removed.length + added.length + replacements.length > 0
+
+// Render pattern:
+// Item name with orange underline + orange dot if customized
+// + {name} in emerald for extras
+// -> {name} in blue for replacements
+// - No {name} in red for removals
+```
+
+### Qty box styling:
+```text
+className="inline-flex items-center justify-center min-w-[32px] h-7 border border-slate-200 rounded text-sm font-medium text-slate-700"
+```
 
