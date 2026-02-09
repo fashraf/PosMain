@@ -33,8 +33,17 @@ export function ExpandedOrderItems({ items }: ExpandedOrderItemsProps) {
                 return (
                   <tr key={item.id} className="border-t border-dotted border-slate-200">
                     <td className="py-1.5 font-medium text-slate-700">{item.item_name}</td>
-                    <td className="py-1.5 text-slate-500">
-                      {tags.length > 0 ? tags.join(", ") : "—"}
+                    <td className="py-1.5">
+                      {removed.length === 0 && added.length === 0 ? null : (
+                        <div className="space-y-0.5">
+                          {removed.map((r, i) => (
+                            <div key={`r-${i}`} className="text-red-400">– {r}</div>
+                          ))}
+                          {added.map((a, i) => (
+                            <div key={`a-${i}`} className="text-emerald-500">+ {a}</div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="py-1.5 text-center text-slate-600">{item.quantity}</td>
                     <td className="py-1.5 text-right tabular-nums text-slate-700">{item.line_total.toFixed(2)}</td>

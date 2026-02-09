@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, ClipboardList, ChevronRight, ChevronDown, AlertTriangle, Eye, Hash, ShoppingBag, Utensils, CreditCard, DollarSign, Clock, Timer, Activity } from "lucide-react";
+import { Search, ClipboardList, ChevronRight, ChevronDown, AlertTriangle, Eye, Hash, ShoppingBag, Utensils, CreditCard, DollarSign, Clock, Timer, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { TouchButton } from "@/components/pos/shared";
@@ -114,17 +114,6 @@ export default function OrderList() {
 
   return (
     <div className="flex flex-col h-full bg-white pos-orders-font">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5 text-slate-600" />
-          <h1 className="text-lg font-bold text-slate-800">Orders</h1>
-        </div>
-        <TouchButton className="rounded-lg h-9 px-4 gap-2 text-sm" onClick={() => navigate("/pos")}>
-          <Plus className="h-4 w-4" /> New Order
-        </TouchButton>
-      </div>
-
       {/* Stat Cards */}
       <div className="flex items-center px-5">
         <div className="flex-1">
@@ -141,7 +130,7 @@ export default function OrderList() {
       </div>
 
       {/* Tabs + Filters */}
-      <div className="sticky top-[57px] z-20 bg-white border-b border-slate-200 px-5 py-0 flex flex-wrap items-end gap-0">
+      <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-5 py-0 flex flex-wrap items-end gap-0">
         {/* Custom tabs */}
         <div className="flex items-end">
           {TABS.map((tab) => (
@@ -209,7 +198,7 @@ export default function OrderList() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-5 py-2">
+      <div className="flex-1 overflow-auto px-5 py-2 rounded-lg">
         {isLoading ? (
           <div className="flex items-center justify-center h-40 text-slate-400 text-sm">Loading orders…</div>
         ) : list.length === 0 ? (
@@ -221,7 +210,7 @@ export default function OrderList() {
             <TableHeader>
               <TableRow className="border-slate-200">
                 <TableHead className="w-[28px]" />
-                <TableHead className="w-[70px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Hash className="h-3.5 w-3.5 text-slate-400" />Order #</span></TableHead>
+                <TableHead className="w-[50px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Hash className="h-3.5 w-3.5 text-slate-400" />#</span></TableHead>
                 <TableHead className="text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><ShoppingBag className="h-3.5 w-3.5 text-slate-400" />Items</span></TableHead>
                 <TableHead className="w-[95px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Utensils className="h-3.5 w-3.5 text-slate-400" />Type</span></TableHead>
                 <TableHead className="w-[65px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><CreditCard className="h-3.5 w-3.5 text-slate-400" />Payment</span></TableHead>
@@ -244,7 +233,7 @@ export default function OrderList() {
                   <React.Fragment key={order.id}>
                     <TableRow
                       className={cn(
-                        "h-[42px] cursor-pointer transition-colors hover:bg-[#F8FAFC] border-slate-100",
+                        "h-[42px] cursor-pointer transition-colors hover:bg-[#F8FAFC] border-dotted border-slate-200",
                         isUnpaid && "pos-unpaid-row",
                         blinking && "animate-new-order-blink"
                       )}

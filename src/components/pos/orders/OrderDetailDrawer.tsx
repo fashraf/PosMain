@@ -99,9 +99,9 @@ export function OrderDetailDrawer({
                         <td className="px-3 py-2">
                           <div className="text-slate-700 font-medium">{item.item_name}</div>
                           {(removed.length > 0 || added.length > 0) && (
-                            <div className="text-xs text-slate-400 mt-0.5 space-y-0.5">
-                              {removed.map((r, i) => <div key={i}>– {r}</div>)}
-                              {added.map((a, i) => <div key={i}>+ {a}</div>)}
+                            <div className="text-xs mt-0.5 space-y-0.5">
+                              {removed.map((r, i) => <div key={i} className="text-red-400">– No {r}</div>)}
+                              {added.map((a, i) => <div key={i} className="text-emerald-500">+ Extra {a}</div>)}
                             </div>
                           )}
                         </td>
