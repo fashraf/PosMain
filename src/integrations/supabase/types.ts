@@ -396,6 +396,48 @@ export type Database = {
           },
         ]
       }
+      kds_item_status: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          order_item_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          order_item_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          order_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kds_item_status_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kds_item_status_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: true
+            referencedRelation: "pos_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_categories: {
         Row: {
           created_at: string
