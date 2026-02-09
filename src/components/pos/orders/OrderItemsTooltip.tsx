@@ -33,7 +33,7 @@ export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderIt
       <TooltipContent
         side="bottom"
         align="start"
-        className="max-w-xs p-3 text-xs space-y-2"
+        className="max-w-sm min-w-[320px] p-4 text-sm space-y-3"
       >
         {items.map((item) => {
           const cust = item.customization_json;
