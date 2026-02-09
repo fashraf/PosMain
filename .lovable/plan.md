@@ -1,123 +1,91 @@
 
 
-# POS Order List (Cashier View)
+# Order List UI Redesign -- Summary Cards, Expandable Rows, and Improved Layout
 
 ## Overview
 
-A dedicated `/pos/orders` page within the POS layout, providing cashiers with a fast, touch-friendly order management screen. The page lists all orders with status tabs, filters, item tooltips, and action buttons -- optimized for high-volume restaurant/gas-station environments.
+Redesign the Order List page to match the reference image with four summary stat cards at the top, a more compact and aligned table layout, expandable rows showing item details inline (nested grid), and a larger/improved tooltip.
 
-## Page Structure
+## Changes
 
-### Header Bar (Sticky)
-- Title "Orders" on the left
-- "+ New Order" button on the right (navigates to `/pos`)
+### 1. Summary Stat Cards (New Section)
 
-### Status Tabs (Sticky, below header)
-- All | Active | Unpaid | Completed | Cancelled
-- "Unpaid" tab shows a small warning icon
-- Active = paid orders from today that are not cancelled
-- Unpaid = `payment_status = 'pending'`
-- Completed = `payment_status = 'paid'`
-- Cancelled = `payment_status = 'cancelled'`
+Add a row of 4 icon-driven stat cards above the tabs:
 
-### Filter Bar (Sticky, below tabs)
-- Search input (order number or item name)
-- Date filter (Today default, with options for Yesterday, Last 7 Days, All)
-- Order Type dropdown (All, Dine In, Take Away, Delivery, Self Pickup)
-- Payment Method dropdown (All, Cash, Card, Split, Pay Later)
-- Default sort: newest first (created_at DESC)
+- **Total Orders** -- `ClipboardList` icon, count of all orders in current date range
+- **In Process** -- `Layers` icon, count of pending/unpaid orders
+- **Completed** -- `CheckSquare` icon, count of paid orders
+- **Payment Pending** -- `DollarSign` icon, count of unpaid orders
 
-### Order Table
-- Columns: Order # | Items | Type | Payment | Total | Time | Status | Actions
-- 42px row height, zebra striping, lavender hover
-- Unpaid rows get a soft red pulse animation (reuse `animate-pulse-red` from CSS)
-- "Items" column shows count + first 2-3 item names truncated; hovering/tapping opens a tooltip showing full item breakdown with customizations, subtotal, tax, and total
+Each card: white bg, rounded-xl border, dark icon in a rounded square badge, bold number + subtitle. Laid out in a 4-column grid.
 
-### Status Badges
-- Paid: Green pill
-- Pending: Red pill with soft pulse
-- Cancelled: Grey pill
-- Split (both): Yellow pill
+### 2. Tabs + Filters on Same Row
 
-### Action Buttons (per row)
-- **Edit** (Pencil icon): Navigate to `/pos` with `editOrderId` state (existing flow)
-- **Collect Payment** (Banknote icon): Only visible on unpaid orders; opens a payment-only modal
-- **Cancel** (XCircle icon): Opens the existing `CancelOrderModal`
-- **Delete** (Trash2 icon): Only visible for managers; confirms with a PIN/confirmation modal
+Move the tabs and filter controls (search, date, type, payment) onto a single row to reduce vertical space waste. Tabs on the left, filters on the right -- matching the reference image layout.
 
-### Order Detail Drawer (click on Order #)
-- Right-side sheet showing full order details
-- Items table with customizations
-- Payment details card
-- Totals breakdown
-- Created-by info and timestamps
+### 3. Expandable / Nested Item Rows
 
-## Database Changes
+Add a chevron toggle on each order row. Clicking it expands the row to show a nested sub-table of items:
 
-### New table: `pos_order_audit_log`
-Tracks all changes to orders for the audit history section.
+| Item Name | Customization | Qty | Price |
+|-----------|---------------|-----|-------|
+| Chicken Biryani | -- No Tomato, + Extra Cheese | 1 | 46.00 |
+| Curd | | 1 | 0.00 |
 
-```sql
-CREATE TABLE pos_order_audit_log (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id uuid NOT NULL,
-  action text NOT NULL,
-  details text,
-  performed_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+This gives full item + customization visibility without needing a tooltip or drawer.
 
-ALTER TABLE pos_order_audit_log ENABLE ROW LEVEL SECURITY;
+### 4. Bigger Tooltip
+
+Increase tooltip width from `max-w-xs` (320px) to `max-w-sm` (384px), increase padding and font size to `text-sm` (14px), and add more breathing room between items.
+
+### 5. Compact Row Alignment
+
+- Tighter column widths, consistent alignment
+- Action icons grouped tightly with uniform spacing
+- Remove unnecessary cell padding
+- Ensure all columns align cleanly as in the reference
+
+## Technical Details
+
+### Files Modified
+
+1. **`src/pages/pos/OrderList.tsx`**
+   - Add summary stat cards section (computed from order data via a separate count query or derive from current data)
+   - Merge tabs + filters into one sticky row
+   - Add expandable row state (`expandedOrderId`) with a chevron toggle in the Order # column
+   - Render a nested `<tr>` with a sub-table when expanded, showing items with customization details
+   - Tighten column class widths and padding
+
+2. **`src/components/pos/orders/OrderItemsTooltip.tsx`**
+   - Increase `max-w-xs` to `max-w-sm`
+   - Change `text-xs` to `text-sm`
+   - Increase padding from `p-3` to `p-4`
+   - Add `min-w-[320px]` for consistent width
+
+3. **`src/hooks/pos/usePOSOrders.ts`**
+   - Add a new `useOrderStats` hook (or inline query) that fetches counts: total, in-process, completed, pending -- scoped to the current date filter
+   - This avoids loading all orders just for counts
+
+### Expanded Row Design
+
+When a row is expanded, a full-width sub-row appears below it containing a mini-table:
+
+```
+| Item Name          | Customization              | Qty | Price  |
+|--------------------|----------------------------|-----|--------|
+| Chicken Biryani    | - No Tomato, + Extra Cheese|  1  | 46.00  |
+| Curd               |                            |  1  |  0.00  |
 ```
 
-RLS: Admins can manage; authenticated users with branch access can view logs for their orders.
+- Light gray background (`bg-muted/30`)
+- Dotted top border
+- Smaller text (`text-[13px]`)
+- Customization shown inline as comma-separated tags with `-` and `+` prefixes
 
-**Note**: Audit log population will be a follow-up enhancement. The table is created now so the UI can reference it.
+### Stat Cards Layout
 
-## New Files
-
-1. **`src/pages/pos/OrderList.tsx`** -- Main page component with tabs, filters, table, and actions
-2. **`src/components/pos/orders/OrderStatusBadge.tsx`** -- Reusable status pill component
-3. **`src/components/pos/orders/OrderItemsTooltip.tsx`** -- Hover/tap tooltip showing item breakdown
-4. **`src/components/pos/orders/OrderDetailDrawer.tsx`** -- Right-side sheet for full order view
-5. **`src/components/pos/orders/CollectPaymentModal.tsx`** -- Payment-only modal for unpaid orders
-6. **`src/components/pos/orders/DeleteOrderModal.tsx`** -- Manager-only delete confirmation
-7. **`src/hooks/pos/usePOSOrders.ts`** -- TanStack Query hook for fetching/filtering orders
-
-## Modified Files
-
-1. **`src/App.tsx`** -- Add route `/pos/orders` within POSLayout
-2. **`src/pages/pos/index.ts`** -- Export `OrderList`
-3. **`src/components/pos/layout/POSLayout.tsx`** -- (Optional) Add a minimal top nav link to toggle between POS and Orders
-
-## Key Implementation Details
-
-### Data Fetching (`usePOSOrders`)
-- Fetches from `pos_orders` with filters for status, date range, order type, payment method
-- Joins `profiles` for cashier name (taken_by -> profiles.full_name)
-- Joins `pos_order_items` for item details (used in tooltips)
-- Sorted by `created_at DESC`
-- Paginated (15 per page)
-- Uses TanStack Query with refetch on window focus
-
-### Collect Payment Modal
-- Reuses the same payment method buttons and cash/card logic from `PaymentColumn`
-- Only allows payment entry -- no item editing
-- Updates `pos_orders` with payment_status, payment_method, tendered_amount, change_amount
-
-### Permissions
-- Edit, Cancel, Collect Payment: Available to all authenticated POS users
-- Delete: Checks `user_roles` for `manager` or `admin` role before showing the button
-- Role check done via a query to `user_roles` table (no client-side storage)
-
-### Responsive Behavior
-- Full table on desktop/tablet landscape
-- On narrower screens: Items column collapses to just count ("3 Items")
-- Action buttons remain icon-only for space efficiency
-
-### Navigation Integration
-- POSLayout gets a minimal top bar with "POS" and "Orders" links
-- Order complete page gets a "View Orders" button alongside existing actions
-
-Add this to the main menu. also auto update when there is new order.. blink 5 times when a new order is added. 
+Four equal-width cards in a grid:
+- Each card: `rounded-xl border p-4 flex items-center gap-3`
+- Icon: 40x40 rounded-lg dark bg with white icon
+- Text: Bold large number + small muted subtitle
 
