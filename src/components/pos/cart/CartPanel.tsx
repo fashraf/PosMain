@@ -19,6 +19,7 @@ interface CartPanelProps {
   onEditCustomization: (cartItemId: string) => void;
   onClearAll: () => void;
   onPay: () => void;
+  editingOrderNumber?: number | null;
 }
 
 export function CartPanel({
@@ -34,6 +35,7 @@ export function CartPanel({
   onEditCustomization,
   onClearAll,
   onPay,
+  editingOrderNumber,
 }: CartPanelProps) {
   const isEmpty = items.length === 0;
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -44,6 +46,7 @@ export function CartPanel({
       <CartHeader
         itemCount={items.length}
         totalQuantity={totalQuantity}
+        editingOrderNumber={editingOrderNumber}
       />
 
       <div className="flex-1 overflow-auto">

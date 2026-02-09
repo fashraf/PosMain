@@ -23,6 +23,8 @@ interface CheckoutModalProps {
   cart: POSCartHook;
   onOrderComplete: () => void;
   onEditCustomization: (cartItemId: string) => void;
+  editingOrderId?: string | null;
+  editingOrderNumber?: number | null;
 }
 
 export function CheckoutModal({
@@ -31,6 +33,8 @@ export function CheckoutModal({
   cart,
   onOrderComplete,
   onEditCustomization,
+  editingOrderId,
+  editingOrderNumber,
 }: CheckoutModalProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -67,6 +71,8 @@ export function CheckoutModal({
     return "✓ Ready to submit!";
   };
 
+  const isEditMode = !!editingOrderId;
+
   const handleSubmit = async () => {
     if (!canSubmit()) {
       if (formData.orderType === "delivery" && !formData.deliveryAddress.trim()) {
@@ -91,31 +97,55 @@ export function CheckoutModal({
           ? null
           : formData.paymentMethod;
 
-      const { data: order, error: orderError } = await supabase
-        .from("pos_orders")
-        .insert({
-          order_type: formData.orderType,
-          customer_mobile: formData.customerMobile || null,
-          customer_name: formData.customerName || null,
-          delivery_address: formData.orderType === "delivery" ? formData.deliveryAddress : null,
-          subtotal: cart.subtotal,
-          vat_rate: cart.vatRate,
-          vat_amount: cart.vatAmount,
-          total_amount: cart.total,
-          payment_status: paymentStatus,
-          payment_method: paymentMethodDb,
-          tendered_amount: formData.paymentMethod === "cash" ? formData.tenderedAmount : 0,
-          change_amount: formData.paymentMethod === "cash" ? Math.max(0, formData.tenderedAmount - cart.total) : 0,
-          taken_by: profile?.id || null,
-          notes: formData.notes || null,
-        })
-        .select()
-        .single();
+      const orderPayload = {
+        order_type: formData.orderType,
+        customer_mobile: formData.customerMobile || null,
+        customer_name: formData.customerName || null,
+        delivery_address: formData.orderType === "delivery" ? formData.deliveryAddress : null,
+        subtotal: cart.subtotal,
+        vat_rate: cart.vatRate,
+        vat_amount: cart.vatAmount,
+        total_amount: cart.total,
+        payment_status: paymentStatus,
+        payment_method: paymentMethodDb,
+        tendered_amount: formData.paymentMethod === "cash" ? formData.tenderedAmount : 0,
+        change_amount: formData.paymentMethod === "cash" ? Math.max(0, formData.tenderedAmount - cart.total) : 0,
+        taken_by: profile?.id || null,
+        notes: formData.notes || null,
+      };
 
-      if (orderError) throw orderError;
+      let orderId: string;
+      let orderNumber: number;
+
+      if (isEditMode) {
+        const { data: updated, error: updateError } = await supabase
+          .from("pos_orders")
+          .update(orderPayload)
+          .eq("id", editingOrderId!)
+          .select("id, order_number")
+          .single();
+        if (updateError) throw updateError;
+        orderId = updated.id;
+        orderNumber = updated.order_number;
+
+        const { error: deleteError } = await supabase
+          .from("pos_order_items")
+          .delete()
+          .eq("order_id", editingOrderId!);
+        if (deleteError) throw deleteError;
+      } else {
+        const { data: order, error: orderError } = await supabase
+          .from("pos_orders")
+          .insert(orderPayload)
+          .select()
+          .single();
+        if (orderError) throw orderError;
+        orderId = order.id;
+        orderNumber = order.order_number;
+      }
 
       const orderItems = cart.items.map((item) => ({
-        order_id: order.id,
+        order_id: orderId,
         menu_item_id: item.menuItemId,
         item_name: item.name,
         quantity: item.quantity,
@@ -128,7 +158,6 @@ export function CheckoutModal({
       const { error: itemsError } = await supabase
         .from("pos_order_items")
         .insert(orderItems);
-
       if (itemsError) throw itemsError;
 
       onOpenChange(false);
@@ -142,9 +171,9 @@ export function CheckoutModal({
 
       navigate("/pos/order-complete", {
         state: {
-          mode: "new",
-          orderId: order.id,
-          orderNumber: order.order_number,
+          mode: isEditMode ? "update" : "new",
+          orderId,
+          orderNumber,
           items: cart.items.map((item) => ({
             name: item.name,
             quantity: item.quantity,
@@ -199,7 +228,7 @@ export function CheckoutModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-[90vw] w-[90vw] h-[90vh] max-h-[90vh] flex flex-col p-0 gap-0 rounded-2xl overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b border-dotted border-violet-200/60 shrink-0 bg-violet-50/20">
-          <DialogTitle className="text-xl font-bold text-foreground/80">Complete Order</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-foreground/80">{isEditMode ? `Update Order #${editingOrderNumber}` : "Complete Order"}</DialogTitle>
         </DialogHeader>
 
         {/* 3-column grid with dotted dividers */}
@@ -274,7 +303,7 @@ export function CheckoutModal({
               disabled={!isReady || isSubmitting}
               className="min-w-[200px] h-12 text-base font-semibold rounded-xl shadow-sm"
             >
-              {isSubmitting ? "Submitting..." : "Submit Order"}
+              {isSubmitting ? "Submitting..." : isEditMode ? "Update Order" : "Submit Order"}
             </TouchButton>
           </div>
         </div>
