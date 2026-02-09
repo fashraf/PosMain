@@ -211,6 +211,39 @@ export function usePOSOrders(filters: OrderFilters) {
   return { ...result, shouldBlink, pageSize: PAGE_SIZE };
 }
 
+export interface OrderStats {
+  total: number;
+  inProcess: number;
+  completed: number;
+  paymentPending: number;
+}
+
+export function useOrderStats(dateFilter: DateFilter) {
+  return useQuery({
+    queryKey: ["pos-order-stats", dateFilter],
+    queryFn: async (): Promise<OrderStats> => {
+      const range = getDateRange(dateFilter);
+      let query = supabase
+        .from("pos_orders")
+        .select("payment_status");
+      if (range) {
+        query = query.gte("created_at", range.from).lt("created_at", range.to);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = data || [];
+      return {
+        total: rows.length,
+        inProcess: rows.filter((r) => r.payment_status === "pending").length,
+        completed: rows.filter((r) => r.payment_status === "paid").length,
+        paymentPending: rows.filter((r) => r.payment_status === "pending").length,
+      };
+    },
+    staleTime: 10000,
+    refetchOnWindowFocus: true,
+  });
+}
+
 export function useUserRole() {
   const queryResult = useQuery({
     queryKey: ["current-user-role"],
