@@ -13,21 +13,23 @@ interface OrderItemsTooltipProps {
 }
 
 export function OrderItemsTooltip({ items, subtotal, vatAmount, total }: OrderItemsTooltipProps) {
-  const count = items.reduce((s, i) => s + i.quantity, 0);
+  const hasCustomization = (item: OrderItemRow) => {
+    const cust = item.customization_json;
+    if (!cust) return false;
+    return (cust.removedIngredients?.length > 0) || (cust.addedIngredients?.length > 0);
+  };
+
   const preview = items
     .slice(0, 3)
-    .map((i) => i.item_name)
+    .map((i) => `${i.quantity} x ${i.item_name}${hasCustomization(i) ? " (c)" : ""}`)
     .join(", ");
-  const suffix = items.length > 3 ? "…" : "";
+  const suffix = items.length > 3 ? ", …" : "";
 
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
-        <span className="cursor-default text-[13px]">
-          <span className="font-medium text-slate-700">{count} Items</span>
-          <span className="text-slate-400 ml-1 hidden lg:inline">
-            ({preview}{suffix})
-          </span>
+        <span className="cursor-default text-[14px] text-slate-600">
+          {preview}{suffix}
         </span>
       </TooltipTrigger>
       <TooltipContent
