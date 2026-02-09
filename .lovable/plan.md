@@ -119,3 +119,5 @@ RLS: Admins can manage; authenticated users with branch access can view logs for
 - POSLayout gets a minimal top bar with "POS" and "Orders" links
 - Order complete page gets a "View Orders" button alongside existing actions
 
+Add this to the main menu. also auto update when there is new order.. blink 5 times when a new order is added. 
+
