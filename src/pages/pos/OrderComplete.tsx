@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle2, Plus, Minus, Pencil, ShoppingCart, XCircle, Banknote, CreditCard, Clock } from "lucide-react";
+import { CheckCircle2, Plus, Minus, Pencil, ShoppingCart, XCircle, Banknote, CreditCard, Clock, ClipboardList } from "lucide-react";
 import { PaymentReconciliationCard } from "@/components/pos/checkout/PaymentReconciliationCard";
 import { TouchButton } from "@/components/pos/shared";
 import { CancelOrderModal } from "@/components/pos/modals/CancelOrderModal";
@@ -200,7 +200,7 @@ export default function OrderComplete() {
         <PaymentDetailsCard state={state} />
 
         {/* Actions */}
-        <div className="flex justify-center gap-3 pt-2">
+        <div className="flex justify-center gap-3 pt-2 flex-wrap">
           <TouchButton
             variant="outline"
             className="min-w-[120px] rounded-xl shadow-sm border-violet-200 text-violet-700 hover:bg-violet-50"
@@ -215,6 +215,14 @@ export default function OrderComplete() {
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
             New Order
+          </TouchButton>
+          <TouchButton
+            variant="outline"
+            className="min-w-[120px] rounded-xl shadow-sm border-primary/40 text-primary hover:bg-primary/5"
+            onClick={() => navigate("/pos/orders")}
+          >
+            <ClipboardList className="h-4 w-4 mr-2" />
+            View Orders
           </TouchButton>
           <TouchButton
             variant="outline"

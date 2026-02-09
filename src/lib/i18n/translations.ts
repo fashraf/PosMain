@@ -21,6 +21,7 @@ export const translations = {
       batchExpiry: "Batch & Expiry",
       reportsAlerts: "Reports & Alerts",
       users: "Users",
+      orderList: "Orders",
     },
     // Maintenance
     maintenance: {
@@ -843,6 +844,7 @@ export const translations = {
       categories: "الفئات",
       settings: "الإعدادات",
       users: "المستخدمون",
+      orderList: "الطلبات",
     },
     // Common
     common: {
@@ -1192,6 +1194,7 @@ export const translations = {
       categories: "زمرے",
       settings: "سیٹنگز",
       users: "صارفین",
+      orderList: "آرڈرز",
     },
     // Common
     common: {

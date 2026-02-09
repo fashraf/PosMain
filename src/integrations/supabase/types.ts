@@ -632,6 +632,41 @@ export type Database = {
           },
         ]
       }
+      pos_order_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+          order_id: string
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          order_id: string
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          order_id?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_order_audit_log_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "pos_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_order_items: {
         Row: {
           created_at: string
