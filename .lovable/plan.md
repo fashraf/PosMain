@@ -1,99 +1,93 @@
 
 
-# POS Order List -- Refined Polish Pass
+# POS Order List -- 10-Point Refinement
 
 ## Overview
 
-Incremental polish of the existing Order List to match the latest spec: +2px font sizing, refined Items column format, dotted nested grid separators, clickable stat cards, "Last Updated" indicator, column header icons, and width tuning for Type/Time Ago columns.
+Apply 10 specific tweaks to the Order List page based on the user's feedback. This is a focused polish pass -- no new features, just corrections and visual adjustments.
 
 ## Changes
 
-### 1. Font Size Bump (+2px globally within `.pos-orders-font`)
+### 1. Move "Last updated" next to stat cards (reference image style)
 
-**File: `src/index.css`**
-- Update `.pos-orders-font` to set `font-size: 15px` (base 13px + 2px) as the root size for the POS orders scope
-- All `text-[12px]` cells in the table become `text-[14px]`
-- All `text-[13px]` become `text-[15px]`
-- Tab text stays `text-sm` (14px) which is already appropriate at +2px from 12px
-- Tooltip inherits the larger base from `.pos-orders-font`
+**File: `src/pages/pos/OrderList.tsx`**
+- The "updated: Just now" text is already positioned next to the stat cards (line 138-140). Adjust styling to match the reference image: lighter color, slightly smaller text, placed inline right of the first stat card row (not below).
 
-### 2. Items Column Format Change
-
-**File: `src/components/pos/orders/OrderItemsTooltip.tsx`**
-- Change the inline preview text from `"3 Items (Mango Bite, Curd, ...)"` to the format: `"1 x Mango Bite, 2 x Curd, 1 x Chicken Biryani (c)"`
-- Each item shows `{qty} x {name}`
-- If an item has customizations, append `(c)` after its name
-- Items joined by `, ` with ellipsis if more than 3 items
-- Remove the separate "3 Items" count prefix -- the format itself conveys quantity
-
-### 3. Nested Grid Dotted Row Separators
-
-**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
-- Change row borders from `border-t border-slate-100` (solid) to `border-t border-dotted border-slate-200`
-- Keep the `#FAFAFA` background and shadow styling
-
-### 4. Nested Grid Width: 50%
-
-**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
-- The nested grid container gets `max-w-[50%]` so it only spans half the parent row width (left-aligned)
-- Keeps it compact and unobtrusive
-
-### 5. Clickable Stat Cards (Filter Action)
+### 2. Replace "Total Sales" card with "Total Unpaid Orders"
 
 **File: `src/components/pos/orders/OrderStatCards.tsx`**
-- Accept an `onCardClick(tab: OrderStatusTab)` prop
-- Map each card to a tab: Total -> "all", In Process -> "unpaid", Completed -> "completed", Total Sales -> "completed"
-- Add `cursor-pointer` and `hover:shadow-md` transition
-- Active card gets a subtle ring/border highlight
+- Change the 4th card from `totalSales` / "Total Sales" to `paymentPending` / "Total Unpaid"
+- Remove the `isCurrency` flag
+- Change icon to `AlertCircle` with soft red background (`bg-red-50`, `text-red-500`)
+
+### 3. Change "Order #" column header to just "#"
 
 **File: `src/pages/pos/OrderList.tsx`**
-- Pass `onCardClick={(tab) => updateFilter("tab", tab)}` to `OrderStatCards`
+- Change header text from `Order #` to just `#`
+- Keep the `Hash` icon
+- Reduce column width from `w-[70px]` to `w-[50px]`
 
-### 6. "Last Updated" Indicator
-
-**File: `src/pages/pos/OrderList.tsx`**
-- Add a small `"Last updated: X min ago"` text next to the stat cards row (right-aligned)
-- Calculated from `dataUpdatedAt` returned by TanStack Query's `useQuery` result
-- Updates every 30s via the existing tick interval
-
-### 7. Column Header Icons
+### 4. Add dotted lines between ALL table rows
 
 **File: `src/pages/pos/OrderList.tsx`**
-- Add tiny icons (14px) next to column header text:
-  - Order #: `Hash` icon
-  - Items: `ShoppingBag` icon
-  - Type: `Utensils` icon
-  - Payment: `CreditCard` icon
-  - Total: `DollarSign` icon
-  - Time: `Clock` icon
-  - Time Ago: `Timer` icon
-  - Status: `Activity` icon
-- Icons are `text-slate-400` and `h-3.5 w-3.5`, inline with the header text
+- Change `TableRow` border class from `border-slate-100` to `border-dotted border-slate-200` on every order row
+- The main table header row keeps its solid border
 
-### 8. Type and Time Ago Column Width Increase
+### 5. Remove "Orders" header and "New Order" button
 
 **File: `src/pages/pos/OrderList.tsx`**
-- Type column: increase from `w-[75px]` to `w-[95px]` so "Self Pickup" fits on one line
-- Time Ago column: increase from `w-[75px]` to `w-[95px]` so "1h 23m ago" fits on one line
-- Type cell font stays at the new `text-[14px]`
+- Remove the entire sticky header block (lines 117-126) containing the ClipboardList icon, "Orders" title, and "New Order" button
+- The stat cards become the top element
+- Update the sticky tabs `top` offset from `top-[57px]` to `top-0`
 
-### 9. Table Cell Font Size Updates
+### 6. Items column: badge design with light blue, 16px, underline for customized
+
+**File: `src/components/pos/orders/OrderItemsTooltip.tsx`**
+- Change the inline preview to render each item as a small badge/pill: light blue background (`bg-blue-50 text-blue-700`), rounded, `text-[16px]` font
+- Format stays `{qty} x {name}`
+- If an item has customizations, the item text gets `underline` decoration instead of `(c)` suffix
+- Remove the `(c)` marker entirely
+
+### 7. Fix customization data in nested grid AND right slider
+
+**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
+- Ensure `removedIngredients` and `addedIngredients` from `customization_json` are properly displayed
+- Show removed as "- {name}" in red-ish muted text
+- Show added as "+ {name}" in green-ish muted text
+- If no customizations, show nothing (no dash)
+
+**File: `src/components/pos/orders/OrderDetailDrawer.tsx`**
+- Already shows customizations (lines 101-106), but verify the data path works correctly
+- Format removed ingredients as "- No {name}" and added as "+ Extra {name}" consistently
+- Ensure `customization_json` is properly parsed (handle both object and string formats)
+
+### 8. Time Ago format: remove "ago", use dash separator
+
+**File: `src/lib/pos/timeAgo.ts`**
+- Change format from `"4m ago"` to `"- 4m"`
+- Change from `"1h 23m ago"` to `"- 1h 23m"`  
+- Change "Just now" to `"- 0m"`
+- The dash acts as a visual prefix
+
+### 9. Curved corners (already 8px / rounded-lg, but ensure consistency)
 
 **File: `src/pages/pos/OrderList.tsx`**
-- All `text-[12px]` table cells -> `text-[14px]`
-- Order # cell `text-sm` -> `text-[15px]`
-- Total cell `text-sm` -> `text-[15px]`
-- View button text `text-[11px]` -> `text-[13px]`
-- Header cells `text-xs` -> `text-[13px]`
+- Ensure the main table container has `rounded-lg overflow-hidden`
+- All filter selects, buttons, and inputs use `rounded-lg` (8px)
+
+### 10. Light grey background for nested gridview
+
+**File: `src/components/pos/orders/ExpandedOrderItems.tsx`**
+- Already using `bg-[#FAFAFA]` -- confirmed correct. No change needed here.
 
 ## Summary of Files Modified
 
-| File | Change |
-|------|--------|
-| `src/index.css` | Bump `.pos-orders-font` base font-size to 15px |
-| `src/pages/pos/OrderList.tsx` | Column widths, font sizes, header icons, last-updated text, stat card click handler |
-| `src/components/pos/orders/OrderItemsTooltip.tsx` | Items format: `1 x Name (c), 2 x Name` |
-| `src/components/pos/orders/ExpandedOrderItems.tsx` | Dotted row borders, 50% max width |
-| `src/components/pos/orders/OrderStatCards.tsx` | Clickable cards with `onCardClick` prop |
-| `src/hooks/pos/usePOSOrders.ts` | Expose `dataUpdatedAt` from query result |
+| File | Changes |
+|------|---------|
+| `src/pages/pos/OrderList.tsx` | Remove header, "#" column, dotted row borders, rounded table |
+| `src/components/pos/orders/OrderStatCards.tsx` | Replace Total Sales with Total Unpaid |
+| `src/components/pos/orders/OrderItemsTooltip.tsx` | Badge pills, light blue, 16px, underline for customized |
+| `src/components/pos/orders/ExpandedOrderItems.tsx` | Fix customization display with add/remove labels |
+| `src/components/pos/orders/OrderDetailDrawer.tsx` | Verify/fix customization data display |
+| `src/lib/pos/timeAgo.ts` | Change format to "- Xh Xm" without "ago" |
 
