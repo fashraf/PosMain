@@ -216,6 +216,8 @@ export interface OrderStats {
   inProcess: number;
   completed: number;
   paymentPending: number;
+  totalSales: number;
+  cancelledCount: number;
 }
 
 export function useOrderStats(dateFilter: DateFilter) {
@@ -225,18 +227,21 @@ export function useOrderStats(dateFilter: DateFilter) {
       const range = getDateRange(dateFilter);
       let query = supabase
         .from("pos_orders")
-        .select("payment_status");
+        .select("payment_status, total_amount");
       if (range) {
         query = query.gte("created_at", range.from).lt("created_at", range.to);
       }
       const { data, error } = await query;
       if (error) throw error;
       const rows = data || [];
+      const paid = rows.filter((r) => r.payment_status === "paid");
       return {
         total: rows.length,
         inProcess: rows.filter((r) => r.payment_status === "pending").length,
-        completed: rows.filter((r) => r.payment_status === "paid").length,
+        completed: paid.length,
         paymentPending: rows.filter((r) => r.payment_status === "pending").length,
+        totalSales: paid.reduce((sum, r) => sum + (r.total_amount || 0), 0),
+        cancelledCount: rows.filter((r) => r.payment_status === "cancelled").length,
       };
     },
     staleTime: 10000,
