@@ -1,37 +1,132 @@
 
 
-# Fix: Green flash not triggering on first-time item add
+# Complete Order -- Full-Screen Checkout Modal Redesign
 
-## Root Cause
+## Overview
 
-When adding a **new** item to the cart, the highlight ID is set to `item.id` (the menu item ID, e.g. `"curd-123"`), but the actual cart item gets a **random UUID** (e.g. `"a1b2c3..."`). The `CartItemList` compares `highlight.id` against the cart item's UUID -- they never match, so no animation plays.
+Replace the current bottom drawer checkout with a large **90vh x 90vw Dialog modal** using a **3-column layout** optimized for tablet touch. The modal is titled "Complete Order" and includes Order Review, Order Type, and Payment sections side by side.
 
-For **existing** items (re-adding the same thing), `cart.items.find(i => i.menuItemId === item.id)` finds the existing cart entry and uses its UUID -- so the flash works. But for new items, the `find()` returns `undefined` because React hasn't committed the state update yet.
+## Layout Structure
 
-## Fix
-
-After calling `cart.addItem(...)`, look up the matching cart item to get its **cart ID**. Since React state updates are batched, we need to read from `cart.items` which may not yet include the new item. The fix: always try to find the matching cart item, and if not found (new item), fall back to `item.id` (the menu item ID). Then in `CartItemList`, match against **both** `item.id` and `item.menuItemId`.
-
-**Simpler approach**: Change the comparison in `CartItemList` to also check `item.menuItemId`:
-
+```text
++--------------------------------------------------------------+
+| Complete Order                                          [X]   |
++------------------+------------------+------------------------+
+| ORDER REVIEW     | ORDER TYPE       | PAYMENT                |
+| (col-4)          | (col-4)          | (col-4)                |
+|                  |                  |                        |
+| Scrollable items | 4 large cards:   | Radio: Cash / Card /   |
+| with qty stepper | - Dining         |   Both / Pay Later     |
+| and mod chips    | - Take Away      |                        |
+|                  | - Self Pickup    | Cash: total, tendered, |
+| Sticky totals:   | - Delivery       |   +10/+20/+50/Exact,  |
+| Subtotal         |                  |   change display       |
+| VAT              | If Delivery:     |                        |
+| TOTAL (bold)     |   address field  | Both: cash + card      |
+|                  |   (mandatory)    |   split inputs         |
+|                  |                  |                        |
+|                  |                  | Pay Later: disabled    |
+|                  |                  |   for takeaway/pickup  |
++------------------+------------------+------------------------+
+| [Clear Order]                          [Submit Order]         |
++--------------------------------------------------------------+
 ```
-const isHighlighted = highlight?.id === item.id || highlight?.id === item.menuItemId;
+
+## Detailed Column Breakdown
+
+### Column 1 -- Order Review (col-span-4)
+
+- Scrollable list of cart items
+- Each item row: name, unit price, quantity stepper (- qty +), edit icon to open customize modal
+- Modifier chips below each item: red "No Tomato", green "+ Cheese", blue replacement arrows
+- Sticky bottom section within column:
+  - Subtotal, VAT (15%), Grand Total (large, bold, primary color)
+
+### Column 2 -- Order Type (col-span-4)
+
+- 4 large touchable cards with icons (UtensilsCrossed, ShoppingBag, Package, Truck)
+  - Dining, Take Away, Self Pickup, Delivery
+- Single selection, highlighted with primary border + bg tint
+- Update OrderType enum: add `'self_pickup'` alongside existing types
+- Conditional: when "Delivery" selected, show inline address textarea (mandatory, red border if empty)
+- Customer details (mobile + name) shown below order type cards
+
+### Column 3 -- Payment (col-span-4)
+
+- **Payment method radio group** (large touch-friendly buttons):
+  - Cash, Card, Both (Split), Pay Later
+  - "Pay Later" disabled when order type is Take Away or Self Pickup
+- **Dynamic fields based on selection:**
+  - **Cash**: Read-only total, tendered amount input (large numeric), quick-add buttons (+10, +20, +50, Exact), auto-calculated change (green if positive, red if negative/insufficient)
+  - **Card**: No additional fields (just total display)
+  - **Both (Split)**: Two inputs -- "Cash Amount" and auto-calculated "Card Amount" (total - cash). Validation: cash cannot exceed total
+  - **Pay Later**: No fields, just confirmation text
+- Total displayed prominently at top of payment column
+
+## Footer
+
+- **Left**: "Clear Order" button (outline/destructive) -- triggers confirmation modal before clearing
+- **Right**: "Submit Order" button (primary, large) -- disabled until all validations pass
+- Validation rules:
+  - Cart must not be empty
+  - If Delivery: address is required
+  - If Cash: tendered >= total
+  - If Both: cash amount must be > 0 and <= total
+
+## After Submit -- Order Confirmation Screen
+
+- Replace modal content with a success view:
+  - Large checkmark icon
+  - "Order Placed!" heading
+  - Order number (#XXXX)
+  - Brief order summary (item count, total)
+  - Action buttons: "New Order" (primary, clears cart and closes), "Print Receipt" (outline, placeholder for future)
+
+## Type Updates
+
+Update `CheckoutFormData` in `types.ts`:
+
+```typescript
+export type PaymentMethod = 'cash' | 'card' | 'both' | 'pay_later';
+export type OrderType = 'dine_in' | 'takeaway' | 'self_pickup' | 'delivery';
+
+export interface CheckoutFormData {
+  orderType: OrderType;
+  customerMobile: string;
+  customerName: string;
+  deliveryAddress: string;
+  paymentMethod: PaymentMethod;
+  tenderedAmount: number;
+  cashAmount: number; // for split
+  takenBy: string;
+  notes: string;
+}
 ```
 
-This way, whether we highlight by cart UUID or by menu item ID, it will match.
+## Database Changes
 
-## Technical Details
+- The `pos_orders` table already stores `order_type` as a string and `payment_method` as a string, so no schema migration is needed. We just write the new enum values ('self_pickup', 'card', 'both', 'pay_later') and add a `tendered_amount` and `change_amount` column via migration.
 
-### File: `src/components/pos/cart/CartItemList.tsx`
+## Files to Create / Edit
 
-Change the highlight match logic from:
-```tsx
-const isHighlighted = highlight?.id === item.id;
-```
-to:
-```tsx
-const isHighlighted = highlight?.id === item.id || highlight?.id === item.menuItemId;
-```
+| File | Action |
+|------|--------|
+| `src/lib/pos/types.ts` | Update OrderType, PaymentMethod, CheckoutFormData |
+| `src/components/pos/checkout/CheckoutModal.tsx` | **NEW** -- main 90% dialog with 3-column layout |
+| `src/components/pos/checkout/OrderReviewColumn.tsx` | **NEW** -- scrollable items + totals |
+| `src/components/pos/checkout/OrderTypeColumn.tsx` | **NEW** -- type cards + delivery address + customer form |
+| `src/components/pos/checkout/PaymentColumn.tsx` | **NEW** -- payment method selection + cash/split fields |
+| `src/components/pos/checkout/OrderConfirmation.tsx` | **NEW** -- post-submit success view |
+| `src/components/pos/checkout/index.ts` | Update exports |
+| `src/pages/pos/POSMain.tsx` | Swap `CheckoutDrawer` for `CheckoutModal` |
+| DB migration | Add `tendered_amount` and `change_amount` columns to `pos_orders` |
 
-This is a **one-line fix** -- no other files need to change. The `handleAddItem` in `POSMain.tsx` already passes `item.id` (menu item ID), and for increment/decrement it passes the cart item UUID. Both cases will now match correctly.
+## Design Tokens
+
+- White background, gray-50 column backgrounds
+- Primary (#3d44fc) for selected states and CTA
+- Minimum 44px touch targets on all buttons
+- Large text for totals (text-2xl), medium for prices (text-lg)
+- Rounded-xl cards with border-2 for order type selection
+- Same visual language as the existing CustomizeModal (85vw dialog pattern)
 
