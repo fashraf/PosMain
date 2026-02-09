@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle2, Plus, Minus, Pencil, ShoppingCart, XCircle, Banknote, CreditCard, Clock } from "lucide-react";
+import { PaymentReconciliationCard } from "@/components/pos/checkout/PaymentReconciliationCard";
 import { TouchButton } from "@/components/pos/shared";
 import { CancelOrderModal } from "@/components/pos/modals/CancelOrderModal";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +35,7 @@ interface OrderCompleteState {
   cashAmount: number;
   cardAmount: number;
   changes?: OrderChange[];
+  previousTotal?: number;
 }
 
 const ORDER_TYPE_LABELS: Record<string, string> = {
@@ -185,6 +187,14 @@ export default function OrderComplete() {
             <span>{state.total.toFixed(2)} SAR</span>
           </div>
         </div>
+
+        {/* Payment Reconciliation (edit mode only) */}
+        {isUpdate && state.previousTotal != null && (
+          <PaymentReconciliationCard
+            previousTotal={state.previousTotal}
+            currentTotal={state.total}
+          />
+        )}
 
         {/* Payment Details */}
         <PaymentDetailsCard state={state} />

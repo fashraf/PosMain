@@ -25,6 +25,7 @@ interface CheckoutModalProps {
   onEditCustomization: (cartItemId: string) => void;
   editingOrderId?: string | null;
   editingOrderNumber?: number | null;
+  previousOrderTotal?: number | null;
 }
 
 export function CheckoutModal({
@@ -35,6 +36,7 @@ export function CheckoutModal({
   onEditCustomization,
   editingOrderId,
   editingOrderNumber,
+  previousOrderTotal,
 }: CheckoutModalProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -190,6 +192,7 @@ export function CheckoutModal({
           changeAmount,
           cashAmount: formData.paymentMethod === "both" ? formData.cashAmount : 0,
           cardAmount,
+          ...(isEditMode && previousOrderTotal != null ? { previousTotal: previousOrderTotal } : {}),
         },
       });
     } catch (error: any) {
