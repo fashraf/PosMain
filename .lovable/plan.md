@@ -1,89 +1,51 @@
 
-
-# Edit Order Flow from Order Complete Page
+# Payment Reconciliation on Order Edit
 
 ## Overview
 
-When the user clicks "Edit Order" on the order-complete page, the POS screen should load the existing order's items into the cart and display the Order ID in a red blinking badge in the cart header, making it clear the user is editing an existing order (not creating a new one).
+When an order is edited and the total changes, the order-complete page should show a clear, icon-driven reconciliation banner telling the cashier exactly what to do:
+
+- **Total increased** (red/orange): "Collect 15.50 SAR more" with an upward arrow icon
+- **Total decreased** (green): "Return 8.25 SAR to customer" with a downward arrow icon  
+- **No change** (neutral): "No payment action needed" with a checkmark icon
 
 ## What Changes
 
-### 1. POSMain -- Detect Edit Mode from Navigation State
+### 1. Track Previous Total
 
-`POSMain.tsx` currently ignores `location.state`. It needs to:
-- Read `editOrderId` from `useLocation().state`
-- Fetch the order + order items from the database
-- Populate the cart with those items
-- Store the editing order ID and order number in local state
-- Pass the edit indicator down to `CartPanel` and `CartHeader`
+When entering edit mode, `POSMain.tsx` will also fetch and store the **previous total** from the original order. This gets passed through to `CheckoutModal`, which passes it in the navigation state to the order-complete page.
 
-### 2. CartHeader -- Show Blinking Red Order ID
+### 2. CheckoutModal -- Pass Previous Total
 
-When in edit mode, `CartHeader` will display a red blinking badge like:
+Add `previousTotal` to the navigation state when in edit mode so the order-complete page can calculate the difference.
 
-**Editing Order #1042** (in red, with a CSS blink/pulse animation)
+### 3. OrderComplete -- Payment Reconciliation Card
 
-This replaces or supplements the normal "Total Item: X" header.
+Add a new `PaymentReconciliationCard` component that only appears when `mode === "update"`. It compares `previousTotal` vs `total` and shows one of three states:
 
-### 3. CartPanel -- Pass Edit State Through
+- **Collect More** -- Orange/red card with `TrendingUp` icon and the exact amount to collect
+- **Return to Customer** -- Green card with `TrendingDown` icon and the exact amount to refund
+- **No Action** -- Neutral card with `CheckCircle2` icon confirming totals match
 
-`CartPanel` receives the edit info (order number) and forwards it to `CartHeader`.
-
-### 4. CheckoutModal -- Support Update Mode
-
-When editing an existing order, the submit handler should:
-- UPDATE the existing `pos_orders` row instead of INSERTing a new one
-- DELETE old `pos_order_items` and INSERT the new set
-- Navigate to `/pos/order-complete` with `mode: "update"` and change summary
-
-### 5. CSS Animation
-
-Add a simple `animate-blink` keyframe to the Tailwind config or inline for the red order ID badge.
+This card will appear prominently between the totals section and the payment details section, with clear large text and intuitive icons.
 
 ## Technical Details
 
 ### Files Modified
 
 1. **`src/pages/pos/POSMain.tsx`**
-   - Import `useLocation`
-   - Read `location.state?.editOrderId`
-   - Add `useEffect` to fetch order + items from `pos_orders` / `pos_order_items` when `editOrderId` is present
-   - Populate cart via `cart.addItem()` for each order item
-   - Store `editingOrderId` and `editingOrderNumber` in state
-   - Pass `editingOrderNumber` to `CartPanel`
-   - Pass `editingOrderId` + `editingOrderNumber` to `CheckoutModal`
-   - Clear edit state after order complete
+   - Fetch `total_amount` when loading the order for editing
+   - Store it in a new state variable `previousOrderTotal`
+   - Pass it to `CheckoutModal` as a new prop
 
-2. **`src/components/pos/cart/CartHeader.tsx`**
-   - Add optional `editingOrderNumber` prop
-   - When set, render a red pulsing badge: "Editing Order #XXX"
+2. **`src/components/pos/checkout/CheckoutModal.tsx`**
+   - Accept new `previousOrderTotal` prop
+   - Include `previousTotal` in the navigation state to `/pos/order-complete` (only in edit mode)
 
-3. **`src/components/pos/cart/CartPanel.tsx`**
-   - Accept optional `editingOrderNumber` prop
-   - Forward to `CartHeader`
-
-4. **`src/components/pos/checkout/CheckoutModal.tsx`**
-   - Accept optional `editingOrderId` and `editingOrderNumber` props
-   - In `handleSubmit`: if `editingOrderId` is set, do an UPDATE + delete/re-insert items instead of INSERT
-   - Navigate with `mode: "update"` and compute a change summary (added/removed items)
-   - Show "Update Order" instead of "Submit Order" on the button
-
-5. **`src/index.css`** (or `tailwind.config.ts`)
-   - Add a `blink` or `pulse-red` animation keyframe for the order ID badge
-
-### Database
-
-No schema changes needed -- all tables already support updates.
-
-### Edit Flow Sequence
-
-1. User clicks "Edit Order" on `/pos/order-complete`
-2. Navigates to `/pos` with `state: { editOrderId: "uuid" }`
-3. `POSMain` detects `editOrderId`, fetches order items from DB
-4. Cart is populated with the fetched items
-5. Red blinking "Editing Order #1042" appears in cart header
-6. User modifies items, clicks Pay
-7. `CheckoutModal` shows "Update Order" button
-8. On submit: updates existing order row + replaces order items
-9. Navigates to `/pos/order-complete` with `mode: "update"` and change summary
-
+3. **`src/pages/pos/OrderComplete.tsx`**
+   - Extend `OrderCompleteState` interface with `previousTotal?: number`
+   - Add a `PaymentReconciliationCard` component that renders between totals and payment details
+   - Three visual states:
+     - **Collect more**: Orange border, `TrendingUp` icon, bold amount in orange
+     - **Return**: Green border, `TrendingDown` icon, bold amount in green
+     - **No action**: Neutral border, `CheckCircle2` icon, "Totals match" message
