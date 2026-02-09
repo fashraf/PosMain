@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 import { Banknote, Clock } from "lucide-react";
 
 interface PaymentOptionsProps {
-  selected: "now" | "later";
-  onChange: (method: "now" | "later") => void;
+  selected: string;
+  onChange: (method: any) => void;
 }
 
 export function PaymentOptions({ selected, onChange }: PaymentOptionsProps) {
