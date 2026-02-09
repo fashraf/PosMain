@@ -1,84 +1,89 @@
 
 
-# Enhanced Order Complete Page
+# Edit Order Flow from Order Complete Page
 
 ## Overview
 
-Upgrade the `/pos/order-complete` page with two additions:
-1. **Payment details section** -- show exactly how the customer paid (tendered amount, change given, cash/card split, or pending status)
-2. **Three action buttons** -- Edit Order, New Order, Cancel Order (with reason selection)
+When the user clicks "Edit Order" on the order-complete page, the POS screen should load the existing order's items into the cart and display the Order ID in a red blinking badge in the cart header, making it clear the user is editing an existing order (not creating a new one).
 
 ## What Changes
 
-### 1. Pass Additional Payment Data from CheckoutModal
+### 1. POSMain -- Detect Edit Mode from Navigation State
 
-The `navigate()` call in `CheckoutModal.tsx` currently passes only `paymentMethod`. We need to also pass:
-- `tenderedAmount` (for cash payments)
-- `changeAmount` (cash change returned)
-- `cashAmount` / `cardAmount` (for split payments)
-- `paymentStatus` ("paid" or "pending")
-- `orderId` (needed for cancel/edit operations)
+`POSMain.tsx` currently ignores `location.state`. It needs to:
+- Read `editOrderId` from `useLocation().state`
+- Fetch the order + order items from the database
+- Populate the cart with those items
+- Store the editing order ID and order number in local state
+- Pass the edit indicator down to `CartPanel` and `CartHeader`
 
-### 2. Payment Summary Section on OrderComplete Page
+### 2. CartHeader -- Show Blinking Red Order ID
 
-Below the totals card, add a new "Payment Details" card that adapts to the payment method:
+When in edit mode, `CartHeader` will display a red blinking badge like:
 
-- **Cash**: Shows Tendered Amount, Change Given (green highlight)
-- **Card**: Shows "Charged to Card" with the total
-- **Both (Split)**: Shows Cash portion and Card portion
-- **Pay Later**: Shows "Payment Pending" amber warning
+**Editing Order #1042** (in red, with a CSS blink/pulse animation)
 
-### 3. Replace Current Action Buttons with Three Buttons
+This replaces or supplements the normal "Total Item: X" header.
 
-Replace the current "Print Receipt" + "New Order" with:
+### 3. CartPanel -- Pass Edit State Through
 
-- **Edit Order** (outline, violet) -- navigates back to `/pos` and re-opens the checkout modal with this order's data loaded (placeholder for now -- navigates to `/pos` with state indicating edit mode)
-- **New Order** (primary) -- navigates to `/pos` and clears the cart
-- **Cancel Order** (outline, destructive) -- opens a modal asking for a cancellation reason
+`CartPanel` receives the edit info (order number) and forwards it to `CartHeader`.
 
-### 4. Cancel Order Modal
+### 4. CheckoutModal -- Support Update Mode
 
-A small dialog with predefined cancellation reasons:
-- Customer changed mind
-- Duplicate order
-- Wrong items entered
-- Customer didn't pay
-- Other (free text)
+When editing an existing order, the submit handler should:
+- UPDATE the existing `pos_orders` row instead of INSERTing a new one
+- DELETE old `pos_order_items` and INSERT the new set
+- Navigate to `/pos/order-complete` with `mode: "update"` and change summary
 
-On confirm, updates the order in the database:
-- Sets `payment_status` to `'cancelled'`
-- Navigates back to `/pos`
+### 5. CSS Animation
 
-### 5. Database: Add cancellation columns
-
-Add two columns to `pos_orders`:
-- `cancelled_at` (timestamptz, nullable)
-- `cancel_reason` (text, nullable)
+Add a simple `animate-blink` keyframe to the Tailwind config or inline for the red order ID badge.
 
 ## Technical Details
 
-### Database Migration
-
-```sql
-ALTER TABLE public.pos_orders
-  ADD COLUMN cancelled_at timestamptz,
-  ADD COLUMN cancel_reason text;
-```
-
 ### Files Modified
 
-1. **`src/pages/pos/OrderComplete.tsx`**
-   - Expand `OrderCompleteState` interface with payment detail fields (`tenderedAmount`, `changeAmount`, `cashAmount`, `cardAmount`, `paymentStatus`, `orderId`)
-   - Add a "Payment Details" card section between totals and actions
-   - Replace action buttons with Edit Order / New Order / Cancel Order
-   - Add cancel reason modal state and handler
-   - Cancel handler: calls Supabase update on `pos_orders`, sets `payment_status='cancelled'`, `cancelled_at=now()`, `cancel_reason`
+1. **`src/pages/pos/POSMain.tsx`**
+   - Import `useLocation`
+   - Read `location.state?.editOrderId`
+   - Add `useEffect` to fetch order + items from `pos_orders` / `pos_order_items` when `editOrderId` is present
+   - Populate cart via `cart.addItem()` for each order item
+   - Store `editingOrderId` and `editingOrderNumber` in state
+   - Pass `editingOrderNumber` to `CartPanel`
+   - Pass `editingOrderId` + `editingOrderNumber` to `CheckoutModal`
+   - Clear edit state after order complete
 
-2. **`src/components/pos/checkout/CheckoutModal.tsx`**
-   - Add `orderId`, `tenderedAmount`, `changeAmount`, `cashAmount`, `cardAmount`, `paymentStatus` to the navigation state passed to `/pos/order-complete`
+2. **`src/components/pos/cart/CartHeader.tsx`**
+   - Add optional `editingOrderNumber` prop
+   - When set, render a red pulsing badge: "Editing Order #XXX"
 
-3. **New: `src/components/pos/modals/CancelOrderModal.tsx`**
-   - A small AlertDialog with reason radio buttons + optional free text
-   - Calls `onConfirm(reason: string)`
+3. **`src/components/pos/cart/CartPanel.tsx`**
+   - Accept optional `editingOrderNumber` prop
+   - Forward to `CartHeader`
 
-### No changes needed to types, routing, or layout files.
+4. **`src/components/pos/checkout/CheckoutModal.tsx`**
+   - Accept optional `editingOrderId` and `editingOrderNumber` props
+   - In `handleSubmit`: if `editingOrderId` is set, do an UPDATE + delete/re-insert items instead of INSERT
+   - Navigate with `mode: "update"` and compute a change summary (added/removed items)
+   - Show "Update Order" instead of "Submit Order" on the button
+
+5. **`src/index.css`** (or `tailwind.config.ts`)
+   - Add a `blink` or `pulse-red` animation keyframe for the order ID badge
+
+### Database
+
+No schema changes needed -- all tables already support updates.
+
+### Edit Flow Sequence
+
+1. User clicks "Edit Order" on `/pos/order-complete`
+2. Navigates to `/pos` with `state: { editOrderId: "uuid" }`
+3. `POSMain` detects `editOrderId`, fetches order items from DB
+4. Cart is populated with the fetched items
+5. Red blinking "Editing Order #1042" appears in cart header
+6. User modifies items, clicks Pay
+7. `CheckoutModal` shows "Update Order" button
+8. On submit: updates existing order row + replaces order items
+9. Navigates to `/pos/order-complete` with `mode: "update"` and change summary
+
