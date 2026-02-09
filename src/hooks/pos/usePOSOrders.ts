@@ -208,7 +208,7 @@ export function usePOSOrders(filters: OrderFilters) {
     []
   );
 
-  return { ...result, shouldBlink, pageSize: PAGE_SIZE };
+  return { ...result, shouldBlink, pageSize: PAGE_SIZE, dataUpdatedAt: result.dataUpdatedAt };
 }
 
 export interface OrderStats {

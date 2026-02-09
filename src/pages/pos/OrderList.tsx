@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, ClipboardList, ChevronRight, ChevronDown, AlertTriangle, Eye } from "lucide-react";
+import { Plus, Search, ClipboardList, ChevronRight, ChevronDown, AlertTriangle, Eye, Hash, ShoppingBag, Utensils, CreditCard, DollarSign, Clock, Timer, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { TouchButton } from "@/components/pos/shared";
@@ -52,8 +52,16 @@ export default function OrderList() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [, setTick] = useState(0);
 
-  const { data: orders, isLoading, shouldBlink, pageSize } = usePOSOrders(filters);
+  const { data: orders, isLoading, shouldBlink, pageSize, dataUpdatedAt } = usePOSOrders(filters);
   const { data: stats } = useOrderStats(filters.dateFilter);
+
+  // Last updated text
+  const lastUpdatedText = React.useMemo(() => {
+    if (!dataUpdatedAt) return "";
+    const diff = Math.round((Date.now() - dataUpdatedAt) / 60000);
+    if (diff < 1) return "Just now";
+    return `${diff} min ago`;
+  }, [dataUpdatedAt, filters]);
 
   const [drawerOrder, setDrawerOrder] = useState<OrderRow | null>(null);
   const [payOrder, setPayOrder] = useState<OrderRow | null>(null);
@@ -118,7 +126,19 @@ export default function OrderList() {
       </div>
 
       {/* Stat Cards */}
-      <OrderStatCards stats={stats || { total: 0, inProcess: 0, completed: 0, paymentPending: 0, totalSales: 0, cancelledCount: 0 }} isLoading={!stats} />
+      <div className="flex items-center px-5">
+        <div className="flex-1">
+          <OrderStatCards
+            stats={stats || { total: 0, inProcess: 0, completed: 0, paymentPending: 0, totalSales: 0, cancelledCount: 0 }}
+            isLoading={!stats}
+            activeTab={filters.tab}
+            onCardClick={(tab) => updateFilter("tab", tab)}
+          />
+        </div>
+        {lastUpdatedText && (
+          <span className="text-[12px] text-slate-400 whitespace-nowrap pr-1">Last updated: {lastUpdatedText}</span>
+        )}
+      </div>
 
       {/* Tabs + Filters */}
       <div className="sticky top-[57px] z-20 bg-white border-b border-slate-200 px-5 py-0 flex flex-wrap items-end gap-0">
@@ -201,15 +221,15 @@ export default function OrderList() {
             <TableHeader>
               <TableRow className="border-slate-200">
                 <TableHead className="w-[28px]" />
-                <TableHead className="w-[70px] text-xs text-slate-500 font-medium">Order #</TableHead>
-                <TableHead className="text-xs text-slate-500 font-medium">Items</TableHead>
-                <TableHead className="w-[75px] text-xs text-slate-500 font-medium">Type</TableHead>
-                <TableHead className="w-[65px] text-xs text-slate-500 font-medium">Payment</TableHead>
-                <TableHead className="w-[70px] text-right text-xs text-slate-500 font-medium">Total</TableHead>
-                <TableHead className="w-[55px] text-xs text-slate-500 font-medium">Time</TableHead>
-                <TableHead className="w-[75px] text-xs text-slate-500 font-medium">Time Ago</TableHead>
-                <TableHead className="w-[65px] text-xs text-slate-500 font-medium">Status</TableHead>
-                <TableHead className="w-[60px] text-center text-xs text-slate-500 font-medium">View</TableHead>
+                <TableHead className="w-[70px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Hash className="h-3.5 w-3.5 text-slate-400" />Order #</span></TableHead>
+                <TableHead className="text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><ShoppingBag className="h-3.5 w-3.5 text-slate-400" />Items</span></TableHead>
+                <TableHead className="w-[95px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Utensils className="h-3.5 w-3.5 text-slate-400" />Type</span></TableHead>
+                <TableHead className="w-[65px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><CreditCard className="h-3.5 w-3.5 text-slate-400" />Payment</span></TableHead>
+                <TableHead className="w-[70px] text-right text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><DollarSign className="h-3.5 w-3.5 text-slate-400" />Total</span></TableHead>
+                <TableHead className="w-[55px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-slate-400" />Time</span></TableHead>
+                <TableHead className="w-[95px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Timer className="h-3.5 w-3.5 text-slate-400" />Time Ago</span></TableHead>
+                <TableHead className="w-[65px] text-[13px] text-slate-500 font-medium"><span className="inline-flex items-center gap-1"><Activity className="h-3.5 w-3.5 text-slate-400" />Status</span></TableHead>
+                <TableHead className="w-[60px] text-center text-[13px] text-slate-500 font-medium">View</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -237,7 +257,7 @@ export default function OrderList() {
                           <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                         )}
                       </TableCell>
-                      <TableCell className="text-sm font-semibold text-slate-700">
+                      <TableCell className="text-[15px] font-semibold text-slate-700">
                         #{order.order_number}
                       </TableCell>
                       <TableCell>
@@ -248,20 +268,20 @@ export default function OrderList() {
                           total={order.total_amount}
                         />
                       </TableCell>
-                      <TableCell className="text-[12px] text-slate-500">
+                      <TableCell className="text-[14px] text-slate-500">
                         {ORDER_TYPE_LABELS[order.order_type] || order.order_type}
                       </TableCell>
-                      <TableCell className="text-[12px] capitalize text-slate-500">
+                      <TableCell className="text-[14px] capitalize text-slate-500">
                         {order.payment_method ? PAYMENT_LABELS[order.payment_method] || order.payment_method : "—"}
                       </TableCell>
-                      <TableCell className="text-right text-sm font-medium tabular-nums text-slate-700">
+                      <TableCell className="text-right text-[15px] font-medium tabular-nums text-slate-700">
                         {order.total_amount.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-[12px] text-slate-400">
+                      <TableCell className="text-[14px] text-slate-400">
                         {format(new Date(order.created_at), "HH:mm")}
                       </TableCell>
                       <TableCell>
-                        <span className={cn("text-[12px] inline-flex items-center gap-1", getTimeAgoColor(timeAgo.level))}>
+                        <span className={cn("text-[14px] inline-flex items-center gap-1", getTimeAgoColor(timeAgo.level))}>
                           {timeAgo.level === "critical" && <AlertTriangle className="h-3 w-3" />}
                           {timeAgo.text}
                         </span>
@@ -271,7 +291,7 @@ export default function OrderList() {
                       </TableCell>
                       <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                         <button
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 text-[11px] font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                           onClick={() => setDrawerOrder(order)}
                         >
                           <Eye className="h-3 w-3" /> View

@@ -8,7 +8,7 @@ export function ExpandedOrderItems({ items }: ExpandedOrderItemsProps) {
   return (
     <tr>
       <td colSpan={10} className="p-0">
-        <div className="mx-4 my-2 rounded-lg bg-[#FAFAFA] shadow-sm border border-slate-100 px-4 py-2">
+        <div className="mx-4 my-2 rounded-lg bg-[#FAFAFA] shadow-sm border border-slate-100 px-4 py-2 max-w-[50%]">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="text-slate-500">
@@ -31,7 +31,7 @@ export function ExpandedOrderItems({ items }: ExpandedOrderItemsProps) {
                 ];
 
                 return (
-                  <tr key={item.id} className="border-t border-slate-100">
+                  <tr key={item.id} className="border-t border-dotted border-slate-200">
                     <td className="py-1.5 font-medium text-slate-700">{item.item_name}</td>
                     <td className="py-1.5 text-slate-500">
                       {tags.length > 0 ? tags.join(", ") : "—"}

@@ -304,6 +304,7 @@
   /* POS Orders — Roboto Condensed font scope */
   .pos-orders-font {
     font-family: 'Roboto Condensed', 'Inter', sans-serif;
+    font-size: 15px;
   }
 
   /* POS underline tab */
