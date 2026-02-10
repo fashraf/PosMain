@@ -4,7 +4,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { UserFormPage, UserFormData } from "@/components/users/UserFormPage";
-import { RolePreviewPanel } from "@/components/users/RolePreviewPanel";
 import { PasswordResetModal } from "@/components/users/PasswordResetModal";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
 
@@ -22,7 +21,6 @@ export default function UsersEdit() {
   const [userId, setUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewRoleId, setPreviewRoleId] = useState<string | null>(null);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
 
   useEffect(() => {
@@ -51,12 +49,10 @@ export default function UsersEdit() {
       setUserName(profile.full_name || "");
       setUserId(profile.user_id);
 
-      // Find user's role
       const userRole = (userRolesRes.data || []).find(
         (ur: any) => ur.user_id === profile.user_id
       );
 
-      // Find user's branches
       const userBranches = (userBranchesRes.data || [])
         .filter((ub) => ub.user_id === profile.user_id)
         .map((ub) => ub.branch_id);
@@ -77,9 +73,9 @@ export default function UsersEdit() {
         is_active: profile.is_active,
         default_language: profile.default_language || "en",
         force_password_change: profile.force_password_change || false,
+        profile_image: (profile as any).profile_image || null,
       });
 
-      if (userRole?.role_id) setPreviewRoleId(userRole.role_id);
       setIsLoading(false);
     };
     load();
@@ -104,7 +100,7 @@ export default function UsersEdit() {
           emp_type_id: data.emp_type_id || null,
           default_language: data.default_language,
           force_password_change: data.force_password_change,
-        })
+        } as any)
         .eq("user_id", userId);
       if (profileError) throw profileError;
 
@@ -157,7 +153,7 @@ export default function UsersEdit() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4">
       <LoadingOverlay visible={isSaving} />
       <UserFormPage
         mode="edit"
@@ -170,16 +166,6 @@ export default function UsersEdit() {
         isLoading={isLoading}
         isSaving={isSaving}
         onResetPassword={() => setPasswordModalOpen(true)}
-        onShowRolePreview={(roleId) => setPreviewRoleId(roleId)}
-        rolePreviewPanel={
-          previewRoleId ? (
-            <RolePreviewPanel
-              roleId={previewRoleId}
-              roles={roles}
-              onClose={() => setPreviewRoleId(null)}
-            />
-          ) : undefined
-        }
       />
       <PasswordResetModal
         open={passwordModalOpen}

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoleBadge } from "@/components/roles/RoleBadge";
 import { PermissionMatrix, Permission } from "@/components/roles/PermissionMatrix";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,38 +40,35 @@ export function RolePreviewPanel({ roleId, roles, onClose, onAssign }: RolePrevi
   if (!roleId || !role) return null;
 
   return (
-    <Card className="sticky top-6">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Role Preview</CardTitle>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="border-2 border-dashed border-blue-300/40 rounded-xl overflow-hidden sticky top-4">
+      <div className="px-3 py-2 bg-blue-50 border-b border-dashed border-blue-200/50 flex items-center justify-between">
+        <span className="text-xs font-semibold text-blue-700">Role Preview</span>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      <div className="p-3 space-y-3 bg-white">
         <div className="flex items-center gap-2">
           <RoleBadge name={role.name} color={role.color} />
         </div>
-        <p className="text-sm text-muted-foreground">Assigned to {userCount} user(s)</p>
+        <p className="text-[11px] text-muted-foreground">Assigned to {userCount} user(s)</p>
 
         <Button
           variant="outline"
           size="sm"
-          className="w-full"
+          className="w-full h-7 text-xs"
           onClick={() => navigate(`/roles/${roleId}/edit`)}
         >
-          <ExternalLink className="h-3.5 w-3.5 me-2" />
+          <ExternalLink className="h-3 w-3 me-1.5" />
           Edit Role
         </Button>
 
-        {/* Permissions - read only */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="flex items-center justify-center py-4">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : (
-          <div className="max-h-[50vh] overflow-y-auto">
+          <div className="max-h-[45vh] overflow-y-auto">
             <PermissionMatrix
               permissions={permissions}
               selectedIds={selectedIds}
@@ -82,19 +78,18 @@ export function RolePreviewPanel({ roleId, roles, onClose, onAssign }: RolePrevi
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-1">
           {onAssign && (
-            <Button size="sm" className="flex-1" onClick={() => onAssign(roleId)}>
-              <Check className="h-4 w-4 me-1" />
-              Assign this role
+            <Button size="sm" className="flex-1 h-7 text-xs" onClick={() => onAssign(roleId)}>
+              <Check className="h-3 w-3 me-1" />
+              Assign
             </Button>
           )}
-          <Button variant="outline" size="sm" className="flex-1" onClick={onClose}>
+          <Button variant="outline" size="sm" className="flex-1 h-7 text-xs" onClick={onClose}>
             Close
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

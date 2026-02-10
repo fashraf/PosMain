@@ -3,15 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, ArrowLeft, ArrowRight, Camera, Info, Save, Upload, User, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Info, Save, User, X, Shield, Briefcase, FileText, Lock, CheckCircle } from "lucide-react";
 import { RoleBadge } from "@/components/roles/RoleBadge";
+import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
+import { TooltipInfo } from "@/components/shared/TooltipInfo";
+import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
+import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
+import { RolePreviewPanel } from "@/components/users/RolePreviewPanel";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,7 @@ export interface UserFormData {
   force_password_change: boolean;
   default_language: string;
   is_active: boolean;
+  profile_image: string | null;
 }
 
 interface RoleOption {
@@ -59,8 +62,6 @@ interface UserFormPageProps {
   isLoading: boolean;
   isSaving: boolean;
   onResetPassword?: () => void;
-  onShowRolePreview?: (roleId: string) => void;
-  rolePreviewPanel?: React.ReactNode;
 }
 
 export function UserFormPage({
@@ -74,8 +75,6 @@ export function UserFormPage({
   isLoading,
   isSaving,
   onResetPassword,
-  onShowRolePreview,
-  rolePreviewPanel,
 }: UserFormPageProps) {
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
@@ -97,12 +96,16 @@ export function UserFormPage({
     force_password_change: true,
     default_language: "en",
     is_active: true,
+    profile_image: null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showRolePreview, setShowRolePreview] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setForm((f) => ({ ...f, ...initialData, password: mode === "add" ? "123456abc" : "" }));
+      if (initialData.role_id) setShowRolePreview(true);
     }
   }, [initialData, mode]);
 
@@ -134,7 +137,12 @@ export function UserFormPage({
   };
 
   const handleSubmit = () => {
-    if (validate()) onSubmit(form);
+    if (validate()) setShowConfirm(true);
+  };
+
+  const handleConfirm = () => {
+    setShowConfirm(false);
+    onSubmit(form);
   };
 
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
@@ -149,16 +157,16 @@ export function UserFormPage({
   }
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-3 pb-20">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/users")}>
-          <BackIcon className="h-5 w-5" />
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/users")}>
+          <BackIcon className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+          <h1 className="text-xl font-bold text-foreground">{title}</h1>
           {mode === "add" && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground">
               Create a new system user and assign role & branch access
             </p>
           )}
@@ -167,323 +175,238 @@ export function UserFormPage({
 
       {/* Edit Warning */}
       {mode === "edit" && (
-        <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800 text-sm">
+        <Alert variant="destructive" className="bg-amber-50 border-amber-200 py-2">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+          <AlertDescription className="text-amber-800 text-xs">
             Changes will apply immediately across all assigned branches
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Two Column Layout */}
-      <div className="flex gap-6">
-        {/* Left Column - Form */}
-        <div className="flex-1 min-w-0 space-y-6">
+      {/* Two Column Grid */}
+      <div className="grid grid-cols-12 gap-3">
+        {/* Left Column - col-span-8 */}
+        <div className="col-span-8 space-y-3">
           {/* Profile Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Profile Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Avatar Placeholder */}
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-border">
-                  <User className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" type="button">
-                    <Upload className="h-4 w-4 me-2" />
-                    {mode === "edit" ? "Replace Photo" : "Upload Photo"}
-                  </Button>
-                  <Button variant="outline" size="sm" type="button">
-                    <Camera className="h-4 w-4 me-2" />
-                    Take Photo
-                  </Button>
+          <DashedSectionCard title="Profile Information" icon={User} variant="purple">
+            <div className="space-y-3">
+              <div className="flex items-start gap-4">
+                <ImageUploadHero
+                  value={form.profile_image}
+                  onChange={(url) => updateField("profile_image", url)}
+                  size={80}
+                />
+                <div className="flex-1 grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Full Name *</Label>
+                    <Input
+                      value={form.full_name}
+                      onChange={(e) => updateField("full_name", e.target.value)}
+                      className={cn("h-8 text-sm", errors.full_name && "border-destructive")}
+                    />
+                    {errors.full_name && <p className="text-[11px] text-destructive">{errors.full_name}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <Label className="text-xs">Mobile Number *</Label>
+                      <TooltipInfo content="Used as login ID" />
+                    </div>
+                    <Input
+                      value={form.phone}
+                      onChange={(e) => updateField("phone", e.target.value)}
+                      placeholder="+966 50 123 4567"
+                      className={cn("h-8 text-sm", errors.phone && "border-destructive")}
+                    />
+                    {errors.phone && <p className="text-[11px] text-destructive">{errors.phone}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <Label className="text-xs">Age</Label>
+                      <TooltipInfo content="Used for compliance reporting" />
+                    </div>
+                    <Input
+                      type="number"
+                      value={form.age}
+                      onChange={(e) => updateField("age", e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Nationality</Label>
+                    <Input
+                      value={form.nationality}
+                      onChange={(e) => updateField("nationality", e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Used for compliance and document validation</p>
+                  </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Full Name *</Label>
-                  <Input
-                    value={form.full_name}
-                    onChange={(e) => updateField("full_name", e.target.value)}
-                    className={cn(errors.full_name && "border-destructive")}
-                  />
-                  {errors.full_name && <p className="text-xs text-destructive">{errors.full_name}</p>}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1">
-                    <Label>Mobile Number *</Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>Used as login ID</TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <Input
-                    value={form.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
-                    placeholder="+966 50 123 4567"
-                    className={cn(errors.phone && "border-destructive")}
-                  />
-                  {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label>Age</Label>
-                  <Input
-                    type="number"
-                    value={form.age}
-                    onChange={(e) => updateField("age", e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1">
-                    <Label>Nationality</Label>
-                  </div>
-                  <Input
-                    value={form.nationality}
-                    onChange={(e) => updateField("nationality", e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Used for compliance and document validation
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DashedSectionCard>
 
           {/* Identification */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Identification (Optional)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>National ID / Iqama</Label>
+          <DashedSectionCard title="Identification (Optional)" icon={FileText} variant="amber">
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs">National ID / Iqama</Label>
+                    <TooltipInfo content="Iqama number for Saudi-based employees" />
+                  </div>
                   <Input
                     value={form.national_id}
                     onChange={(e) => updateField("national_id", e.target.value)}
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Iqama Expiry</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Iqama Expiry</Label>
                   <Input
                     type="date"
                     value={form.national_id_expiry}
                     onChange={(e) => updateField("national_id_expiry", e.target.value)}
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Passport Number</Label>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    <Label className="text-xs">Passport Number</Label>
+                    <TooltipInfo content="Required for non-Saudi employees" />
+                  </div>
                   <Input
                     value={form.passport_number}
                     onChange={(e) => updateField("passport_number", e.target.value)}
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Passport Expiry</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Passport Expiry</Label>
                   <Input
                     type="date"
                     value={form.passport_expiry}
                     onChange={(e) => updateField("passport_expiry", e.target.value)}
+                    className="h-8 text-sm"
                   />
                 </div>
               </div>
-              <p className="text-xs text-amber-600 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" />
+              <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
                 Expiry reminders will be generated automatically if dates are provided
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </DashedSectionCard>
 
           {/* Employment & Access */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Employment & Access</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Employee Type</Label>
+          <DashedSectionCard title="Employment & Access" icon={Briefcase} variant="blue">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Employee Type</Label>
                   <Select
                     value={form.emp_type_id}
                     onValueChange={(v) => updateField("emp_type_id", v)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employee type" />
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       {empTypes.map((et) => (
-                        <SelectItem key={et.id} value={et.id}>
-                          {et.name_en}
-                        </SelectItem>
+                        <SelectItem key={et.id} value={et.id}>{et.name_en}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="flex items-center gap-1">
-                    <Label>Role *</Label>
-                    {form.role_id && onShowRolePreview && (
-                      <button
-                        type="button"
-                        onClick={() => onShowRolePreview(form.role_id)}
-                        className="text-xs text-primary hover:underline flex items-center gap-0.5"
-                      >
-                        <Info className="h-3 w-3" />
-                        View full permissions
-                      </button>
-                    )}
+                    <Label className="text-xs">Default Language</Label>
+                    <TooltipInfo content="Sets the default UI language for this user" />
                   </div>
-                  <Select
-                    value={form.role_id}
-                    onValueChange={(v) => {
-                      updateField("role_id", v);
-                      onShowRolePreview?.(v);
-                    }}
-                  >
-                    <SelectTrigger className={cn(errors.role_id && "border-destructive")}>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          <div className="flex items-center gap-2">
-                            <RoleBadge name={r.name} color={r.color} />
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.role_id && <p className="text-xs text-destructive">{errors.role_id}</p>}
+                  <div className="flex gap-1.5">
+                    {[
+                      { value: "en", label: "English" },
+                      { value: "ar", label: "العربية" },
+                      { value: "ur", label: "اردو" },
+                    ].map((lang) => (
+                      <label
+                        key={lang.value}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 border rounded-md cursor-pointer transition-colors text-xs",
+                          form.default_language === lang.value
+                            ? "border-primary bg-primary/5"
+                            : "border-input"
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="language"
+                          value={lang.value}
+                          checked={form.default_language === lang.value}
+                          onChange={() => updateField("default_language", lang.value)}
+                          className="sr-only"
+                        />
+                        {lang.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              {/* Branches */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <Label>Branches *</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>User can only operate within selected branches</TooltipContent>
-                  </Tooltip>
-                </div>
-                {errors.branch_ids && (
-                  <p className="text-xs text-destructive">{errors.branch_ids}</p>
-                )}
-                <div className="border rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
-                  {branches.map((b) => (
-                    <div key={b.id} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={form.branch_ids.includes(b.id)}
-                        onCheckedChange={() => toggleBranch(b.id)}
-                      />
-                      <span className="text-sm">{b.name}</span>
-                    </div>
-                  ))}
-                  {branches.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No branches available</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Default Language */}
-              <div className="space-y-2">
-                <Label>Default Language</Label>
-                <div className="flex gap-3">
-                  {[
-                    { value: "en", label: "English" },
-                    { value: "ar", label: "العربية" },
-                    { value: "ur", label: "اردو" },
-                  ].map((lang) => (
-                    <label
-                      key={lang.value}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-colors",
-                        form.default_language === lang.value
-                          ? "border-primary bg-primary/5"
-                          : "border-input"
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="language"
-                        value={lang.value}
-                        checked={form.default_language === lang.value}
-                        onChange={() => updateField("default_language", lang.value)}
-                        className="sr-only"
-                      />
-                      <span className="text-sm">{lang.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DashedSectionCard>
 
           {/* Security */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Security</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <DashedSectionCard title="Security" icon={Lock} variant="muted">
+            <div className="space-y-2">
               {mode === "add" ? (
-                <div className="space-y-2">
-                  <Label>Default Password</Label>
-                  <Input value={form.password} readOnly className="max-w-xs bg-muted" />
-                  <p className="text-xs text-muted-foreground">Auto-generated default password</p>
+                <div className="space-y-1">
+                  <Label className="text-xs">Default Password</Label>
+                  <Input value={form.password} readOnly className="max-w-xs bg-muted h-8 text-sm" />
+                  <p className="text-[10px] text-muted-foreground">Auto-generated default password</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
                     <Checkbox
                       checked={form.force_password_change}
-                      onCheckedChange={(checked) =>
-                        updateField("force_password_change", !!checked)
-                      }
+                      onCheckedChange={(checked) => updateField("force_password_change", !!checked)}
+                      className="h-3.5 w-3.5"
                     />
-                    <Label className="cursor-pointer">
+                    <Label className="cursor-pointer text-xs">
                       Reset password & force change at next login
                     </Label>
                   </div>
                   {onResetPassword && (
-                    <Button variant="outline" size="sm" type="button" onClick={onResetPassword}>
+                    <Button variant="outline" size="sm" type="button" onClick={onResetPassword} className="h-7 text-xs">
                       Reset Password Now
                     </Button>
                   )}
-                  <p className="text-xs text-amber-600 flex items-center gap-1">
-                    <AlertTriangle className="h-3.5 w-3.5" />
+                  <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
                     Resetting password will immediately invalidate the current credentials
                   </p>
                 </div>
               )}
 
               {mode === "add" && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <Checkbox
                     checked={form.force_password_change}
-                    onCheckedChange={(checked) =>
-                      updateField("force_password_change", !!checked)
-                    }
+                    onCheckedChange={(checked) => updateField("force_password_change", !!checked)}
+                    className="h-3.5 w-3.5"
                   />
-                  <Label className="cursor-pointer">Force change at first login</Label>
+                  <div className="flex items-center gap-1">
+                    <Label className="cursor-pointer text-xs">Force change at first login</Label>
+                    <TooltipInfo content="User will be required to set a new password on their next login" />
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </DashedSectionCard>
 
           {/* Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-4">
+          <DashedSectionCard title="Status" icon={CheckCircle} variant="green">
+            <div className="space-y-2">
+              <div className="flex gap-3">
                 {[
                   { value: true, label: t("common.active") },
                   { value: false, label: t("common.inactive") },
@@ -491,7 +414,7 @@ export function UserFormPage({
                   <label
                     key={String(opt.value)}
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer transition-colors",
+                      "flex items-center gap-1.5 px-3 py-1.5 border rounded-md cursor-pointer transition-colors text-xs",
                       form.is_active === opt.value
                         ? "border-primary bg-primary/5"
                         : "border-input"
@@ -504,45 +427,128 @@ export function UserFormPage({
                       onChange={() => updateField("is_active", opt.value)}
                       className="sr-only"
                     />
-                    <span className="text-sm">{opt.label}</span>
+                    {opt.label}
                   </label>
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <TooltipInfo content="Inactive users cannot log in but historical data remains intact" />
                 Inactive users cannot log in but historical data remains intact
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </DashedSectionCard>
         </div>
 
-        {/* Right Column - Role Preview Panel */}
-        {rolePreviewPanel && (
-          <div className="w-[340px] shrink-0">{rolePreviewPanel}</div>
-        )}
+        {/* Right Column - col-span-4 */}
+        <div className="col-span-4 space-y-3">
+          {/* Role & Branches */}
+          <DashedSectionCard title="Role & Branches" icon={Shield} variant="blue">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">Role *</Label>
+                  {form.role_id && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRolePreview(true)}
+                      className="text-[11px] text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <Info className="h-3 w-3" />
+                      View permissions
+                    </button>
+                  )}
+                </div>
+                <Select
+                  value={form.role_id}
+                  onValueChange={(v) => {
+                    updateField("role_id", v);
+                    setShowRolePreview(true);
+                  }}
+                >
+                  <SelectTrigger className={cn("h-8 text-sm", errors.role_id && "border-destructive")}>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        <div className="flex items-center gap-2">
+                          <RoleBadge name={r.name} color={r.color} />
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.role_id && <p className="text-[11px] text-destructive">{errors.role_id}</p>}
+              </div>
+
+              {/* Branches */}
+              <div className="space-y-1">
+                <Label className="text-xs">Branches *</Label>
+                {errors.branch_ids && (
+                  <p className="text-[11px] text-destructive">{errors.branch_ids}</p>
+                )}
+                <div className="border rounded-lg p-2 space-y-1 max-h-32 overflow-y-auto">
+                  {branches.map((b) => (
+                    <div key={b.id} className="flex items-center gap-1.5">
+                      <Checkbox
+                        checked={form.branch_ids.includes(b.id)}
+                        onCheckedChange={() => toggleBranch(b.id)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <span className="text-xs">{b.name}</span>
+                    </div>
+                  ))}
+                  {branches.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No branches available</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </DashedSectionCard>
+
+          {/* Role Preview Panel - inline */}
+          {showRolePreview && form.role_id && (
+            <RolePreviewPanel
+              roleId={form.role_id}
+              roles={roles}
+              onClose={() => setShowRolePreview(false)}
+            />
+          )}
+        </div>
       </div>
 
       {/* Sticky Footer */}
       <div
         className={cn(
-          "fixed bottom-0 inset-x-0 bg-background border-t p-4 z-10",
-          "flex items-center gap-3",
-          isRTL
-            ? "flex-row-reverse pe-[var(--sidebar-width)] ps-4"
-            : "ps-[var(--sidebar-width)] pe-4"
+          "fixed bottom-0 bg-background/95 backdrop-blur-sm border-t p-3 z-30",
+          isRTL ? "right-0 left-[16rem]" : "left-[16rem] right-0"
         )}
-        style={{ "--sidebar-width": "16rem" } as React.CSSProperties}
       >
-        <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" onClick={() => navigate("/users")} disabled={isSaving}>
-            <X className="h-4 w-4 me-2" />
+        <div className={cn("flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/users")} disabled={isSaving}>
+            <X className="h-3.5 w-3.5 me-1.5" />
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={isSaving}>
-            <Save className="h-4 w-4 me-2" />
+          <Button size="sm" onClick={handleSubmit} disabled={isSaving}>
+            <Save className="h-3.5 w-3.5 me-1.5" />
             {isSaving ? t("common.loading") : "Save User"}
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmActionModal
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={handleConfirm}
+        title="Save User"
+        message={
+          mode === "add"
+            ? "Are you sure you want to create this user? They will be able to log in with the provided credentials."
+            : "Are you sure you want to save changes? Updates will apply immediately across all assigned branches."
+        }
+        confirmLabel="Save User"
+      />
     </div>
   );
 }
