@@ -1,98 +1,68 @@
 
-# User Form Page: Compact Overhaul + Fixes
 
-## Overview
+# Fix Branches, Font Size, Layout & Compact Spacing
 
-Fix branch fetching, restructure sections, add section navigation tabs with completion indicators, make nationality a dropdown, add email field, auto-focus on validation errors, and reduce all margins to maximum 5px for a truly compact layout.
+## Issues Identified
 
----
-
-## Issues to Fix
-
-1. **Branches don't load** -- The `branches` table exists but has no data rows. The form needs to show a helpful empty state and/or allow the user to add branches. The query itself is correct (`supabase.from("branches").select("id, name").eq("is_active", true)`) but the table is empty.
-2. **Security section** -- Move into "Employment & Access" card
-3. **Status section** -- Move into "Profile Information" card
-4. **Email field** -- Add to Profile Information (not mandatory)
-5. **Nationality** -- Change from text Input to a Select dropdown with options: Saudi, Indian, Egyptian, Bangladeshi
-6. **Focus on error** -- On validation failure, scroll to and focus the first field with an error
-7. **Section navigation tabs** -- Add a sticky `SectionNavigationBar` on the right column showing completion status (green check) for each section
-8. **Compact margins** -- Reduce all `space-y-3` to `space-y-1.5`, all `gap-3` to `gap-1.5`, and `p-4` to `p-2` everywhere
+1. **Branches pages use mock/hardcoded data** -- `Branches.tsx`, `BranchesAdd.tsx`, and `BranchesEdit.tsx` all use local arrays instead of querying the database. The `branches` table in the database has columns: `id`, `name`, `address`, `is_active`, `created_at`, `updated_at`. The mock data uses a completely different schema (name_en/ar/ur, code, currency, VAT, etc.) that doesn't exist in the database.
+2. **User form branch fetching** works correctly (`supabase.from("branches").select("id, name")`) but the branches table is empty because add/edit never saves to the database.
+3. **Role form layout** needs Role Name (col-3), Description (col-5), and Active/Inactive (col-3) on one row, same height.
+4. **Font size** needs to be 12px across all form labels, inputs, and text in both Role and User forms.
+5. **Margins/padding** still too large in wrapper pages (`p-6`, `p-4`).
 
 ---
 
-## Section Restructure
+## Plan
 
-### Left Column (col-span-8) -- 3 sections instead of 5:
+### 1. Fix Branch Add/Edit to use the Database
 
-**1. Profile Information** (purple)
-- Image upload + Full Name + Mobile + Email (new, optional) + Age + Nationality (dropdown) + **Status (Active/Inactive)** (moved here)
+**`src/pages/BranchesAdd.tsx`** -- Rewrite to save to the actual `branches` table via Supabase instead of mock `setTimeout`. Simplify form to match the real schema (`name`, `address`, `is_active`). Remove all mock currency/VAT/rounding fields that don't exist in the DB.
 
-**2. Identification (Optional)** (amber)
-- National ID / Iqama + Expiry + Passport + Expiry + warning text (unchanged)
+**`src/pages/BranchesEdit.tsx`** -- Rewrite to load branch by ID from Supabase, update via Supabase. Same simplified form.
 
-**3. Employment & Access** (blue)
-- Employee Type + Default Language + **Security sub-section** (password, force change, reset) merged here
+**`src/pages/Branches.tsx`** -- Rewrite to fetch from Supabase (`branches` table) instead of using `initialBranches` array. Toggle status via Supabase update.
 
-### Right Column (col-span-4):
+### 2. Role Form Layout -- Inline Row
 
-**Section Navigation Tabs** (sticky at top)
-- Vertical tab list showing each section with green checkmark when complete:
-  - Profile Information: complete when full_name + phone filled
-  - Identification: always complete (optional)
-  - Employment & Access: complete when role + branches selected
-  - Role & Branches: complete when role + at least 1 branch selected
+**`src/components/roles/RoleFormPage.tsx`**:
+- Put Role Name, Description, and Status on a single row using `grid grid-cols-12`:
+  - Role Name: `col-span-3`
+  - Description: `col-span-6` (use `Input` instead of `Textarea` so they're the same height)
+  - Active/Inactive toggle: `col-span-3`
+- All labels and inputs at `text-[12px]` / `text-xs` (12px)
+- Color picker stays on its own row below
+- Reduce all spacing: `space-y-1.5`, `gap-1`
+- Page wrapper padding: `p-1` max
 
-**Role & Branches** card (unchanged, below tabs)
+### 3. Font Size 12px Everywhere
 
-**Role Preview Panel** (unchanged, below role card)
+**`src/components/roles/RoleFormPage.tsx`** and **`src/components/users/UserFormPage.tsx`**:
+- Change all `text-xs` (which is already 12px in Tailwind) -- verify consistency
+- Change any `text-[11px]`, `text-[10px]` labels to `text-xs` (12px)
+- Input heights stay at `h-7` or `h-8` with `text-xs`
+
+### 4. Remove Extra Margins
+
+- `src/pages/RolesAdd.tsx`: Change `p-6` to `p-1`
+- `src/pages/RolesEdit.tsx`: Change `p-6` to `p-1`  
+- `src/pages/UsersAdd.tsx`: Change `p-4` to `p-1`
+- `src/pages/UsersEdit.tsx`: Change `p-4` to `p-1`
+- `RoleFormPage.tsx`: Change `space-y-3` to `space-y-1.5`, `pb-20` to `pb-12`
+- `UserFormPage.tsx`: Verify `space-y-1.5` is consistent, reduce any remaining `gap-2` to `gap-1`
 
 ---
 
-## Technical Details
-
-### Files to Modify
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/users/UserFormPage.tsx` | Full rewrite: merge Security into Employment, merge Status into Profile, add email field, nationality dropdown, section nav tabs on right, auto-focus errors, compact spacing |
-| `src/components/shared/DashedSectionCard.tsx` | Reduce internal padding from `p-4` to `p-2`, header padding from `px-4 py-2.5` to `px-3 py-1.5` |
+| `src/pages/Branches.tsx` | Rewrite: fetch from Supabase, toggle status via DB update |
+| `src/pages/BranchesAdd.tsx` | Rewrite: save to `branches` table (name, address, is_active) |
+| `src/pages/BranchesEdit.tsx` | Rewrite: load/update from `branches` table |
+| `src/components/roles/RoleFormPage.tsx` | Inline row layout (col-3/col-6/col-3), font 12px, compact spacing |
+| `src/components/users/UserFormPage.tsx` | Font 12px consistency, reduce remaining margins |
+| `src/pages/RolesAdd.tsx` | Reduce padding to `p-1` |
+| `src/pages/RolesEdit.tsx` | Reduce padding to `p-1` |
+| `src/pages/UsersAdd.tsx` | Reduce padding to `p-1` |
+| `src/pages/UsersEdit.tsx` | Reduce padding to `p-1` |
 
-### Nationality Dropdown Options
-- Saudi
-- Indian
-- Egyptian
-- Bangladeshi
-- Pakistani
-- Yemeni
-- Sudanese
-- Other
-
-### Validation + Focus Logic
-```
-const validate = () => {
-  // ... existing validation ...
-  if (Object.keys(newErrors).length > 0) {
-    const firstErrorKey = Object.keys(newErrors)[0];
-    const el = document.querySelector(`[data-field="${firstErrorKey}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    (el?.querySelector('input, select, button') as HTMLElement)?.focus();
-  }
-};
-```
-
-### Section Completion Logic (for right-side tabs)
-- **Profile**: `full_name` and `phone` are filled
-- **Identification**: Always true (all fields optional)
-- **Employment**: `role_id` is set and `branch_ids.length > 0`
-
-### Spacing Changes (global across UserFormPage)
-- `space-y-3` becomes `space-y-1.5`
-- `gap-3` becomes `gap-1.5`
-- `gap-4` becomes `gap-2`
-- `pb-20` becomes `pb-14`
-- DashedSectionCard inner padding: `p-4` to `p-2`
-- DashedSectionCard header: `px-4 py-2.5` to `px-3 py-1.5`
-
-### Empty Branches Handling
-- Show a warning message: "No branches found. Please add branches first."
-- Add a link to `/branches/add` from the empty state
