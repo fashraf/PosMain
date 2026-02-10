@@ -12,9 +12,10 @@ interface KitchenItemModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (orderItemId: string, itemName: string) => void;
+  orderNumber?: number;
 }
 
-export function KitchenItemModal({ item, open, onClose, onConfirm }: KitchenItemModalProps) {
+export function KitchenItemModal({ item, open, onClose, onConfirm, orderNumber }: KitchenItemModalProps) {
   if (!item) return null;
 
   const cust = item.customization_json as any;
@@ -26,9 +27,11 @@ export function KitchenItemModal({ item, open, onClose, onConfirm }: KitchenItem
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm mx-auto p-0 overflow-hidden rounded-2xl">
         <DialogHeader className="bg-slate-50 px-6 pt-6 pb-4">
+          {orderNumber && (
+            <p className="text-[15px] font-medium text-slate-500 mb-1">Order Id: #{orderNumber}</p>
+          )}
           <DialogTitle className="text-[21px] font-bold text-slate-800">
-            {item.quantity > 1 && <span className="mr-1">×{item.quantity}</span>}
-            {item.item_name}
+            {item.quantity} X {item.item_name}
           </DialogTitle>
           {(removals.length > 0 || extras.length > 0 || replacements.length > 0) && (
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[17px]">

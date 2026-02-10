@@ -73,11 +73,9 @@ export function KitchenItemRow({ item, orderCreatedAt, onTap }: KitchenItemRowPr
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          {item.quantity > 1 && (
-            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[15px] font-bold text-slate-700">
-              ×{item.quantity}
-            </span>
-          )}
+          <span className="text-[15px] font-bold text-slate-600">
+            {item.quantity} X
+          </span>
           <span
             className={cn(
               "font-semibold text-[18px]",
