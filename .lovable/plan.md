@@ -1,138 +1,98 @@
 
-
-# Compact UI Overhaul: Role & User Form Pages
+# User Form Page: Compact Overhaul + Fixes
 
 ## Overview
 
-Make both the Role and User form pages compact, add dotted-border section styling, integrate the working `ImageUploadHero` component, add save confirmation modals, improve tooltips/warnings, and fix the sticky footer so it doesn't overlap the sidebar/menu.
+Fix branch fetching, restructure sections, add section navigation tabs with completion indicators, make nationality a dropdown, add email field, auto-focus on validation errors, and reduce all margins to maximum 5px for a truly compact layout.
 
 ---
 
-## 1. Role Form Page (`RoleFormPage.tsx`) -- Compact + Confirmation Modal
+## Issues to Fix
 
-### Layout Changes
-- Remove `space-y-6` spacing, use `space-y-3` throughout
-- Replace `Card` wrappers with `DashedSectionCard` (dotted borders, color-coded headers)
-  - Role Details section: `variant="purple"`
-  - Permission Matrix section: `variant="blue"`
-- Reduce padding inside sections (use `p-3` instead of `p-4/p-5`)
-- Header: reduce title size from `text-3xl` to `text-xl`, tighten gaps
-- Color picker: smaller swatches (`h-6 w-6` instead of `h-8 w-8`)
-
-### Sticky Footer Fix
-- Change from `fixed bottom-0 inset-x-0` to a proper sticky footer that respects sidebar width
-- Use `left-[16rem]` explicitly (matching sidebar) and `right-0` instead of `inset-x-0`
-- Reduce padding to `p-3`, use smaller buttons
-- Add `z-30` to sit above content but below modals
-
-### Save Confirmation Modal
-- Add `ConfirmActionModal` before save
-- On "Save Role" click: open confirmation modal with message "Are you sure you want to save this role? Permission changes will affect all assigned users immediately."
-- On confirm: call `onSubmit(form)`
-
-### Tooltips
-- Add tooltip on Role Name field: "Used to identify this role across the system"
-- Add tooltip on Status toggle: "Inactive roles cannot be assigned to new users"
-- Add tooltip on Color picker: "Color is used to visually distinguish this role in badges"
-
-### Warning Alert
-- Keep the existing edit-mode warning but make it more compact (smaller padding, `py-2`)
+1. **Branches don't load** -- The `branches` table exists but has no data rows. The form needs to show a helpful empty state and/or allow the user to add branches. The query itself is correct (`supabase.from("branches").select("id, name").eq("is_active", true)`) but the table is empty.
+2. **Security section** -- Move into "Employment & Access" card
+3. **Status section** -- Move into "Profile Information" card
+4. **Email field** -- Add to Profile Information (not mandatory)
+5. **Nationality** -- Change from text Input to a Select dropdown with options: Saudi, Indian, Egyptian, Bangladeshi
+6. **Focus on error** -- On validation failure, scroll to and focus the first field with an error
+7. **Section navigation tabs** -- Add a sticky `SectionNavigationBar` on the right column showing completion status (green check) for each section
+8. **Compact margins** -- Reduce all `space-y-3` to `space-y-1.5`, all `gap-3` to `gap-1.5`, and `p-4` to `p-2` everywhere
 
 ---
 
-## 2. User Form Page (`UserFormPage.tsx`) -- Col-8/Col-4 + Compact + Image Upload
+## Section Restructure
 
-### Layout Restructure
-- Change from `flex gap-6` with `flex-1` / `w-[340px]` to a proper `grid grid-cols-12 gap-4`
-  - Left column: `col-span-8` (Profile, Identification, Employment, Security, Status)
-  - Right column: `col-span-4` (Role selection + Role Preview Panel combined)
-- Reduce all `space-y-6` to `space-y-3`
+### Left Column (col-span-8) -- 3 sections instead of 5:
 
-### Section Styling
-- Replace all `Card` wrappers with `DashedSectionCard`:
-  - Profile Information: `variant="purple"`
-  - Identification: `variant="amber"`
-  - Employment & Access: `variant="blue"`
-  - Security: `variant="muted"`
-  - Status: `variant="green"`
-- Remove CardHeader/CardContent, use DashedSectionCard's built-in header
+**1. Profile Information** (purple)
+- Image upload + Full Name + Mobile + Email (new, optional) + Age + Nationality (dropdown) + **Status (Active/Inactive)** (moved here)
 
-### Image Upload Fix
-- Replace the non-functional avatar placeholder with the existing `ImageUploadHero` component
-- Add `profile_image` field to `UserFormData` interface (string | null)
-- Wire `ImageUploadHero` with `value={form.profile_image}` and `onChange` to update form state
-- Save the URL to profiles table via the `onSubmit` handler
-- Pass `profile_image` through to `UsersAdd.tsx` and `UsersEdit.tsx` for persistence
+**2. Identification (Optional)** (amber)
+- National ID / Iqama + Expiry + Passport + Expiry + warning text (unchanged)
 
-### Right Column (Col-4) -- Role + Preview Combined
-- Move the Role dropdown and Branch selection into the right column
-- Keep Employee Type and Default Language in left column under Employment
-- Role Preview Panel renders directly below the role dropdown in the same column
-- Remove separate `rolePreviewPanel` prop -- embed it inline
+**3. Employment & Access** (blue)
+- Employee Type + Default Language + **Security sub-section** (password, force change, reset) merged here
 
-### Sticky Footer Fix
-- Same fix as Role page: use `left-[16rem] right-0` instead of `inset-x-0`
-- Compact: `p-3`, smaller gaps
+### Right Column (col-span-4):
 
-### Save Confirmation Modal
-- Add `ConfirmActionModal` triggered by "Save User" button
-- Message for Add: "Are you sure you want to create this user? They will be able to log in with the provided credentials."
-- Message for Edit: "Are you sure you want to save changes? Updates will apply immediately across all assigned branches."
+**Section Navigation Tabs** (sticky at top)
+- Vertical tab list showing each section with green checkmark when complete:
+  - Profile Information: complete when full_name + phone filled
+  - Identification: always complete (optional)
+  - Employment & Access: complete when role + branches selected
+  - Role & Branches: complete when role + at least 1 branch selected
 
-### Tooltips (Additional)
-- Age field: "Used for compliance reporting"
-- National ID: "Iqama number for Saudi-based employees"
-- Passport: "Required for non-Saudi employees"
-- Force password change: "User will be required to set a new password on their next login"
-- Status inactive: "Inactive users cannot log in but historical data remains intact"
-- Default Language: "Sets the default UI language for this user"
+**Role & Branches** card (unchanged, below tabs)
 
-### Warning Alerts
-- Identification section: Keep existing expiry reminder, make it compact
-- Security section (edit mode): Keep existing password reset warning
+**Role Preview Panel** (unchanged, below role card)
 
 ---
 
-## 3. Role Preview Panel (`RolePreviewPanel.tsx`) -- Compact
+## Technical Details
 
-- Reduce padding throughout (`p-3` instead of `p-4`)
-- Smaller text: `text-xs` for user count
-- Make the permission list more compact (reduce `py-2.5` to `py-1.5` in PermissionMatrix when `disabled`)
-- Add dotted border styling to match design system (`border-2 border-dashed`)
+### Files to Modify
 
----
+| File | Changes |
+|------|---------|
+| `src/components/users/UserFormPage.tsx` | Full rewrite: merge Security into Employment, merge Status into Profile, add email field, nationality dropdown, section nav tabs on right, auto-focus errors, compact spacing |
+| `src/components/shared/DashedSectionCard.tsx` | Reduce internal padding from `p-4` to `p-2`, header padding from `px-4 py-2.5` to `px-3 py-1.5` |
 
-## 4. Database + Persistence for Profile Image
+### Nationality Dropdown Options
+- Saudi
+- Indian
+- Egyptian
+- Bangladeshi
+- Pakistani
+- Yemeni
+- Sudanese
+- Other
 
-- Add `profile_image` column to `profiles` table (text, nullable) via migration
-- Update `UsersAdd.tsx`: include `profile_image` in the `create-user` edge function body
-- Update `UsersEdit.tsx`: include `profile_image` in the profile update query
-- Update `create-user` edge function: accept and store `profile_image`
-- Load existing `profile_image` in `UsersEdit.tsx` from profile data
+### Validation + Focus Logic
+```
+const validate = () => {
+  // ... existing validation ...
+  if (Object.keys(newErrors).length > 0) {
+    const firstErrorKey = Object.keys(newErrors)[0];
+    const el = document.querySelector(`[data-field="${firstErrorKey}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (el?.querySelector('input, select, button') as HTMLElement)?.focus();
+  }
+};
+```
 
----
+### Section Completion Logic (for right-side tabs)
+- **Profile**: `full_name` and `phone` are filled
+- **Identification**: Always true (all fields optional)
+- **Employment**: `role_id` is set and `branch_ids.length > 0`
 
-## 5. Permission Matrix (`PermissionMatrix.tsx`) -- Minor Compacting
+### Spacing Changes (global across UserFormPage)
+- `space-y-3` becomes `space-y-1.5`
+- `gap-3` becomes `gap-1.5`
+- `gap-4` becomes `gap-2`
+- `pb-20` becomes `pb-14`
+- DashedSectionCard inner padding: `p-4` to `p-2`
+- DashedSectionCard header: `px-4 py-2.5` to `px-3 py-1.5`
 
-- Reduce group header padding from `px-4 py-3` to `px-3 py-2`
-- Reduce individual permission row padding from `px-4 py-2.5` to `px-3 py-1.5`
-- When `disabled` prop is true, use even tighter spacing for the preview panel
-
-Please remove margins and make the forms compact and appealing to look at 
----
-
-## 6. Files Summary
-
-| File | Action |
-|------|--------|
-| **Database** | Migration: add `profile_image text` to `profiles` |
-| `src/components/roles/RoleFormPage.tsx` | Rewrite: compact layout, DashedSectionCard, confirmation modal, tooltips, footer fix |
-| `src/components/users/UserFormPage.tsx` | Rewrite: col-8/col-4 grid, DashedSectionCard, ImageUploadHero, inline role preview, confirmation modal, tooltips, footer fix |
-| `src/components/users/RolePreviewPanel.tsx` | Update: compact, dotted border |
-| `src/components/roles/PermissionMatrix.tsx` | Update: tighter spacing |
-| `src/pages/UsersAdd.tsx` | Update: pass `profile_image` to edge function, remove separate rolePreviewPanel wiring |
-| `src/pages/UsersEdit.tsx` | Update: load/save `profile_image`, remove separate rolePreviewPanel wiring |
-| `src/pages/RolesAdd.tsx` | Minor: confirmation modal state |
-| `src/pages/RolesEdit.tsx` | Minor: confirmation modal state |
-| `supabase/functions/create-user/index.ts` | Update: accept `profile_image` field |
-
+### Empty Branches Handling
+- Show a warning message: "No branches found. Please add branches first."
+- Add a link to `/branches/add` from the empty state
