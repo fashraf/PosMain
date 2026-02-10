@@ -149,18 +149,24 @@ export function KitchenOrderCard({ order, onMarkComplete, onUndoComplete, onMark
           </div>
         </div>
 
-        {/* Mark All Done button */}
-        {incompleteIds.length > 0 && (
-          <div className="px-4 pb-3">
+        {/* Footer buttons */}
+        <div className="px-4 pb-3 flex gap-2">
+          {incompleteIds.length > 0 && (
             <button
               onClick={() => onMarkAllComplete(incompleteIds, order.order_number)}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-[15px] py-2 transition-colors touch-manipulation"
+              className="flex-[2] flex items-center justify-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-semibold text-[15px] py-2 transition-colors touch-manipulation"
             >
               <CheckCheck className="h-5 w-5" />
               Mark All Done
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={() => window.print()}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-semibold text-[15px] py-2 transition-colors touch-manipulation"
+          >
+            Print
+          </button>
+        </div>
 
         {/* ORDER COMPLETE overlay */}
         {showComplete && (
@@ -175,6 +181,7 @@ export function KitchenOrderCard({ order, onMarkComplete, onUndoComplete, onMark
         open={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         onConfirm={onMarkComplete}
+        orderNumber={order.order_number}
       />
     </>
   );

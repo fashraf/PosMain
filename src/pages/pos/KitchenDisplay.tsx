@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useKitchenOrders } from "@/hooks/pos/useKitchenOrders";
-import { KitchenStatusBar, KitchenFilters, KitchenOrderCard, type KDSFilter } from "@/components/pos/kitchen";
+import { KitchenFilters, KitchenOrderCard, type KDSFilter } from "@/components/pos/kitchen";
 
 export default function KitchenDisplay() {
   const { orders, isLoading, handleMarkComplete, handleUndoComplete, handleMarkAllComplete } = useKitchenOrders();
@@ -51,8 +51,6 @@ export default function KitchenDisplay() {
 
   return (
     <div className="flex flex-col h-screen">
-      <KitchenStatusBar pendingCount={pendingCount} urgentCount={urgentCount} bellEnabled={bellEnabled} onToggleBell={toggleBell} />
-
       <div className="flex-1 overflow-y-auto bg-slate-100 p-3">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
@@ -79,7 +77,14 @@ export default function KitchenDisplay() {
         )}
       </div>
 
-      <KitchenFilters active={filter} onChange={setFilter} />
+      <KitchenFilters
+        active={filter}
+        onChange={setFilter}
+        pendingCount={pendingCount}
+        urgentCount={urgentCount}
+        bellEnabled={bellEnabled}
+        onToggleBell={toggleBell}
+      />
     </div>
   );
 }
