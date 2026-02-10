@@ -153,7 +153,7 @@ export default function UsersEdit() {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-1">
       <LoadingOverlay visible={isSaving} />
       <UserFormPage
         mode="edit"

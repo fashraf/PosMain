@@ -66,7 +66,7 @@ export default function RolesAdd() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-1">
       <LoadingOverlay visible={isSaving} />
       <RoleFormPage
         mode="add"

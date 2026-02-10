@@ -90,7 +90,7 @@ export default function RolesEdit() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-1">
       <LoadingOverlay visible={isSaving} />
       <RoleFormPage
         mode="edit"
