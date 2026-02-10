@@ -7,3 +7,4 @@ export { default as ClassificationTypesPage } from "./ClassificationTypes";
 export { default as UnitsPage } from "./Units";
 export { default as StorageTypesPage } from "./StorageTypes";
 export { default as IngredientGroupsPage } from "./IngredientGroups";
+export { default as EmployeeTypesPage } from "./EmployeeTypes";

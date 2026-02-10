@@ -477,6 +477,39 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_emp_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       maintenance_subcategories: {
         Row: {
           created_at: string
@@ -520,6 +553,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      permissions: {
+        Row: {
+          code: string
+          description: string | null
+          group_name: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          description?: string | null
+          group_name: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          description?: string | null
+          group_name?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
       }
       pos_item_ingredients: {
         Row: {
@@ -852,40 +912,141 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
           created_at: string
+          default_language: string
+          emp_type_id: string | null
           employee_code: string | null
+          force_password_change: boolean
           full_name: string | null
           id: string
           is_active: boolean
           last_login_at: string | null
+          national_id: string | null
+          national_id_expiry: string | null
+          nationality: string | null
+          passport_expiry: string | null
+          passport_number: string | null
           phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
           created_at?: string
+          default_language?: string
+          emp_type_id?: string | null
           employee_code?: string | null
+          force_password_change?: boolean
           full_name?: string | null
           id?: string
           is_active?: boolean
           last_login_at?: string | null
+          national_id?: string | null
+          national_id_expiry?: string | null
+          nationality?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
           created_at?: string
+          default_language?: string
+          emp_type_id?: string | null
           employee_code?: string | null
+          force_password_change?: boolean
           full_name?: string | null
           id?: string
           is_active?: boolean
           last_login_at?: string | null
+          national_id?: string | null
+          national_id_expiry?: string | null
+          nationality?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_emp_type_id_fkey"
+            columns: ["emp_type_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_emp_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          id: string
+          permission_id: string
+          role_id: string
+        }
+        Insert: {
+          id?: string
+          permission_id: string
+          role_id: string
+        }
+        Update: {
+          id?: string
+          permission_id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1070,20 +1231,28 @@ export type Database = {
       user_roles: {
         Row: {
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role_id: string | null
           user_id: string
         }
         Insert: {
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role_id?: string | null
           user_id: string
         }
         Update: {
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_shifts: {
         Row: {
