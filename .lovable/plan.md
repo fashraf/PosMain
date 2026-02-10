@@ -1,151 +1,138 @@
 
 
-# Redesign: Full-Page Add/Edit for Users and Roles (No Modals)
+# Compact UI Overhaul: Role & User Form Pages
 
 ## Overview
 
-Replace all modal-based dialogs for User and Role management with dedicated full pages. The User pages get a two-column layout with a contextual Role Preview panel. The Role pages become full pages with the permission matrix inline.
+Make both the Role and User form pages compact, add dotted-border section styling, integrate the working `ImageUploadHero` component, add save confirmation modals, improve tooltips/warnings, and fix the sticky footer so it doesn't overlap the sidebar/menu.
 
 ---
 
-## 1. New Routes
+## 1. Role Form Page (`RoleFormPage.tsx`) -- Compact + Confirmation Modal
 
-| Route | Page | Purpose |
-|-------|------|---------|
-| `/users/add` | `UsersAdd.tsx` | Add new user (full page) |
-| `/users/:id/edit` | `UsersEdit.tsx` | Edit user (full page) |
-| `/roles/add` | `RolesAdd.tsx` | Add new role (full page) |
-| `/roles/:id/edit` | `RolesEdit.tsx` | Edit role (full page) |
+### Layout Changes
+- Remove `space-y-6` spacing, use `space-y-3` throughout
+- Replace `Card` wrappers with `DashedSectionCard` (dotted borders, color-coded headers)
+  - Role Details section: `variant="purple"`
+  - Permission Matrix section: `variant="blue"`
+- Reduce padding inside sections (use `p-3` instead of `p-4/p-5`)
+- Header: reduce title size from `text-3xl` to `text-xl`, tighten gaps
+- Color picker: smaller swatches (`h-6 w-6` instead of `h-8 w-8`)
 
----
+### Sticky Footer Fix
+- Change from `fixed bottom-0 inset-x-0` to a proper sticky footer that respects sidebar width
+- Use `left-[16rem]` explicitly (matching sidebar) and `right-0` instead of `inset-x-0`
+- Reduce padding to `p-3`, use smaller buttons
+- Add `z-30` to sit above content but below modals
 
-## 2. User Add/Edit Page Layout
+### Save Confirmation Modal
+- Add `ConfirmActionModal` before save
+- On "Save Role" click: open confirmation modal with message "Are you sure you want to save this role? Permission changes will affect all assigned users immediately."
+- On confirm: call `onSubmit(form)`
 
-### Structure
-- **Header**: "Add New User" / "Edit User -- {Name}" with sticky [Cancel] + [Save User] buttons
-- **Subtitle**: "Create a new system user and assign role & branch access"
-- **Edit Warning Banner**: "Changes will apply immediately across all assigned branches"
-- **Two-column layout**: 70% left form / 30% right Role Preview panel
+### Tooltips
+- Add tooltip on Role Name field: "Used to identify this role across the system"
+- Add tooltip on Status toggle: "Inactive roles cannot be assigned to new users"
+- Add tooltip on Color picker: "Color is used to visually distinguish this role in badges"
 
-### Left Column -- User Form
-
-**Section: Profile Information**
-- User Image placeholder with [Upload Photo] / [Take Photo] buttons (edit mode shows [Replace Photo] / [Remove])
-- Full Name (required)
-- Mobile Number (required, unique, tooltip: "Used as login ID")
-- Age
-- Nationality (dropdown)
-- Tooltip under Nationality: "Used for compliance and document validation"
-
-**Section: Identification (Optional)**
-- National ID / Iqama
-- Iqama Expiry (date picker)
-- Passport Number
-- Passport Expiry (date picker)
-- Inline warning: "Expiry reminders will be generated automatically if dates are provided"
-
-**Section: Employment & Access**
-- Employee Type (dropdown from maintenance_emp_types)
-- Role (required dropdown with color badges)
-  - Info icon: "View full permissions" -- clicking opens/refreshes the right-side Role Preview panel
-- Branches (multi-select checklist, at least one required)
-  - Tooltip: "User can only operate within selected branches"
-- Default Language (radio: English / Arabic / Urdu)
-
-**Section: Security**
-- Default Password: "123456abc" (read-only, auto-generated) -- for Add mode
-- Edit mode: [Reset Password Now] button + "Reset password & force change at next login" checkbox
-- Checkbox: "Force change at first login"
-- Warning on reset: "Resetting password will immediately invalidate the current credentials"
-
-**Section: Status**
-- Radio: Active / Inactive
-- Helper: "Inactive users cannot log in but historical data remains intact"
-
-### Right Column -- Role Preview Panel
-
-- Hidden by default, slides in when a role is selected or user clicks "View full permissions"
-- Shows:
-  - Role name with color badge
-  - "Assigned to N users"
-  - [Edit Role] button (navigates to `/roles/:id/edit`)
-  - Read-only permission list grouped by category with checkmarks
-  - [Assign this role] / [Close] buttons at bottom
-
-### Sticky Footer
-- [Cancel] on left, [Save User] on right
-- Uses the existing `PageFormLayout` footer pattern (fixed bottom, offset for sidebar)
+### Warning Alert
+- Keep the existing edit-mode warning but make it more compact (smaller padding, `py-2`)
 
 ---
 
-## 3. Role Add/Edit Page Layout
+## 2. User Form Page (`UserFormPage.tsx`) -- Col-8/Col-4 + Compact + Image Upload
 
-### Structure
-- **Header**: "Add Role" / "Edit Role -- {Name}" with sticky [Cancel] + [Save Role]
-- **Warning banner** (edit mode): "Permission changes will affect all assigned users immediately"
-- **System role indicator**: badge if `is_system = true`
+### Layout Restructure
+- Change from `flex gap-6` with `flex-1` / `w-[340px]` to a proper `grid grid-cols-12 gap-4`
+  - Left column: `col-span-8` (Profile, Identification, Employment, Security, Status)
+  - Right column: `col-span-4` (Role selection + Role Preview Panel combined)
+- Reduce all `space-y-6` to `space-y-3`
 
-### Form Sections
+### Section Styling
+- Replace all `Card` wrappers with `DashedSectionCard`:
+  - Profile Information: `variant="purple"`
+  - Identification: `variant="amber"`
+  - Employment & Access: `variant="blue"`
+  - Security: `variant="muted"`
+  - Status: `variant="green"`
+- Remove CardHeader/CardContent, use DashedSectionCard's built-in header
 
-**Section: Role Details**
-- Role Name (required, disabled for system roles)
-- Description (textarea)
-- Color Picker (preset swatches)
-- Status toggle (Active / Inactive)
+### Image Upload Fix
+- Replace the non-functional avatar placeholder with the existing `ImageUploadHero` component
+- Add `profile_image` field to `UserFormData` interface (string | null)
+- Wire `ImageUploadHero` with `value={form.profile_image}` and `onChange` to update form state
+- Save the URL to profiles table via the `onSubmit` handler
+- Pass `profile_image` through to `UsersAdd.tsx` and `UsersEdit.tsx` for persistence
 
-**Section: Permission Matrix**
-- Full-width, grouped by category (Orders, Payments, Items & Pricing, Inventory, Kitchen, Printing, User Management)
-- Each group: collapsible with "Select All" toggle
-- Individual permissions: Switch toggles with tooltip descriptions
-- Tooltip on section: "Controls what actions users with this role can perform across all branches"
+### Right Column (Col-4) -- Role + Preview Combined
+- Move the Role dropdown and Branch selection into the right column
+- Keep Employee Type and Default Language in left column under Employment
+- Role Preview Panel renders directly below the role dropdown in the same column
+- Remove separate `rolePreviewPanel` prop -- embed it inline
 
-### Sticky Footer
-- [Cancel] + [Save Role]
+### Sticky Footer Fix
+- Same fix as Role page: use `left-[16rem] right-0` instead of `inset-x-0`
+- Compact: `p-3`, smaller gaps
 
----
+### Save Confirmation Modal
+- Add `ConfirmActionModal` triggered by "Save User" button
+- Message for Add: "Are you sure you want to create this user? They will be able to log in with the provided credentials."
+- Message for Edit: "Are you sure you want to save changes? Updates will apply immediately across all assigned branches."
 
-## 4. Files to Create
+### Tooltips (Additional)
+- Age field: "Used for compliance reporting"
+- National ID: "Iqama number for Saudi-based employees"
+- Passport: "Required for non-Saudi employees"
+- Force password change: "User will be required to set a new password on their next login"
+- Status inactive: "Inactive users cannot log in but historical data remains intact"
+- Default Language: "Sets the default UI language for this user"
 
-| File | Description |
-|------|-------------|
-| `src/pages/UsersAdd.tsx` | Full-page Add User with two-column layout |
-| `src/pages/UsersEdit.tsx` | Full-page Edit User (loads user data, same layout) |
-| `src/components/users/UserFormPage.tsx` | Shared form component used by both Add and Edit |
-| `src/components/users/RolePreviewPanel.tsx` | Right-side contextual panel showing role permissions |
-| `src/pages/RolesAdd.tsx` | Full-page Add Role |
-| `src/pages/RolesEdit.tsx` | Full-page Edit Role (loads role data) |
-| `src/components/roles/RoleFormPage.tsx` | Shared form component for role add/edit |
-
-## 5. Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/App.tsx` | Add 4 new routes: `/users/add`, `/users/:id/edit`, `/roles/add`, `/roles/:id/edit` |
-| `src/pages/Users.tsx` | Change `onAdd` to navigate to `/users/add`, `onEdit` to navigate to `/users/:id/edit`; remove `UserStepperDialog` and `PasswordResetModal` imports |
-| `src/pages/Roles.tsx` | Change `onAdd` to navigate to `/roles/add`, `onEdit` to navigate to `/roles/:id/edit`; remove `RoleDialog` |
-| `src/components/users/UserTable.tsx` | View action navigates to edit page in read-only mode (or a separate view route) |
-| `src/components/roles/RoleTable.tsx` | View/Edit actions navigate to page routes instead of opening modals |
-
-## 6. Components to Keep (Reused)
-
-- `PermissionMatrix` -- reused in both RoleFormPage and RolePreviewPanel (read-only mode)
-- `RoleBadge` -- reused everywhere
-- `PasswordResetModal` -- kept as a small modal triggered from the Edit User page's "Reset Password Now" button (this is a quick action, not a full form)
-- `LoadingOverlay` -- reused for save operations
-- `PageFormLayout` pattern -- sticky footer with sidebar offset
-
-## 7. Components to Deprecate
-
-- `UserStepperDialog` -- replaced by full-page `UserFormPage`
-- `RoleDialog` -- replaced by full-page `RoleFormPage`
+### Warning Alerts
+- Identification section: Keep existing expiry reminder, make it compact
+- Security section (edit mode): Keep existing password reset warning
 
 ---
 
-## 8. Technical Notes
+## 3. Role Preview Panel (`RolePreviewPanel.tsx`) -- Compact
 
-- **Data Loading**: `UsersEdit.tsx` and `RolesEdit.tsx` will fetch their data by ID from URL params using `useParams()` + direct Supabase queries
-- **Role Preview Panel**: Fetches permissions for the selected role via `role_permissions` join when the role dropdown changes
-- **Navigation**: Uses `useNavigate()` for Cancel (go back) and post-save redirect
-- **Validation**: Same rules as current stepper -- required fields, unique mobile, at least one branch
-- **The PasswordResetModal stays as a modal** since it's a quick confirmation action, not a full form page
+- Reduce padding throughout (`p-3` instead of `p-4`)
+- Smaller text: `text-xs` for user count
+- Make the permission list more compact (reduce `py-2.5` to `py-1.5` in PermissionMatrix when `disabled`)
+- Add dotted border styling to match design system (`border-2 border-dashed`)
+
+---
+
+## 4. Database + Persistence for Profile Image
+
+- Add `profile_image` column to `profiles` table (text, nullable) via migration
+- Update `UsersAdd.tsx`: include `profile_image` in the `create-user` edge function body
+- Update `UsersEdit.tsx`: include `profile_image` in the profile update query
+- Update `create-user` edge function: accept and store `profile_image`
+- Load existing `profile_image` in `UsersEdit.tsx` from profile data
+
+---
+
+## 5. Permission Matrix (`PermissionMatrix.tsx`) -- Minor Compacting
+
+- Reduce group header padding from `px-4 py-3` to `px-3 py-2`
+- Reduce individual permission row padding from `px-4 py-2.5` to `px-3 py-1.5`
+- When `disabled` prop is true, use even tighter spacing for the preview panel
+
+Please remove margins and make the forms compact and appealing to look at 
+---
+
+## 6. Files Summary
+
+| File | Action |
+|------|--------|
+| **Database** | Migration: add `profile_image text` to `profiles` |
+| `src/components/roles/RoleFormPage.tsx` | Rewrite: compact layout, DashedSectionCard, confirmation modal, tooltips, footer fix |
+| `src/components/users/UserFormPage.tsx` | Rewrite: col-8/col-4 grid, DashedSectionCard, ImageUploadHero, inline role preview, confirmation modal, tooltips, footer fix |
+| `src/components/users/RolePreviewPanel.tsx` | Update: compact, dotted border |
+| `src/components/roles/PermissionMatrix.tsx` | Update: tighter spacing |
+| `src/pages/UsersAdd.tsx` | Update: pass `profile_image` to edge function, remove separate rolePreviewPanel wiring |
+| `src/pages/UsersEdit.tsx` | Update: load/save `profile_image`, remove separate rolePreviewPanel wiring |
+| `src/pages/RolesAdd.tsx` | Minor: confirmation modal state |
+| `src/pages/RolesEdit.tsx` | Minor: confirmation modal state |
+| `supabase/functions/create-user/index.ts` | Update: accept `profile_image` field |
 
