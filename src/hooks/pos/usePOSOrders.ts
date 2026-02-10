@@ -257,9 +257,9 @@ export function useUserRole() {
       if (!user) return null;
       const { data } = await supabase
         .from("user_roles")
-        .select("role")
+        .select("role_id, roles(name)")
         .eq("user_id", user.id);
-      return (data || []).map((r) => r.role);
+      return (data || []).map((r: any) => (r.roles as any)?.name?.toLowerCase() || '');
     },
     staleTime: 60000,
   });

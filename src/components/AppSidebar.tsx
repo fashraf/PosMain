@@ -22,6 +22,7 @@ import {
   Users,
   ShoppingCart,
   ChefHat,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -79,10 +80,12 @@ const maintenanceSubItems = [
   { titleKey: "maintenance.units", url: "/maintenance/units" },
   { titleKey: "maintenance.storageTypes", url: "/maintenance/storage-types" },
   { titleKey: "maintenance.ingredientGroups", url: "/maintenance/ingredient-groups" },
+  { titleKey: "maintenance.employeeTypes", url: "/maintenance/employee-types" },
 ];
 
 const otherNavItems = [
-   { titleKey: "nav.users", url: "/users", icon: Users },
+  { titleKey: "nav.users", url: "/users", icon: Users },
+  { titleKey: "nav.roleMaster", url: "/roles", icon: Shield },
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
   { titleKey: "nav.categories", url: "/categories", icon: Tag },
   { titleKey: "nav.itemIngredients", url: "/item-ingredient-mapping", icon: Link2 },

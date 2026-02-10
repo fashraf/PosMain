@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
    const { toast } = useToast();
 
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [loginMethod, setLoginMethod] = useState<'email' | 'mobile'>('email');
   const [password, setPassword] = useState("");
    const [fullName, setFullName] = useState("");
    const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,26 +37,36 @@ import { cn } from "@/lib/utils";
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
      setIsLoading(true);
- 
-     const { error } = await supabase.auth.signInWithPassword({
-       email,
-       password,
-     });
- 
+
+     let loginEmail = email;
+
+     // If mobile login, look up email first
+     if (loginMethod === 'mobile') {
+       try {
+         const { data, error } = await supabase.functions.invoke('login-by-mobile', {
+           body: { mobile },
+         });
+         if (error || data?.error) {
+           toast({ title: "Login failed", description: data?.error || "No account found with this mobile number.", variant: "destructive" });
+           setIsLoading(false);
+           return;
+         }
+         loginEmail = data.email;
+       } catch {
+         toast({ title: "Login failed", description: "Could not verify mobile number.", variant: "destructive" });
+         setIsLoading(false);
+         return;
+       }
+     }
+
+     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+
      if (!error) {
-       toast({
-         title: "Welcome back!",
-         description: "You have successfully signed in.",
-       });
+       toast({ title: "Welcome back!", description: "You have successfully signed in." });
        navigate("/", { replace: true });
      } else {
-       toast({
-         title: "Invalid credentials",
-         description: error.message || "Please check your email and password.",
-         variant: "destructive",
-       });
+       toast({ title: "Invalid credentials", description: error.message || "Please check your credentials.", variant: "destructive" });
      }
- 
      setIsLoading(false);
    };
  
@@ -193,89 +205,46 @@ import { cn } from "@/lib/utils";
  
              <TabsContent value="signin">
                <form onSubmit={handleSubmit} className="space-y-5">
-                 {/* Email Field */}
-                 <div className="space-y-2">
-                   <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                     Email
-                   </Label>
-                   <Input
-                     id="email"
-                     type="email"
-                     placeholder="Enter your email"
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                     className="h-11 rounded-lg border-input focus-visible:ring-primary"
-                     required
-                   />
+                 {/* Login Method Toggle */}
+                 <div className="flex gap-2 p-1 bg-muted rounded-lg">
+                   <button type="button" onClick={() => setLoginMethod('email')} className={cn("flex-1 py-1.5 text-sm rounded-md transition-colors", loginMethod === 'email' ? "bg-background shadow-sm font-medium" : "text-muted-foreground")}>Email</button>
+                   <button type="button" onClick={() => setLoginMethod('mobile')} className={cn("flex-1 py-1.5 text-sm rounded-md transition-colors", loginMethod === 'mobile' ? "bg-background shadow-sm font-medium" : "text-muted-foreground")}>Mobile</button>
                  </div>
- 
+
+                 {loginMethod === 'email' ? (
+                   <div className="space-y-2">
+                     <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
+                     <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 rounded-lg border-input focus-visible:ring-primary" required />
+                   </div>
+                 ) : (
+                   <div className="space-y-2">
+                     <Label htmlFor="mobile" className="text-sm font-medium text-foreground">Mobile Number</Label>
+                     <Input id="mobile" type="tel" placeholder="+966 50 123 4567" value={mobile} onChange={(e) => setMobile(e.target.value)} className="h-11 rounded-lg border-input focus-visible:ring-primary" required />
+                   </div>
+                 )}
+
                  {/* Password Field */}
                  <div className="space-y-2">
-                   <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                     Password
-                   </Label>
+                   <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
                    <div className="relative">
-                     <Input
-                       id="password"
-                       type={showPassword ? "text" : "password"}
-                       placeholder="Enter your password"
-                       value={password}
-                       onChange={(e) => setPassword(e.target.value)}
-                       className="h-11 rounded-lg border-input pr-10 focus-visible:ring-primary"
-                       required
-                     />
-                     <button
-                       type="button"
-                       onClick={() => setShowPassword(!showPassword)}
-                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                     >
-                       {showPassword ? (
-                         <EyeOff className="h-[18px] w-[18px]" />
-                       ) : (
-                         <Eye className="h-[18px] w-[18px]" />
-                       )}
+                     <Input id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 rounded-lg border-input pr-10 focus-visible:ring-primary" required />
+                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                       {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                      </button>
                    </div>
                  </div>
- 
+
                  {/* Remember Me & Forgot Password */}
                  <div className="flex items-center justify-between">
                    <div className="flex items-center gap-2">
-                     <Checkbox
-                       id="remember"
-                       checked={rememberMe}
-                       onCheckedChange={(checked) => setRememberMe(checked === true)}
-                     />
-                     <Label
-                       htmlFor="remember"
-                       className="text-sm text-muted-foreground cursor-pointer"
-                     >
-                       Remember me
-                     </Label>
+                     <Checkbox id="remember" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked === true)} />
+                     <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">Remember me</Label>
                    </div>
-                   <button
-                     type="button"
-                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                     onClick={() => {
-                       toast({
-                         title: "Forgot Password",
-                         description: "Please contact your administrator.",
-                       });
-                     }}
-                   >
-                     Forgot Password
-                   </button>
+                   <button type="button" className="text-sm text-muted-foreground hover:text-foreground transition-colors" onClick={() => toast({ title: "Forgot Password", description: "Please contact your administrator." })}>Forgot Password</button>
                  </div>
- 
+
                  {/* Sign In Button */}
-                 <Button
-                   type="submit"
-                   disabled={isLoading}
-                   className={cn(
-                     "w-full h-11 rounded-lg font-medium text-sm",
-                     "bg-[#1F2937] hover:bg-[#374151] text-white"
-                   )}
-                 >
+                 <Button type="submit" disabled={isLoading} className={cn("w-full h-11 rounded-lg font-medium text-sm", "bg-[#1F2937] hover:bg-[#374151] text-white")}>
                    {isLoading ? "Signing in..." : "Sign In"}
                  </Button>
                </form>

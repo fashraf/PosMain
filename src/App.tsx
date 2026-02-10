@@ -50,7 +50,9 @@ import ClassificationTypesPage from "@/pages/maintenance/ClassificationTypes";
 import UnitsPage from "@/pages/maintenance/Units";
 import StorageTypesPage from "@/pages/maintenance/StorageTypes";
 import IngredientGroupsPage from "@/pages/maintenance/IngredientGroups";
+import EmployeeTypesPage from "@/pages/maintenance/EmployeeTypes";
 import Users from "@/pages/Users";
+import Roles from "@/pages/Roles";
 // POS Module
 import { POSMain, OrderComplete, OrderList, KitchenDisplay } from "@/pages/pos";
 import { POSLayout } from "@/components/pos/layout";
@@ -158,7 +160,9 @@ const App = () => (
                       <Route path="/maintenance/units" element={<UnitsPage />} />
                       <Route path="/maintenance/storage-types" element={<StorageTypesPage />} />
                       <Route path="/maintenance/ingredient-groups" element={<IngredientGroupsPage />} />
-                       <Route path="/users" element={<Users />} />
+                      <Route path="/maintenance/employee-types" element={<EmployeeTypesPage />} />
+                      <Route path="/users" element={<Users />} />
+                      <Route path="/roles" element={<Roles />} />
                       {/* Catch-all for 404 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
