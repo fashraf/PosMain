@@ -82,7 +82,7 @@ export function DashedSectionCard({
     >
       <div
         className={cn(
-          "px-4 py-2.5 border-b border-dashed flex items-center justify-between",
+          "px-3 py-1.5 border-b border-dashed flex items-center justify-between",
           colors.headerBg,
           colors.headerBorder
         )}
@@ -104,7 +104,7 @@ export function DashedSectionCard({
           )}
         </div>
       </div>
-      <div className="p-4 bg-white">{children}</div>
+      <div className="p-2 bg-white">{children}</div>
     </div>
   );
 }
