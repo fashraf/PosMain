@@ -4,11 +4,12 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { StatusBadge } from "@/components/shared/StatusBadge";
+import { StatusBadge, YesNoBadge } from "@/components/shared/StatusBadge";
 import { ViewDetailsModal } from "@/components/shared/ViewDetailsModal";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { useToast } from "@/components/ui/use-toast";
@@ -18,8 +19,18 @@ import { Plus, Search, Building2, Eye, Edit } from "lucide-react";
 interface Branch {
   id: string;
   name: string;
+  name_ar: string | null;
+  name_ur: string | null;
+  branch_code: string | null;
   address: string | null;
   is_active: boolean;
+  currency: string;
+  currency_symbol: string;
+  vat_enabled: boolean;
+  vat_rate: number;
+  pricing_mode: string;
+  rounding_rule: string;
+  order_types: string[];
   created_at: string;
 }
 
@@ -38,7 +49,7 @@ export default function Branches() {
       .from("branches")
       .select("*")
       .order("name");
-    if (!error) setBranches(data || []);
+    if (!error) setBranches((data as any) || []);
     setIsLoading(false);
   };
 
@@ -46,7 +57,7 @@ export default function Branches() {
 
   const filteredBranches = branches.filter((b) =>
     b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (b.address || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (b.branch_code || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleToggleStatus = async (branch: Branch) => {
@@ -60,18 +71,19 @@ export default function Branches() {
       return;
     }
     setBranches((prev) => prev.map((b) => b.id === branch.id ? { ...b, is_active: newStatus } : b));
-    toast({
-      title: newStatus ? t("common.activate") : t("common.deactivate"),
-      description: `${branch.name} has been ${newStatus ? "activated" : "deactivated"}.`,
-    });
   };
 
   const getViewSections = (branch: Branch) => [
     {
-      title: t("branches.basicInfo"),
+      title: "Basic Information",
       fields: [
         { label: t("common.name"), value: branch.name, icon: Building2 },
-        { label: "Address", value: branch.address || "—" },
+        { label: "Branch Code", value: branch.branch_code || "—" },
+        { label: "Currency", value: `${branch.currency_symbol} ${branch.currency}` },
+        { label: "VAT", value: branch.vat_enabled ? `Yes (${branch.vat_rate}%)` : "No" },
+        { label: "Pricing Mode", value: branch.pricing_mode },
+        { label: "Rounding", value: branch.rounding_rule === "none" ? "None" : branch.rounding_rule },
+        { label: "Order Types", value: (branch.order_types || []).join(", ") || "—" },
         { label: t("common.status"), value: <StatusBadge isActive={branch.is_active} /> },
       ],
     },
@@ -86,44 +98,41 @@ export default function Branches() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 p-1">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t("branches.title")}</h1>
-        <Button onClick={() => navigate("/branches/add")} size="sm">
-          <Plus className="h-4 w-4 me-2" />
+        <h1 className="text-lg font-bold text-foreground">{t("branches.title")}</h1>
+        <Button onClick={() => navigate("/branches/add")} size="sm" className="h-7 text-xs">
+          <Plus className="h-3.5 w-3.5 me-1" />
           {t("branches.addBranch")}
         </Button>
       </div>
 
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-3 pb-2">
           <div className="relative max-w-md">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder={t("common.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="ps-10 h-8 text-xs"
+              className="ps-9 h-7 text-xs"
             />
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-2 pb-2">
           {filteredBranches.length === 0 ? (
             <EmptyState
               icon={Building2}
               title={t("common.noData")}
               description={searchQuery ? "No branches match your search." : t("branches.noBranches")}
-              action={
-                !searchQuery && (
-                  <Button onClick={() => navigate("/branches/add")} size="sm">
-                    <Plus className="h-4 w-4 me-2" />
-                    {t("branches.addBranch")}
-                  </Button>
-                )
-              }
+              action={!searchQuery && (
+                <Button onClick={() => navigate("/branches/add")} size="sm" className="h-7 text-xs">
+                  <Plus className="h-3.5 w-3.5 me-1" /> {t("branches.addBranch")}
+                </Button>
+              )}
             />
           ) : (
             <div className="rounded-md border">
@@ -131,7 +140,9 @@ export default function Branches() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold text-xs">{t("common.name")}</TableHead>
-                    <TableHead className="font-semibold text-xs">Address</TableHead>
+                    <TableHead className="font-semibold text-xs">Branch Code</TableHead>
+                    <TableHead className="font-semibold text-xs">Currency</TableHead>
+                    <TableHead className="font-semibold text-xs">VAT Enabled</TableHead>
                     <TableHead className="font-semibold text-xs">{t("common.status")}</TableHead>
                     <TableHead className="font-semibold text-xs text-end">{t("common.actions")}</TableHead>
                   </TableRow>
@@ -139,10 +150,26 @@ export default function Branches() {
                 <TableBody>
                   {filteredBranches.map((branch) => (
                     <TableRow key={branch.id}>
-                      <TableCell className="font-medium text-xs">{branch.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{branch.address || "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="font-medium text-xs py-1.5">{branch.name}</TableCell>
+                      <TableCell className="py-1.5">
+                        {branch.branch_code ? (
+                          <Badge variant="outline" className="font-mono text-[11px]">{branch.branch_code}</Badge>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-xs py-1.5">
+                        <span className="text-muted-foreground">{branch.currency_symbol}</span>{" "}
+                        <span>{branch.currency}</span>
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <div className="flex items-center gap-1">
+                          <YesNoBadge value={branch.vat_enabled} />
+                          {branch.vat_enabled && (
+                            <span className="text-[11px] text-muted-foreground">({branch.vat_rate}%)</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <div className="flex items-center gap-1.5">
                           <Switch
                             checked={branch.is_active}
                             onCheckedChange={() => handleToggleStatus(branch)}
@@ -150,8 +177,8 @@ export default function Branches() {
                           <StatusBadge isActive={branch.is_active} />
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1">
+                      <TableCell className="py-1.5">
+                        <div className="flex items-center justify-end gap-0.5">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewingBranch(branch)}>
                             <Eye className="h-3.5 w-3.5" />
                           </Button>

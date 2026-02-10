@@ -53,27 +53,57 @@ export type Database = {
       branches: {
         Row: {
           address: string | null
+          branch_code: string | null
           created_at: string
+          currency: string
+          currency_symbol: string
           id: string
           is_active: boolean
           name: string
+          name_ar: string | null
+          name_ur: string | null
+          order_types: string[]
+          pricing_mode: string
+          rounding_rule: string
           updated_at: string
+          vat_enabled: boolean
+          vat_rate: number
         }
         Insert: {
           address?: string | null
+          branch_code?: string | null
           created_at?: string
+          currency?: string
+          currency_symbol?: string
           id?: string
           is_active?: boolean
           name: string
+          name_ar?: string | null
+          name_ur?: string | null
+          order_types?: string[]
+          pricing_mode?: string
+          rounding_rule?: string
           updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
         }
         Update: {
           address?: string | null
+          branch_code?: string | null
           created_at?: string
+          currency?: string
+          currency_symbol?: string
           id?: string
           is_active?: boolean
           name?: string
+          name_ar?: string | null
+          name_ur?: string | null
+          order_types?: string[]
+          pricing_mode?: string
+          rounding_rule?: string
           updated_at?: string
+          vat_enabled?: boolean
+          vat_rate?: number
         }
         Relationships: []
       }
