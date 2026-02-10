@@ -1,58 +1,64 @@
 
 
-# New Order Bell Sound + On/Off Toggle
+# KDS Layout Restructure + Print Button + Modal Enhancement
 
 ## Overview
-Play the uploaded bell sound (`opening-bell-421471.mp3`) whenever a new order arrives on the Kitchen Display. Add an on/off toggle switch in the status bar to mute/unmute the bell.
+
+Three changes based on the reference images:
+
+1. **Add Print button + show quantity prefix ("1 X") on item rows** (Image 1)
+2. **Show Order ID in the item completion modal + quantity prefix** (Image 2)
+3. **Remove the top black status bar; merge all controls into the bottom bar** (Image 3)
 
 ---
 
-## 1. Copy Sound File to Project
+## 1. Item Rows: Add Quantity Prefix ("1 X")
 
-Copy the uploaded MP3 to `public/sounds/new-order-bell.mp3` so it can be loaded by the browser's `Audio` API at runtime.
+**File:** `src/components/pos/kitchen/KitchenItemRow.tsx`
 
-## 2. New Order Detection Logic
+Currently quantity only shows when > 1 as a badge. Change to always show as `{qty} X` text before the item name (matching the reference: "1 X Mango Bite").
+
+## 2. Print Button in Order Card Footer
+
+**File:** `src/components/pos/kitchen/KitchenOrderCard.tsx`
+
+Add a "Print" button next to "Mark All Done" in the footer area. The two buttons sit side by side:
+- "Mark All Done" takes ~65% width (green)
+- "Print" takes ~35% width (white/outlined)
+
+Print will trigger `window.print()` for now (or a future print handler). The button appears regardless of completion state.
+
+## 3. Item Completion Modal: Show Order Number + Quantity
+
+**File:** `src/components/pos/kitchen/KitchenItemModal.tsx`
+
+- Add `orderNumber` prop to the modal
+- Display "Order Id: #{orderNumber}" at the top of the modal header (matching Image 2)
+- Show quantity prefix "1 X" before the item name
+
+**File:** `src/components/pos/kitchen/KitchenOrderCard.tsx`
+
+- Pass `order.order_number` to `KitchenItemModal`
+
+## 4. Remove Top Status Bar, Merge Into Bottom Bar
 
 **File:** `src/pages/pos/KitchenDisplay.tsx`
 
-- Track previously seen order IDs using a `useRef<Set<string>>`.
-- On each render when `orders` changes, compare current order IDs against the previous set.
-- If new IDs are found and bell is enabled, play the sound.
-- Skip the very first load (so the bell does not ring for existing orders when the page opens).
+- Remove `<KitchenStatusBar />` from the top
+- Merge its data (Pending count, Urgent count, Bell toggle, Clock) into the bottom bar alongside filters
 
-```text
-useRef: previousOrderIds (Set<string>)
-useRef: isFirstLoad (boolean, starts true)
-useEffect on [orders]:
-  - if isFirstLoad, populate set and flip flag, return
-  - find new IDs not in previous set
-  - if any new IDs and bellEnabled -> play sound
-  - update set
-```
+**File:** `src/components/pos/kitchen/KitchenFilters.tsx`
 
-## 3. Bell On/Off Toggle in Status Bar
+Rename/expand to become the unified bottom bar. New layout (left to right):
+- **Left:** Pending count badge, Urgent count badge (with warning icon)
+- **Center:** Filter pills (All, Urgent, Dine-in, Delivery, Takeaway, Self-pickup)
+- **Right:** Bell icon + Switch toggle, Date/time clock
+
+Accept new props: `pendingCount`, `urgentCount`, `bellEnabled`, `onToggleBell`
 
 **File:** `src/components/pos/kitchen/KitchenStatusBar.tsx`
 
-- Accept two new props: `bellEnabled: boolean` and `onToggleBell: () => void`
-- Add a `Switch` component (from `@/components/ui/switch`) and a `Bell` / `BellOff` icon next to the clock on the right side of the status bar
-- When toggled off, the icon changes to `BellOff` and dims; when on, shows `Bell` in amber
-
-## 4. State Management
-
-**File:** `src/pages/pos/KitchenDisplay.tsx`
-
-- Add `useState<boolean>(true)` for `bellEnabled` (defaults to ON)
-- Pass `bellEnabled` and toggle handler down to `KitchenStatusBar`
-- The sound play logic checks `bellEnabled` before playing
-
-## 5. Sound Playback
-
-Use the browser's `HTMLAudioElement` API:
-```text
-const bellAudio = useRef(new Audio("/sounds/new-order-bell.mp3"));
-bellAudio.current.play();
-```
+- Keep the file but it will no longer be rendered. Can be removed or left unused.
 
 ---
 
@@ -60,7 +66,9 @@ bellAudio.current.play();
 
 | File | Changes |
 |------|---------|
-| `public/sounds/new-order-bell.mp3` | Copy uploaded MP3 here |
-| `src/pages/pos/KitchenDisplay.tsx` | Add bell state, new-order detection logic, audio playback |
-| `src/components/pos/kitchen/KitchenStatusBar.tsx` | Add bell toggle switch with Bell/BellOff icon |
+| `src/components/pos/kitchen/KitchenItemRow.tsx` | Always show "N X" quantity prefix |
+| `src/components/pos/kitchen/KitchenOrderCard.tsx` | Add Print button in footer; pass orderNumber to modal |
+| `src/components/pos/kitchen/KitchenItemModal.tsx` | Add orderNumber prop; show "Order Id: #N" header + quantity |
+| `src/components/pos/kitchen/KitchenFilters.tsx` | Expand to unified bottom bar with stats, bell toggle, clock |
+| `src/pages/pos/KitchenDisplay.tsx` | Remove top StatusBar; pass stats/bell props to Filters |
 
