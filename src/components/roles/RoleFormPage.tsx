@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, ArrowLeft, ArrowRight, Info, Save, Shield, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Save, Shield, X } from "lucide-react";
 import { PermissionMatrix, Permission } from "./PermissionMatrix";
+import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
+import { TooltipInfo } from "@/components/shared/TooltipInfo";
+import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ export function RoleFormPage({
     permission_ids: new Set(),
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -75,6 +77,11 @@ export function RoleFormPage({
     if (!form.name.trim()) newErrors.name = "Role name is required";
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
+    setShowConfirm(true);
+  };
+
+  const handleConfirm = () => {
+    setShowConfirm(false);
     onSubmit(form);
   };
 
@@ -90,17 +97,17 @@ export function RoleFormPage({
   }
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-3 pb-20">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/roles")}>
-          <BackIcon className="h-5 w-5" />
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/roles")}>
+          <BackIcon className="h-4 w-4" />
         </Button>
-        <div className="flex items-center gap-3">
-          <Shield className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">{title}</h1>
           {isSystem && (
-            <span className="text-xs bg-muted px-2.5 py-1 rounded-full font-medium text-muted-foreground">
+            <span className="text-[11px] bg-muted px-2 py-0.5 rounded-full font-medium text-muted-foreground">
               System Role
             </span>
           )}
@@ -109,55 +116,58 @@ export function RoleFormPage({
 
       {/* Warning banner */}
       {mode === "edit" && userCount > 0 && (
-        <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800 text-sm">
+        <Alert variant="destructive" className="bg-amber-50 border-amber-200 py-2">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+          <AlertDescription className="text-amber-800 text-xs">
             Permission changes will affect all {userCount} assigned user(s) immediately.
           </AlertDescription>
         </Alert>
       )}
 
       {/* Role Details Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Role Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
+      <DashedSectionCard title="Role Details" icon={Shield} variant="purple">
+        <div className="space-y-3">
           {/* Role Name */}
-          <div className="space-y-2">
-            <Label>Role Name *</Label>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <Label className="text-xs">Role Name *</Label>
+              <TooltipInfo content="Used to identify this role across the system" />
+            </div>
             <Input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g., Floor Manager"
               disabled={isSystem}
-              className={cn("max-w-md", errors.name && "border-destructive")}
+              className={cn("max-w-md h-8 text-sm", errors.name && "border-destructive")}
             />
-            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+            {errors.name && <p className="text-[11px] text-destructive">{errors.name}</p>}
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label>Description</Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Description</Label>
             <Textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="Brief description of this role..."
-              className="min-h-[80px] max-w-lg"
+              className="min-h-[60px] max-w-lg text-sm"
             />
           </div>
 
           {/* Color Picker */}
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="flex gap-2 flex-wrap">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <Label className="text-xs">Color</Label>
+              <TooltipInfo content="Color is used to visually distinguish this role in badges" />
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, color: c }))}
                   className={cn(
-                    "h-8 w-8 rounded-full border-2 transition-all",
+                    "h-6 w-6 rounded-full border-2 transition-all",
                     form.color === c ? "border-foreground scale-110" : "border-transparent"
                   )}
                   style={{ backgroundColor: c }}
@@ -168,9 +178,12 @@ export function RoleFormPage({
 
           {/* Status */}
           <div className="flex items-center justify-between max-w-md">
-            <Label>Status</Label>
+            <div className="flex items-center gap-1">
+              <Label className="text-xs">Status</Label>
+              <TooltipInfo content="Inactive roles cannot be assigned to new users" />
+            </div>
             <div className="flex items-center gap-2">
-              <span className={cn("text-sm", form.is_active ? "text-green-600" : "text-muted-foreground")}>
+              <span className={cn("text-xs", form.is_active ? "text-green-600" : "text-muted-foreground")}>
                 {form.is_active ? t("common.active") : t("common.inactive")}
               </span>
               <Switch
@@ -179,55 +192,56 @@ export function RoleFormPage({
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </DashedSectionCard>
 
       {/* Permission Matrix Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">Permission Matrix</CardTitle>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Controls what actions users with this role can perform across all branches</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <PermissionMatrix
-            permissions={permissions}
-            selectedIds={form.permission_ids}
-            onChange={(ids) => setForm((f) => ({ ...f, permission_ids: ids }))}
-          />
-        </CardContent>
-      </Card>
+      <DashedSectionCard title="Permission Matrix" icon={Shield} variant="blue"
+        rightBadge={
+          <span className="text-[11px] text-muted-foreground">
+            Controls what actions users with this role can perform
+          </span>
+        }
+      >
+        <PermissionMatrix
+          permissions={permissions}
+          selectedIds={form.permission_ids}
+          onChange={(ids) => setForm((f) => ({ ...f, permission_ids: ids }))}
+        />
+      </DashedSectionCard>
 
       {/* Sticky Footer */}
       <div
         className={cn(
-          "fixed bottom-0 inset-x-0 bg-background border-t p-4 z-10",
-          "flex items-center gap-3",
-          isRTL
-            ? "flex-row-reverse pe-[var(--sidebar-width)] ps-4"
-            : "ps-[var(--sidebar-width)] pe-4"
+          "fixed bottom-0 bg-background/95 backdrop-blur-sm border-t p-3 z-30",
+          isRTL ? "right-0 left-[16rem]" : "left-[16rem] right-0"
         )}
-        style={{ "--sidebar-width": "16rem" } as React.CSSProperties}
       >
-        <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" onClick={() => navigate("/roles")} disabled={isSaving}>
-            <X className="h-4 w-4 me-2" />
+        <div className={cn("flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/roles")} disabled={isSaving}>
+            <X className="h-3.5 w-3.5 me-1.5" />
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={isSaving}>
-            <Save className="h-4 w-4 me-2" />
+          <Button size="sm" onClick={handleSubmit} disabled={isSaving}>
+            <Save className="h-3.5 w-3.5 me-1.5" />
             {isSaving ? t("common.loading") : "Save Role"}
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmActionModal
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={handleConfirm}
+        title="Save Role"
+        message={
+          mode === "edit"
+            ? "Are you sure you want to save this role? Permission changes will affect all assigned users immediately."
+            : "Are you sure you want to create this role?"
+        }
+        confirmLabel="Save Role"
+      />
     </div>
   );
 }

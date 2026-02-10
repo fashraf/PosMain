@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
       emp_type_id: body.emp_type_id || null,
       default_language: body.default_language || 'en',
       force_password_change: body.force_password_change ?? false,
+      profile_image: body.profile_image || null,
     }).eq('user_id', userId);
 
     // Assign role (using role_id)

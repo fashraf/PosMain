@@ -4,7 +4,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { UserFormPage, UserFormData } from "@/components/users/UserFormPage";
-import { RolePreviewPanel } from "@/components/users/RolePreviewPanel";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
 
 export default function UsersAdd() {
@@ -17,7 +16,6 @@ export default function UsersAdd() {
   const [empTypes, setEmpTypes] = useState<Array<{ id: string; name_en: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [previewRoleId, setPreviewRoleId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -56,6 +54,7 @@ export default function UsersAdd() {
           emp_type_id: data.emp_type_id || null,
           default_language: data.default_language,
           force_password_change: data.force_password_change,
+          profile_image: data.profile_image || null,
         },
       });
       if (error) throw error;
@@ -75,7 +74,7 @@ export default function UsersAdd() {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4">
       <LoadingOverlay visible={isSaving} />
       <UserFormPage
         mode="add"
@@ -85,16 +84,6 @@ export default function UsersAdd() {
         onSubmit={handleSubmit}
         isLoading={isLoading}
         isSaving={isSaving}
-        onShowRolePreview={(roleId) => setPreviewRoleId(roleId)}
-        rolePreviewPanel={
-          previewRoleId ? (
-            <RolePreviewPanel
-              roleId={previewRoleId}
-              roles={roles}
-              onClose={() => setPreviewRoleId(null)}
-            />
-          ) : undefined
-        }
       />
     </div>
   );

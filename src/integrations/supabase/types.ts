@@ -929,6 +929,7 @@ export type Database = {
           passport_expiry: string | null
           passport_number: string | null
           phone: string | null
+          profile_image: string | null
           updated_at: string
           user_id: string
         }
@@ -950,6 +951,7 @@ export type Database = {
           passport_expiry?: string | null
           passport_number?: string | null
           phone?: string | null
+          profile_image?: string | null
           updated_at?: string
           user_id: string
         }
@@ -971,6 +973,7 @@ export type Database = {
           passport_expiry?: string | null
           passport_number?: string | null
           phone?: string | null
+          profile_image?: string | null
           updated_at?: string
           user_id?: string
         }
