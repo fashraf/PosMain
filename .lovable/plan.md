@@ -1,111 +1,143 @@
 
 
-# Branch Master Data: Full Feature Overhaul
+# Branch Settings Page Redesign
 
 ## Overview
 
-Expand the `branches` table with new columns and rebuild the List, Add, and Edit pages to match the reference screenshots -- with Branch Code, Currency, VAT, Order Types, Pricing Mode, Rounding Rules, and compact DashedSectionCard layout.
+Complete redesign of the Branch Add/Edit form to be enterprise-grade with full-width layout, dynamic Sales Channels from database, multi-tax builder, horizontal pricing mode, confirmation modal, and clean flat UI inspired by the reference screenshot.
 
 ---
 
-## 1. Database Migration
+## 1. Database Changes
 
-Add the following columns to the `branches` table:
+### Create `sales_channels` table
 
-| Column | Type | Default | Nullable |
-|--------|------|---------|----------|
-| `branch_code` | text | NULL | Yes |
-| `name_ar` | text | NULL | Yes |
-| `name_ur` | text | NULL | Yes |
-| `currency` | text | `'SAR'` | No |
-| `currency_symbol` | text | `'ر.س'` | No |
-| `vat_enabled` | boolean | `false` | No |
-| `vat_rate` | numeric | `15` | No |
-| `pricing_mode` | text | `'exclusive'` | No |
-| `rounding_rule` | text | `'none'` | No |
-| `order_types` | text[] | `'{}'` | No |
+| Column | Type | Default |
+|--------|------|---------|
+| id | uuid | gen_random_uuid() |
+| name_en | text (NOT NULL) | -- |
+| name_ar | text | NULL |
+| name_ur | text | NULL |
+| code | text (NOT NULL) | -- |
+| icon | text | NULL |
+| is_active | boolean | true |
+| created_at | timestamptz | now() |
+| updated_at | timestamptz | now() |
 
-Then seed 3 branches:
-- Main Branch (MAIN, SAR, VAT 15%, active)
-- Downtown (DOWNTOWN, SAR, VAT 15%, active)
-- Mall Outlet (MALL, USD, no VAT, inactive)
+Seed with: In-Store, Zomato, Swiggy, Online Website (inactive).
+
+RLS: Admins manage all, authenticated users can view.
+
+### Create `branch_taxes` table
+
+| Column | Type | Default |
+|--------|------|---------|
+| id | uuid | gen_random_uuid() |
+| branch_id | uuid (FK to branches) | -- |
+| tax_name | text (NOT NULL) | -- |
+| tax_type | text | 'percentage' |
+| value | numeric | 0 |
+| apply_on | text | 'before_discount' |
+| is_active | boolean | true |
+| sort_order | integer | 0 |
+| created_at | timestamptz | now() |
+
+RLS: Admins manage all, authenticated users can view.
+
+### Add `sales_channel_ids` column to `branches`
+
+| Column | Type | Default |
+|--------|------|---------|
+| sales_channel_ids | uuid[] | '{}' |
 
 ---
 
-## 2. Branch List Page (`Branches.tsx`)
+## 2. Branch Form Page Redesign (`BranchFormPage.tsx`)
 
-Rebuild the table to show columns matching the screenshot:
+Full-width container (remove `max-w-2xl`), clean flat white background, light grey section dividers.
 
-| Name | Branch Code | Currency | VAT Enabled | Status | Actions |
-|------|-------------|----------|-------------|--------|---------|
-
-- Branch Code displayed in a monospace badge
-- Currency shows symbol + code (e.g., "ر.س SAR")
-- VAT Enabled shows Yes/No badge + percentage in parentheses
-- Status shows Switch + StatusBadge
-- Actions: Eye (view) + Edit icons
-- Compact spacing, 12px font throughout
-
----
-
-## 3. Branch Add/Edit Pages
-
-Both pages will use a shared `BranchFormPage` component with 5 DashedSectionCard sections:
+### Section Layout (using DashedSectionCard)
 
 **Section 1: Basic Information** (purple)
-- Branch Name: `CompactMultiLanguageInput` (EN/AR/UR)
-- Branch Code: Input
-- Status: Switch toggle (right-aligned)
+- Row 1: Branch Name (multi-language, full width)
+- Row 2: 4-column grid -- Branch Code (col-3), Currency dropdown (col-3), Pricing Mode (col-3), Status toggle (col-3)
+- Font: 14px for inputs, 16px medium for section headers
 
-**Section 2: Order Types** (green)
-- `CheckboxGroup` with 3 options: Dine-In, Takeaway, Delivery
+**Section 2: Sales Channels** (green) -- replaces "Order Types"
+- `SearchableMultiSelect` fetching active sales channels from the new `sales_channels` table
+- Shows loading skeleton while fetching
+- Selected channels displayed as small badge tags
+- Tooltip explaining purpose
 
-**Section 3: Currency & Pricing** (blue)
-- Currency: `SearchableSelect` dropdown (SAR, USD, AED, EGP, BDT, PKR)
-- Pricing Mode: `CompactRadioGroup` (Inclusive / Exclusive) with descriptions
+**Section 3: Tax Configuration** (amber) -- replaces single VAT toggle
+- Dynamic repeatable tax rows in a grid:
+  - Tax Name (col-3), Tax Type dropdown: Percentage/Fixed (col-3), Value (col-3), Apply On dropdown: Before Discount/After Discount (col-2), Active toggle + Delete (col-1)
+- "Add Tax" button with Plus icon
+- Smooth add/remove animation
+- Tooltip explaining tax application logic
 
-**Section 4: Tax & VAT Settings** (amber)
-- VAT Enabled: Switch toggle
-- VAT Rate: Input (shown only when VAT enabled), percentage field
+**Section 4: Pricing Mode** (blue)
+- Horizontal inline radio buttons: Tax Inclusive | Tax Exclusive | Hybrid
+- Selected option gets soft highlight background
+- Tooltip explaining each mode
 
 **Section 5: Rounding Rules** (muted)
-- `CompactRadioGroup` horizontal: No rounding, 0.05, 0.10, Whole number
+- Horizontal radio group (unchanged but with 14px font)
 
-**Footer**: Sticky Cancel + Save buttons
+### Save Flow
+- Click "Save Branch" opens a **Confirmation Modal**:
+  - Title: "Confirm Branch Configuration Changes"
+  - Summary table showing: Sales Channels count, Tax count, Pricing Mode, Status
+  - Warning: "These updates will reflect immediately in POS operations."
+  - Buttons: Cancel | Confirm & Apply
 
 ---
 
-## Technical Details
+## 3. Typography & Spacing
 
-### Files to Create/Modify
+| Element | Size |
+|---------|------|
+| Input font | 14px (`text-sm`) |
+| Labels | 14px, font-medium |
+| Section headers | 16px, font-medium |
+| Page title | 18px, font-bold |
+| Spacing | Consistent 12px (gap-3, space-y-3, p-3) |
+
+---
+
+## 4. Responsive Behavior
+
+| Breakpoint | Columns per row |
+|------------|----------------|
+| Desktop (lg+) | 4 fields (grid-cols-4) |
+| Tablet (md) | 2 fields (grid-cols-2) |
+| Mobile (sm) | 1 field (grid-cols-1) |
+
+---
+
+## 5. UX Enhancements
+
+- Required fields marked with red asterisk
+- Tooltip icons next to: Pricing Mode, Tax Apply On, Sales Channels
+- Real-time validation (name required, tax value must be positive)
+- Focus-on-error scrolling
+
+---
+
+## 6. Sales Channels Page Update
+
+Update `SalesChannels.tsx` to fetch from the new `sales_channels` DB table instead of hardcoded array (currently mock data).
+
+---
+
+## Files to Create/Modify
 
 | File | Action |
 |------|--------|
-| Migration SQL | New columns + seed data |
-| `src/components/branches/BranchFormPage.tsx` | **Create** -- shared form component |
-| `src/pages/Branches.tsx` | **Rewrite** -- expanded table columns |
-| `src/pages/BranchesAdd.tsx` | **Rewrite** -- use BranchFormPage |
-| `src/pages/BranchesEdit.tsx` | **Rewrite** -- use BranchFormPage |
-
-### Currency Options
-```text
-SAR (ر.س) - Saudi Riyal
-USD ($) - US Dollar
-AED (د.إ) - UAE Dirham
-EGP (ج.م) - Egyptian Pound
-BDT (৳) - Bangladeshi Taka
-PKR (₨) - Pakistani Rupee
-```
-
-### Validation
-- Branch Name (EN) is required
-- Branch Code is optional but unique if provided
-- Focus-on-error scrolling to first invalid field
-
-### Compact Styling Rules
-- All padding/margins max 5px (`p-1`, `space-y-1.5`, `gap-1.5`)
-- Font size 12px (`text-xs`) for labels, inputs, text
-- Input height: `h-7`
-- DashedSectionCard padding: `p-2` internal
-- Sticky footer: `left-[16rem] right-0`
-
+| Migration SQL | Create `sales_channels` + `branch_taxes` tables, add `sales_channel_ids` to branches |
+| `src/components/branches/BranchFormPage.tsx` | Full rewrite with new design |
+| `src/components/branches/BranchTaxRow.tsx` | **Create** -- single tax row component |
+| `src/components/branches/BranchSaveConfirmModal.tsx` | **Create** -- confirmation modal |
+| `src/pages/Branches.tsx` | Update to show Sales Channels column instead of Order Types |
+| `src/pages/BranchesEdit.tsx` | Update to load branch_taxes |
+| `src/pages/SalesChannels.tsx` | Update to use DB instead of mock data |
