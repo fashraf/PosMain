@@ -1,99 +1,55 @@
-import { useLanguage } from "@/hooks/useLanguage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  UtensilsCrossed, 
-  Carrot, 
-  Store, 
-  AlertTriangle 
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-
-// Mock data for dashboard stats
-const mockStats = {
-  totalItems: 45,
-  totalIngredients: 78,
-  activeChannels: 4,
-  lowStockAlerts: 3,
-};
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import KPIGaugeCard from "@/components/dashboard/KPIGaugeCard";
+import QuickStatsStrip from "@/components/dashboard/QuickStatsStrip";
+import RevenueTrendChart from "@/components/dashboard/RevenueTrendChart";
+import BranchContributionChart from "@/components/dashboard/BranchContributionChart";
+import StaffAttendanceCard from "@/components/dashboard/StaffAttendanceCard";
+import KeyMetricsGrid from "@/components/dashboard/KeyMetricsGrid";
+import AlertsPanel from "@/components/dashboard/AlertsPanel";
+import {
+  kpiData,
+  quickStats,
+  hourlyRevenue,
+  branchContribution,
+  staffMetrics,
+  keyMetrics,
+  alerts,
+} from "@/components/dashboard/mockDashboardData";
 
 export default function Dashboard() {
-  const { t, isRTL } = useLanguage();
-
-  const statCards = [
-    {
-      titleKey: "dashboard.totalItems",
-      value: mockStats.totalItems,
-      icon: UtensilsCrossed,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      titleKey: "dashboard.totalIngredients",
-      value: mockStats.totalIngredients,
-      icon: Carrot,
-      color: "text-success",
-      bgColor: "bg-success/10",
-    },
-    {
-      titleKey: "dashboard.activeChannels",
-      value: mockStats.activeChannels,
-      icon: Store,
-      color: "text-accent-foreground",
-      bgColor: "bg-accent",
-    },
-    {
-      titleKey: "dashboard.lowStockAlerts",
-      value: mockStats.lowStockAlerts,
-      icon: AlertTriangle,
-      color: "text-warning",
-      bgColor: "bg-warning/10",
-    },
-  ];
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("dashboard.welcome")}</p>
-      </div>
+      <DashboardHeader />
 
-      {/* Stats Grid */}
-      <div className={cn(
-        "grid gap-4 md:grid-cols-2 lg:grid-cols-4",
-        isRTL && "direction-rtl"
-      )}>
-        {statCards.map((stat) => (
-          <Card key={stat.titleKey} className="border-border shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className={cn(
-              "flex flex-row items-center justify-between pb-2",
-              isRTL && "flex-row-reverse"
-            )}>
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {t(stat.titleKey)}
-              </CardTitle>
-              <div className={cn("p-2 rounded-lg", stat.bgColor)}>
-                <stat.icon className={cn("h-5 w-5", stat.color)} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-            </CardContent>
-          </Card>
+      {/* KPI Gauges */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpiData.map((kpi) => (
+          <KPIGaugeCard key={kpi.label} data={kpi} />
         ))}
       </div>
 
-      {/* Overview Section */}
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle>{t("dashboard.overview")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Welcome to your POS Admin dashboard. Use the sidebar to navigate to different modules.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Quick Stats Strip */}
+      <QuickStatsStrip stats={quickStats} />
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-3">
+          <RevenueTrendChart data={hourlyRevenue} />
+        </div>
+        <div className="lg:col-span-2">
+          <BranchContributionChart data={branchContribution} />
+        </div>
+      </div>
+
+      {/* Staff + Key Metrics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StaffAttendanceCard data={staffMetrics} />
+        <KeyMetricsGrid data={keyMetrics} />
+      </div>
+
+      {/* Alerts */}
+      <AlertsPanel data={alerts} />
     </div>
   );
 }
