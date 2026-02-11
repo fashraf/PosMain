@@ -1,181 +1,127 @@
 
 
-# Branch-Level Real-Time Dashboard
+# Dashboard: All Branches + Per-Branch Toggle
 
 ## Overview
 
-Transform the current group-level dashboard into a branch-specific dashboard. Users select a branch from a dropdown in the header, and all data filters to that branch. All data comes from real database tables (pos_orders, profiles, user_branches, branches, etc.) -- values will be zero if no data exists, which is fine.
+Add an "All Branches" option to the branch dropdown. When selected, show the group-level overview dashboard (aggregated across all branches with Branch Contribution chart). When a specific branch is selected, show the branch-specific dashboard (current layout with donuts, cashier table, scrollable lists).
 
 ---
 
-## Architecture
+## How It Works
 
-The existing group dashboard (`/`) becomes the branch dashboard. A branch selector dropdown is added to the header. When a branch is selected, all queries filter by `branch_id`.
+The branch selector dropdown gets a new first option: **"All Branches"**. This uses a sentinel value `"__all__"` instead of a real branch UUID.
+
+- `selectedBranchId === "__all__"` --> render group dashboard (existing `useDashboardData` hook)
+- `selectedBranchId === "<uuid>"` --> render branch dashboard (existing `useBranchDashboardData` hook)
+- Default selection on load: `"__all__"`
 
 ---
 
-## Page Layout
+## Changes
 
+### 1. `src/components/dashboard/DashboardHeader.tsx`
+
+- Add `"All Branches"` as the first `SelectItem` with value `"__all__"`
+- Update the title logic: when `"__all__"` is selected, show "All Branches -- Dashboard"
+- Keep `onBranchChange` signature the same (still `(id: string) => void`)
+
+### 2. `src/pages/Dashboard.tsx`
+
+- Change default `selectedBranchId` from `null` to `"__all__"` (no more auto-select first branch)
+- Conditionally call both hooks (both always called for React rules, but `useBranchDashboardData` gets `null` when "All Branches" is selected so it returns empty/skipped data)
+- Render two different layouts based on selection:
+  - **All Branches view**: KPI Gauges (4 cards), Quick Stats Strip, Revenue Trend (Today vs Yesterday), Branch Contribution Chart + Staff Attendance Card side-by-side, Key Metrics Grid, Alerts Panel
+  - **Branch view**: Current layout (3 KPI cards, Quick Stats, 3 Donuts, Revenue Trend, Cashier Table + Key Metrics, 3 Scrollable Lists, Alerts)
+
+### 3. `src/hooks/useDashboardData.ts`
+
+- No changes needed -- already works as a group-level aggregator
+
+### 4. `src/hooks/useBranchDashboardData.ts`
+
+- No changes needed -- already accepts `branchId | null` and skips queries when null
+
+---
+
+## Layout Comparison
+
+**All Branches selected:**
 ```text
 +------------------------------------------------------------------+
-| HEADER: [Branch Dropdown v] | Date/Time | Status Badge | Refresh |
+| HEADER: [All Branches v] | Date/Time | Status | Refresh          |
 +------------------------------------------------------------------+
-| ROW 1: 3x KPI Gauge Cards (Revenue, Avg Check, Total Orders)    |
+| ROW 1: 4x KPI Gauges (Revenue, Avg Check, Orders, Cancelled)    |
 +------------------------------------------------------------------+
-| ROW 2: Quick Stats Strip (Paid, Pending, Cancelled, Staff)       |
+| ROW 2: Quick Stats (Paid, Pending, Active Branches, Active Staff)|
 +------------------------------------------------------------------+
-| ROW 3: 3x Donut Charts side-by-side (col-4 each)                |
-|  Payment Modes | Sales by Category | Order Types                 |
+| ROW 3: Revenue Trend (full width, Today vs Yesterday)            |
 +------------------------------------------------------------------+
-| ROW 4: Hourly Revenue Trend (Today vs Yesterday) - full width   |
+| ROW 4: Branch Contribution Chart | Staff Attendance Card         |
 +------------------------------------------------------------------+
-| ROW 5: Staff on Duty Table | Key Metrics Grid                    |
+| ROW 5: Key Metrics Grid (full width)                             |
 +------------------------------------------------------------------+
-| ROW 6: 3x Scrollable Lists (col-4 each)                         |
-|  Latest 50 Orders | Top 50 Slowest | Staff Attendance            |
+| ROW 6: Alerts Panel                                              |
 +------------------------------------------------------------------+
-| ROW 7: Alerts & Insights                                         |
+```
+
+**Specific Branch selected:**
+```text
++------------------------------------------------------------------+
+| HEADER: [Downtown Main v] | Date/Time | Status | Refresh        |
++------------------------------------------------------------------+
+| ROW 1: 3x KPI Gauges (Revenue, Avg Check, Orders)               |
++------------------------------------------------------------------+
+| ROW 2: Quick Stats (Paid, Pending, Cancelled, Staff)             |
++------------------------------------------------------------------+
+| ROW 3: 3x Donut Charts (Payment, Category, Order Types)         |
++------------------------------------------------------------------+
+| ROW 4: Revenue Trend (full width)                                |
++------------------------------------------------------------------+
+| ROW 5: Cashier Duty Table | Key Metrics Grid                    |
++------------------------------------------------------------------+
+| ROW 6: 3x Scrollable Lists (Recent, Slowest, Staff)             |
++------------------------------------------------------------------+
+| ROW 7: Alerts Panel                                              |
 +------------------------------------------------------------------+
 ```
 
 ---
 
-## Components
+## Technical Details
 
-### Modified Files
+### Sentinel Value
+```typescript
+const ALL_BRANCHES = "__all__";
+const isAllBranches = selectedBranchId === ALL_BRANCHES;
+```
 
-**`src/pages/Dashboard.tsx`** -- Complete rewrite to compose new branch-level sections with branch selector state.
+### Both hooks called unconditionally (React rules)
+```typescript
+const groupData = useDashboardData();
+const branchData = useBranchDashboardData(isAllBranches ? null : selectedBranchId);
+```
 
-**`src/hooks/useDashboardData.ts`** -- Refactor to accept `branchId` parameter. All queries filter by branch. Add new queries for order items (category breakdown), payment method breakdown, order type breakdown, and recent orders list.
+When `isAllBranches` is true, `branchData` queries are all skipped (`enabled: !!branchId` returns false), so no unnecessary network calls.
 
-**`src/components/dashboard/DashboardHeader.tsx`** -- Add branch selector dropdown (Select component). Show selected branch name prominently. Remove "Branches: N" counter.
+### Files Changed
 
-**`src/components/dashboard/mockDashboardData.ts`** -- Add new TypeScript interfaces for donut chart data, cashier data, and order list data.
-
-### New Files
-
-**`src/components/dashboard/DonutChartCard.tsx`**
-- Reusable Recharts `PieChart` (donut style) with inner hole
-- Props: title, data array `{name, value, color}`, and optional center label
-- Pastel color scheme consistent with dashboard palette
-- Legend below/beside the chart with percentages
-- Used for: Payment Modes, Sales by Category, Order Types
-
-**`src/components/dashboard/CashierDutyTable.tsx`**
-- Table showing staff assigned to the selected branch
-- Columns: Name, Status (Active), Role
-- Data from `user_branches` joined with `profiles`
-- Material-style table with hover effects, sticky header
-
-**`src/components/dashboard/RecentOrdersList.tsx`**
-- Scrollable card showing latest 50 orders for the branch
-- Columns: Time, Order #, Total (SAR), Status badge
-- Data from `pos_orders` filtered by branch, ordered by `created_at DESC`, limit 50
-- Fixed height with vertical scroll, sticky header
-
-**`src/components/dashboard/SlowestOrdersList.tsx`**  
-- Shows orders sorted by duration (pending time)
-- Columns: Time, Order #, Duration, Status
-- Same query source but sorted differently
-
-**`src/components/dashboard/StaffAttendanceList.tsx`**
-- Shows all staff assigned to this branch
-- Columns: Name, Employee Code, Status (Active/Inactive)
-- Data from `user_branches` + `profiles`
-- Scrollable card with sticky header
-
----
-
-## Data Flow
-
-### Branch Selector
-- Fetch active branches on mount (existing query)
-- Default to first branch if available
-- Store `selectedBranchId` in state
-- Pass to `useBranchDashboardData(branchId)` hook
-
-### Queries (all filtered by `branch_id`)
-
-| Query | Table | Filter | Purpose |
-|-------|-------|--------|---------|
-| Today's orders | `pos_orders` | `branch_id = X, created_at >= today` | Revenue, order counts, payment methods, order types |
-| Yesterday's orders | `pos_orders` | `branch_id = X, created_at = yesterday` | Comparison data |
-| Branch staff | `user_branches` + `profiles` | `branch_id = X` | Staff list, attendance |
-| Recent 50 orders | `pos_orders` | `branch_id = X`, limit 50, desc | Latest orders list |
-| Order items | `pos_order_items` via order IDs | Join with items for categories | Category breakdown |
-
-### Donut Chart Data (computed from orders)
-
-**Payment Modes**: Group today's paid orders by `payment_method` (cash, card, both, pay_later)
-
-**Order Types**: Group today's orders by `order_type` (dine_in, takeaway, self_pickup, delivery)
-
-**Sales by Category**: Join `pos_order_items` -> `pos_menu_items` -> `maintenance_categories` to get category breakdown. If no category data, show "Uncategorized".
-
----
-
-## Donut Chart Design
-
-- Recharts `PieChart` with `innerRadius={50}` `outerRadius={80}` for donut effect
-- Center text showing total count or total SAR
-- Soft pastel colors: `#2c8cb4`, `#32c080`, `#dc8c3c`, `#64b4e0`, `#a09888`, `#8b5cf6`
-- Legend items below chart with color dots + label + percentage
-- Animated on load with `animationDuration={800}`
-- Card wrapper with section header
-
----
-
-## Scrollable Lists Design
-
-- Fixed height `max-h-[400px]` with `overflow-y-auto`
-- Sticky header row
-- Alternating row backgrounds for readability
-- Each list in a Card with header title
-- 3 columns side by side on desktop (`grid-cols-3`), stacked on mobile
-
----
-
-## Auto-Refresh
-
-- `refetchInterval: 60000` (60 seconds) on all order queries
-- Small refresh indicator in header (spinning icon during refetch)
-
----
-
-## Loading States
-
-- Full skeleton layout while initial data loads
-- Individual shimmer cards for each section
-- Block UI overlay not needed since queries are fast
-
----
-
-## Color Palette (unchanged)
-
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Teal | `#2c8cb4` | Headers, primary accents |
-| Mint | `#32c080` | Positive trends |
-| Orange | `#dc8c3c` | Warnings, financial highlights |
-| Cyan | `#64b4e0` | Secondary metrics |
-| Warm Gray | `#a09888` | Neutral text |
-
----
-
-## Files Summary
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/hooks/useBranchDashboardData.ts` | Create -- new hook with branch-filtered queries |
-| `src/components/dashboard/DonutChartCard.tsx` | Create -- reusable donut chart |
-| `src/components/dashboard/CashierDutyTable.tsx` | Create -- staff on duty table |
-| `src/components/dashboard/RecentOrdersList.tsx` | Create -- latest 50 orders |
-| `src/components/dashboard/SlowestOrdersList.tsx` | Create -- slowest orders |
-| `src/components/dashboard/StaffAttendanceList.tsx` | Create -- staff attendance list |
-| `src/components/dashboard/mockDashboardData.ts` | Update -- add new interfaces |
-| `src/components/dashboard/DashboardHeader.tsx` | Update -- add branch selector |
-| `src/pages/Dashboard.tsx` | Rewrite -- compose branch dashboard |
-| `src/hooks/useDashboardData.ts` | Keep as-is (can be removed later) |
+| `src/pages/Dashboard.tsx` | Conditional rendering for All vs Branch view, default to `"__all__"` |
+| `src/components/dashboard/DashboardHeader.tsx` | Add "All Branches" option to dropdown |
 
-No database changes required.
+No new files, no database changes.
+
+also 
+
+   -webkit-text-size-adjust:100%;
+        tab-size: 4;
+        line-height: 1.5;
+        font-family: var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");
+        font-feature-settings: var(--default-font-feature-settings,normal);
+        font-variation-settings: var(--default-font-variation-settings,normal);
+        -webkit-tap-highlight-color: transparent
+
+as a uniform style everywhere 
 
