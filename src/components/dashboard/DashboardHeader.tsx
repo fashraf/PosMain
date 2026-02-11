@@ -9,7 +9,7 @@ function getStatus(hour: number) {
   return { label: "Normal", color: "#32c080" };
 }
 
-export default function DashboardHeader() {
+export default function DashboardHeader({ branchCount = 0 }: { branchCount?: number }) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function DashboardHeader() {
         </span>
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Building2 className="h-3.5 w-3.5" />
-          Branches: <strong className="text-foreground">5</strong>
+          Branches: <strong className="text-foreground">{branchCount}</strong>
         </span>
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <BadgeDollarSign className="h-3.5 w-3.5" />
