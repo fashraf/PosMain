@@ -1,148 +1,181 @@
 
 
-# Restaurant Group Real-Time Dashboard
+# Branch-Level Real-Time Dashboard
 
 ## Overview
 
-Replace the current basic Dashboard page with a comprehensive, visually rich restaurant group dashboard featuring KPI gauges, revenue charts, staff metrics, and actionable alerts. Uses the specified color palette (teal headers, mint green positives, soft orange warnings) with Recharts for all visualizations.
-
-Since the database has minimal live data, the dashboard will use realistic mock data that represents a 5-branch restaurant group. The architecture is designed so mock data sources can be swapped for real Supabase queries later.
+Transform the current group-level dashboard into a branch-specific dashboard. Users select a branch from a dropdown in the header, and all data filters to that branch. All data comes from real database tables (pos_orders, profiles, user_branches, branches, etc.) -- values will be zero if no data exists, which is fine.
 
 ---
 
-## Color Palette (CSS Custom Properties)
+## Architecture
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `--dash-teal` | `#2c8cb4` | Section headers, borders |
-| `--dash-mint` | `#32c080` | Positive metrics, gains |
-| `--dash-orange` | `#dc8c3c` | Warnings, money highlights |
-| `--dash-cyan` | `#64b4e0` | Good performance, secondary |
-| `--dash-warm-gray` | `#a09888` | Neutral/secondary text |
+The existing group dashboard (`/`) becomes the branch dashboard. A branch selector dropdown is added to the header. When a branch is selected, all queries filter by `branch_id`.
 
 ---
 
-## Page Structure
+## Page Layout
 
 ```text
 +------------------------------------------------------------------+
-| HEADER BAR: Restaurant Group   Date/Time   Branches: 5   Status  |
+| HEADER: [Branch Dropdown v] | Date/Time | Status Badge | Refresh |
 +------------------------------------------------------------------+
-| ROW 1: 4x KPI Gauge Cards (Revenue, Avg Check, Prep Time, CSAT) |
-|   + Quick stats strip (Orders, Guests, Online Share)             |
+| ROW 1: 3x KPI Gauge Cards (Revenue, Avg Check, Total Orders)    |
 +------------------------------------------------------------------+
-| ROW 2: Revenue Trend Chart (AreaChart)  |  Branch Contribution   |
-|         Hourly line with peak marker    |  (Horizontal BarChart) |
+| ROW 2: Quick Stats Strip (Paid, Pending, Cancelled, Staff)       |
 +------------------------------------------------------------------+
-| ROW 3: Staff Attendance Card            |  Other Key Metrics     |
-|   Gauge bar + productivity stats        |  6x mini stat cards    |
+| ROW 3: 3x Donut Charts side-by-side (col-4 each)                |
+|  Payment Modes | Sales by Category | Order Types                 |
 +------------------------------------------------------------------+
-| ROW 4: Alerts & Actionable Insights                              |
-|   Warning/success items with icons                               |
+| ROW 4: Hourly Revenue Trend (Today vs Yesterday) - full width   |
++------------------------------------------------------------------+
+| ROW 5: Staff on Duty Table | Key Metrics Grid                    |
++------------------------------------------------------------------+
+| ROW 6: 3x Scrollable Lists (col-4 each)                         |
+|  Latest 50 Orders | Top 50 Slowest | Staff Attendance            |
++------------------------------------------------------------------+
+| ROW 7: Alerts & Insights                                         |
 +------------------------------------------------------------------+
 ```
 
 ---
 
-## Components to Create
+## Components
 
-### 1. `src/components/dashboard/DashboardHeader.tsx`
-- Full-width teal-tinted header strip
-- Shows: "Restaurant Group Dashboard", current date/time (auto-updating), branch count, currency, status badge ("Peak Lunch" / "Normal" based on hour)
+### Modified Files
 
-### 2. `src/components/dashboard/KPIGaugeCard.tsx`
-- Reusable card with: large value, label, trend indicator (up/down arrow + percentage), target comparison text
-- Circular progress ring or mini radial chart using Recharts `RadialBarChart`
-- Color-coded by performance (mint for good, orange for warning)
+**`src/pages/Dashboard.tsx`** -- Complete rewrite to compose new branch-level sections with branch selector state.
 
-### 3. `src/components/dashboard/QuickStatsStrip.tsx`
-- Horizontal strip below KPI cards
-- Shows: Orders count, Guests count, Online+Delivery share with trend arrows
-- Subtle background, inline layout
+**`src/hooks/useDashboardData.ts`** -- Refactor to accept `branchId` parameter. All queries filter by branch. Add new queries for order items (category breakdown), payment method breakdown, order type breakdown, and recent orders list.
 
-### 4. `src/components/dashboard/RevenueTrendChart.tsx`
-- Recharts `AreaChart` showing hourly revenue (08:00-22:00)
-- Gradient fill in teal/cyan
-- Peak hour annotation marker
-- Custom tooltip showing SAR amount + hour
+**`src/components/dashboard/DashboardHeader.tsx`** -- Add branch selector dropdown (Select component). Show selected branch name prominently. Remove "Branches: N" counter.
 
-### 5. `src/components/dashboard/BranchContributionChart.tsx`
-- Recharts horizontal `BarChart`
-- 5 branches with percentage labels
-- Bars colored in teal gradient
+**`src/components/dashboard/mockDashboardData.ts`** -- Add new TypeScript interfaces for donut chart data, cashier data, and order list data.
 
-### 6. `src/components/dashboard/StaffAttendanceCard.tsx`
-- Progress bar gauge (attendance %)
-- Stats grid: Scheduled hrs, Clocked hrs, Overtime, Absenteeism
-- Sales per server hour, top branch highlight
+### New Files
 
-### 7. `src/components/dashboard/KeyMetricsGrid.tsx`
-- 6 mini cards in a 3x2 grid
-- Each: icon, metric name, value, small trend
-- Metrics: Order Accuracy, Complaint Resolution, Repeat Guest Rate, App Orders Growth, Peak Hour Contribution, Top Category
+**`src/components/dashboard/DonutChartCard.tsx`**
+- Reusable Recharts `PieChart` (donut style) with inner hole
+- Props: title, data array `{name, value, color}`, and optional center label
+- Pastel color scheme consistent with dashboard palette
+- Legend below/beside the chart with percentages
+- Used for: Payment Modes, Sales by Category, Order Types
 
-### 8. `src/components/dashboard/AlertsPanel.tsx`
-- List of alert items with warning (orange) and success (mint) icons
-- Each alert: icon + message text
-- "Next Action" item at bottom
+**`src/components/dashboard/CashierDutyTable.tsx`**
+- Table showing staff assigned to the selected branch
+- Columns: Name, Status (Active), Role
+- Data from `user_branches` joined with `profiles`
+- Material-style table with hover effects, sticky header
 
-### 9. `src/components/dashboard/mockDashboardData.ts`
-- All mock data in one file for easy future replacement
-- Typed interfaces for each data section
+**`src/components/dashboard/RecentOrdersList.tsx`**
+- Scrollable card showing latest 50 orders for the branch
+- Columns: Time, Order #, Total (SAR), Status badge
+- Data from `pos_orders` filtered by branch, ordered by `created_at DESC`, limit 50
+- Fixed height with vertical scroll, sticky header
+
+**`src/components/dashboard/SlowestOrdersList.tsx`**  
+- Shows orders sorted by duration (pending time)
+- Columns: Time, Order #, Duration, Status
+- Same query source but sorted differently
+
+**`src/components/dashboard/StaffAttendanceList.tsx`**
+- Shows all staff assigned to this branch
+- Columns: Name, Employee Code, Status (Active/Inactive)
+- Data from `user_branches` + `profiles`
+- Scrollable card with sticky header
 
 ---
 
-## Technical Details
+## Data Flow
 
-### Chart Library
-Already installed: `recharts ^2.15.4` -- used via existing `chart.tsx` UI component.
+### Branch Selector
+- Fetch active branches on mount (existing query)
+- Default to first branch if available
+- Store `selectedBranchId` in state
+- Pass to `useBranchDashboardData(branchId)` hook
 
-Charts used:
-- `RadialBarChart` for KPI gauge rings
-- `AreaChart` for revenue hourly trend
-- `BarChart` (horizontal) for branch contribution
-- `PieChart` (optional) for channel mix
+### Queries (all filtered by `branch_id`)
 
-### Styling Approach
-- Dashboard-specific colors applied via inline styles and Tailwind arbitrary values
-- Cards use existing `Card` component with custom border colors
-- Section headers use the teal color with left border accent
-- All cards have subtle shadows and hover effects
+| Query | Table | Filter | Purpose |
+|-------|-------|--------|---------|
+| Today's orders | `pos_orders` | `branch_id = X, created_at >= today` | Revenue, order counts, payment methods, order types |
+| Yesterday's orders | `pos_orders` | `branch_id = X, created_at = yesterday` | Comparison data |
+| Branch staff | `user_branches` + `profiles` | `branch_id = X` | Staff list, attendance |
+| Recent 50 orders | `pos_orders` | `branch_id = X`, limit 50, desc | Latest orders list |
+| Order items | `pos_order_items` via order IDs | Join with items for categories | Category breakdown |
 
-### Mock Data Structure
-```typescript
-interface DashboardData {
-  kpis: { revenue, avgCheck, prepTime, csatScore }
-  quickStats: { orders, guests, onlineShare }
-  hourlyRevenue: Array<{ hour, revenue, target }>
-  branchContribution: Array<{ name, percentage, revenue }>
-  staffMetrics: { scheduled, clocked, overtime, attendance, salesPerHour }
-  keyMetrics: Array<{ label, value, trend, trendDirection }>
-  alerts: Array<{ type, message }>
-}
-```
+### Donut Chart Data (computed from orders)
 
-### Responsive Behavior
-- 4-col KPI grid collapses to 2-col on medium screens
-- Chart row splits to stacked on smaller screens
-- Staff + metrics row stacks vertically on mobile
+**Payment Modes**: Group today's paid orders by `payment_method` (cash, card, both, pay_later)
+
+**Order Types**: Group today's orders by `order_type` (dine_in, takeaway, self_pickup, delivery)
+
+**Sales by Category**: Join `pos_order_items` -> `pos_menu_items` -> `maintenance_categories` to get category breakdown. If no category data, show "Uncategorized".
 
 ---
 
-## Files to Create/Modify
+## Donut Chart Design
+
+- Recharts `PieChart` with `innerRadius={50}` `outerRadius={80}` for donut effect
+- Center text showing total count or total SAR
+- Soft pastel colors: `#2c8cb4`, `#32c080`, `#dc8c3c`, `#64b4e0`, `#a09888`, `#8b5cf6`
+- Legend items below chart with color dots + label + percentage
+- Animated on load with `animationDuration={800}`
+- Card wrapper with section header
+
+---
+
+## Scrollable Lists Design
+
+- Fixed height `max-h-[400px]` with `overflow-y-auto`
+- Sticky header row
+- Alternating row backgrounds for readability
+- Each list in a Card with header title
+- 3 columns side by side on desktop (`grid-cols-3`), stacked on mobile
+
+---
+
+## Auto-Refresh
+
+- `refetchInterval: 60000` (60 seconds) on all order queries
+- Small refresh indicator in header (spinning icon during refetch)
+
+---
+
+## Loading States
+
+- Full skeleton layout while initial data loads
+- Individual shimmer cards for each section
+- Block UI overlay not needed since queries are fast
+
+---
+
+## Color Palette (unchanged)
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Teal | `#2c8cb4` | Headers, primary accents |
+| Mint | `#32c080` | Positive trends |
+| Orange | `#dc8c3c` | Warnings, financial highlights |
+| Cyan | `#64b4e0` | Secondary metrics |
+| Warm Gray | `#a09888` | Neutral text |
+
+---
+
+## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/components/dashboard/mockDashboardData.ts` | Create -- all mock data |
-| `src/components/dashboard/DashboardHeader.tsx` | Create -- top header strip |
-| `src/components/dashboard/KPIGaugeCard.tsx` | Create -- radial gauge card |
-| `src/components/dashboard/QuickStatsStrip.tsx` | Create -- inline stats |
-| `src/components/dashboard/RevenueTrendChart.tsx` | Create -- hourly area chart |
-| `src/components/dashboard/BranchContributionChart.tsx` | Create -- horizontal bar chart |
-| `src/components/dashboard/StaffAttendanceCard.tsx` | Create -- attendance gauge |
-| `src/components/dashboard/KeyMetricsGrid.tsx` | Create -- 6 mini metrics |
-| `src/components/dashboard/AlertsPanel.tsx` | Create -- alerts list |
-| `src/pages/Dashboard.tsx` | Rewrite -- compose all sections |
+| `src/hooks/useBranchDashboardData.ts` | Create -- new hook with branch-filtered queries |
+| `src/components/dashboard/DonutChartCard.tsx` | Create -- reusable donut chart |
+| `src/components/dashboard/CashierDutyTable.tsx` | Create -- staff on duty table |
+| `src/components/dashboard/RecentOrdersList.tsx` | Create -- latest 50 orders |
+| `src/components/dashboard/SlowestOrdersList.tsx` | Create -- slowest orders |
+| `src/components/dashboard/StaffAttendanceList.tsx` | Create -- staff attendance list |
+| `src/components/dashboard/mockDashboardData.ts` | Update -- add new interfaces |
+| `src/components/dashboard/DashboardHeader.tsx` | Update -- add branch selector |
+| `src/pages/Dashboard.tsx` | Rewrite -- compose branch dashboard |
+| `src/hooks/useDashboardData.ts` | Keep as-is (can be removed later) |
 
-No database changes required -- this is a UI-only feature using mock data.
+No database changes required.
 
