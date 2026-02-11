@@ -65,7 +65,7 @@ export default function SalesChannelsAdd() {
       toast({ title: t("salesChannels.addChannel"), description: `${formData.name_en} has been added.` });
       setIsSaving(false);
       setShowConfirmModal(false);
-      navigate("/sales-channels");
+      navigate("/maintenance/sales-channels");
     }, 500);
   };
 
@@ -74,7 +74,7 @@ export default function SalesChannelsAdd() {
   return (
     <div className="space-y-3 pb-20">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/sales-channels")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/maintenance/sales-channels")}>
           <BackIcon className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold text-foreground">{t("salesChannels.addChannel")}</h1>
@@ -133,7 +133,7 @@ export default function SalesChannelsAdd() {
       {/* Sticky Footer */}
       <div className={cn("fixed bottom-0 inset-x-0 bg-background border-t p-3 z-10", "flex items-center gap-3", isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4")}>
         <div className={cn("flex-1 flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" size="sm" onClick={() => navigate("/sales-channels")} disabled={isSaving}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/maintenance/sales-channels")} disabled={isSaving}>
             <X className="h-4 w-4 me-1" />
             {t("common.cancel")}
           </Button>
