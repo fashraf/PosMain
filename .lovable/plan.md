@@ -1,99 +1,80 @@
 
 
-# Print Template Layout Restructure
+# Print Template Form Fixes
 
 ## Overview
 
-Change the form to full-width with an 8/4 column split. Move Template Name to the top as a standalone row. Add a new Telephone Number field. Restructure the "Template Info" card to show Restaurant Name, Tel #, CR #, and VAT # in a clean 2x2 grid (col-6 each). Remove CR/VAT from the Header toggles section (they become always-visible text fields in Template Info).
+Several quick fixes to the Print Template form: simplify Restaurant Name to a plain text input, remove "Branch Name" references, fix the sticky footer overlap with sidebar, hide logo placeholder in preview when no image uploaded, and add field validation with focus-on-error.
 
 ---
 
-## 1. Database Change
+## Changes
 
-Add a `telephone` column to `print_templates`:
-- `telephone` (text, nullable) -- restaurant/branch telephone number
+### 1. PrintTemplateFormPage.tsx
 
----
+**Restaurant Name -- plain text input (remove multilingual tabs)**
+- Replace `CompactMultiLanguageInput` with a simple `Input` for Restaurant Name
+- Remove the `restaurant_name_ar` and `restaurant_name_ur` state fields from `defaultData` and save payload
+- Use a single `restaurant_name_en` field mapped to a simple text input labeled "Restaurant Name"
+- Remove the `CompactMultiLanguageInput` import
 
-## 2. Data Model Updates
+**Header checkboxes -- rename "Branch Name" to "Restaurant Name"**
+- Change the label from `"Branch Name"` to `"Restaurant Name"` in the header checkbox list (line 286)
+- Keep the key as `show_branch_name` (no DB change needed, just a label rename)
 
-### `PrintTemplateData` interface (in ReceiptPreview.tsx)
+**Fix sticky footer overlapping sidebar**
+- The footer currently uses `ps-[16rem]` but the buttons appear to overlap the sidebar area
+- Change to use `left-[16rem]` instead of `inset-x-0` so the footer starts after the sidebar:
+  ```
+  "fixed bottom-0 right-0 left-[16rem] bg-background border-t p-4 z-30 flex items-center gap-3"
+  ```
+- Remove the `ps-[16rem] pe-4` / `pe-[16rem] ps-4` padding logic since the positioning handles it
 
-Add:
-```typescript
-telephone: string;
-```
+**Add validation with focus-on-error**
+- Validate before opening save modal:
+  - Template Name is required (non-empty after trim)
+  - Restaurant Name is required (non-empty after trim)
+- On validation failure: show toast error, scroll to and focus the first invalid field using `data-field` attributes
+- Add `data-field="name"` and `data-field="restaurant_name"` attributes to the respective inputs
 
-### `defaultData` (in PrintTemplateFormPage.tsx)
+### 2. ReceiptPreview.tsx
 
-Add:
-```typescript
-telephone: "",
-```
+**Hide logo placeholder when no image uploaded**
+- Currently when `show_logo` is true but `logo_url` is null, a "LOGO" placeholder box is shown
+- Change: only show the logo section when `show_logo && data.logo_url` (has an actual image)
+- This means the placeholder box disappears -- the logo area only appears when a real image is uploaded
 
-Remove `cr_number` and `vat_number` from being conditional on checkboxes -- they are now always-visible inputs.
+**Remove branch name references in preview**
+- The preview shows "Al Riyadh Main Branch" when `show_branch_name` is true
+- Rename this to show the restaurant name value (already handled by the restaurant name display above it)
+- Actually, `show_branch_name` now means "Restaurant Name" so the preview should show the `restaurant_name_en` value when `show_branch_name` is checked, falling back to "Sample Restaurant"
 
----
+### 3. PrintTemplateSaveModal.tsx
 
-## 3. PrintTemplateFormPage.tsx -- Layout Changes
-
-### Remove `max-w-[65%] mx-auto` wrapper
-
-The grid becomes full-width within the page content area.
-
-### Change column split from 6/6 to 8/4
-
-```
-col-span-8 = Form sections
-col-span-4 = Receipt Preview (sticky)
-```
-
-### Template Name row at the very top (before sections)
-
-A standalone row above all DashedSectionCards:
-```
-Template Name *  [___________________]     Active [toggle]
-```
-
-### Restructured "Template Info" card
-
-Replace the current content with a 2x2 grid:
-
-```
-Row 1:  Restaurant Name (multilingual)  |  Tel #  [___________]
-Row 2:  CR #  [___________]             |  VAT #  [___________]
-```
-
-- Restaurant Name uses `CompactMultiLanguageInput` (col-span-6)
-- Tel #, CR #, VAT # are simple text inputs (col-span-6 each)
-- These are always visible -- not behind checkboxes
-- The `show_cr_number` and `show_vat_number` checkboxes remain in the Header section but only control receipt visibility (no inline text input there anymore)
-
-### Header section cleanup
-
-Remove the inline CR/VAT text inputs from the Header checkbox list. Keep the checkboxes for toggling visibility on the receipt only. The actual values are entered in Template Info above.
+- Update the "Branch Name" pill label to "Restaurant Name"
 
 ---
 
-## 4. ReceiptPreview.tsx
+## Technical Details
 
-- Show telephone number below branch mobile: `Tel: {data.telephone || "+966 12 345 6789"}`
-- The telephone is shown when it has a value (or a placeholder in preview)
+### Fields simplified
+- `restaurant_name_en` stays as the single restaurant name field (plain Input, no tabs)
+- `restaurant_name_ar` and `restaurant_name_ur` set to empty strings in payload (kept in DB for backward compat, just not shown in form)
 
----
+### Validation rules
+| Field | Rule | Error message |
+|-------|------|--------------|
+| Template Name | Required, non-empty after trim | "Template name is required" |
+| Restaurant Name | Required, non-empty after trim | "Restaurant name is required" |
 
-## 5. Save payload
+### Footer fix
+```
+Before: "fixed bottom-0 inset-x-0 ... ps-[16rem]"
+After:  "fixed bottom-0 right-0 left-[16rem] ... px-4"
+```
 
-Add `telephone` to the save payload and edit-load mapping.
-
----
-
-## 6. Files Changed
-
-| File | Change |
-|------|--------|
-| Database migration | Add `telephone` column |
-| `ReceiptPreview.tsx` | Add `telephone` to interface, show in preview |
-| `PrintTemplateFormPage.tsx` | Full-width 8/4 layout, template name at top, 2x2 info grid with Tel/CR/VAT, remove inline CR/VAT from header toggles |
-| `PrintTemplateSaveModal.tsx` | Include telephone in summary |
+### Files changed
+- `src/components/print-templates/PrintTemplateFormPage.tsx`
+- `src/components/print-templates/ReceiptPreview.tsx`
+- `src/components/print-templates/PrintTemplateSaveModal.tsx`
 
