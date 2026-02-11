@@ -162,3 +162,24 @@ export const alerts: DashboardAlert[] = [
   { type: "success", message: "Riyadh Mall dominating in avg check & server productivity" },
   { type: "action", message: "Prep for dinner surge – monitor app order influx from 17:00" },
 ];
+
+// --- New interfaces for branch dashboard ---
+
+export interface DonutSegment {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface OrderListItem {
+  time: string;
+  orderNumber: string;
+  total: number;
+  status: string;
+}
+
+export interface StaffListItem {
+  name: string;
+  employeeCode: string;
+  isActive: boolean;
+}
