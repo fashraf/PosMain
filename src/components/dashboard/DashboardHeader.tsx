@@ -3,6 +3,7 @@ import { Clock, RefreshCw, BadgeDollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const DASH_TEAL = "#2c8cb4";
+const ALL_BRANCHES = "__all__";
 
 function getStatus(hour: number) {
   if (hour >= 12 && hour < 15) return { label: "Peak Lunch", color: "#dc8c3c" };
@@ -33,7 +34,8 @@ export default function DashboardHeader({ branches, selectedBranchId, onBranchCh
   const status = getStatus(now.getHours());
   const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
-  const branchName = branches.find((b) => b.id === selectedBranchId)?.name || "Select Branch";
+  const isAll = selectedBranchId === ALL_BRANCHES;
+  const branchName = isAll ? "All Branches" : (branches.find((b) => b.id === selectedBranchId)?.name || "Select Branch");
 
   return (
     <div
@@ -46,6 +48,7 @@ export default function DashboardHeader({ branches, selectedBranchId, onBranchCh
             <SelectValue placeholder="Select Branch" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value={ALL_BRANCHES}>All Branches</SelectItem>
             {branches.map((b) => (
               <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
             ))}
