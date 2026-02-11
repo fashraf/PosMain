@@ -15,50 +15,6 @@ interface DashedSectionCardProps {
   isComplete?: boolean;
 }
 
-const variants: Record<ColorVariant, {
-  border: string;
-  headerBg: string;
-  headerBorder: string;
-  iconColor: string;
-  titleColor: string;
-}> = {
-  purple: {
-    border: "border-purple-300/40",
-    headerBg: "bg-purple-50",
-    headerBorder: "border-purple-200/50",
-    iconColor: "text-purple-600",
-    titleColor: "text-purple-700",
-  },
-  green: {
-    border: "border-green-300/40",
-    headerBg: "bg-green-50",
-    headerBorder: "border-green-200/50",
-    iconColor: "text-green-600",
-    titleColor: "text-green-700",
-  },
-  blue: {
-    border: "border-blue-300/40",
-    headerBg: "bg-blue-50",
-    headerBorder: "border-blue-200/50",
-    iconColor: "text-blue-600",
-    titleColor: "text-blue-700",
-  },
-  amber: {
-    border: "border-amber-300/40",
-    headerBg: "bg-amber-50",
-    headerBorder: "border-amber-200/50",
-    iconColor: "text-amber-600",
-    titleColor: "text-amber-700",
-  },
-  muted: {
-    border: "border-gray-300/40",
-    headerBg: "bg-gray-50",
-    headerBorder: "border-gray-200/50",
-    iconColor: "text-gray-600",
-    titleColor: "text-gray-700",
-  },
-};
-
 export function DashedSectionCard({
   title,
   icon: Icon,
@@ -69,27 +25,23 @@ export function DashedSectionCard({
   id,
   isComplete,
 }: DashedSectionCardProps) {
-  const colors = variants[variant];
-
   return (
     <div
       id={id}
       className={cn(
-        "rounded-xl border-2 border-dashed overflow-hidden shadow-sm scroll-mt-20",
-        colors.border,
+        "rounded-xl border-2 border-dashed border-gray-300/40 overflow-hidden shadow-sm scroll-mt-20",
         className
       )}
     >
       <div
-        className={cn(
-          "px-3 py-1.5 border-b border-dashed flex items-center justify-between",
-          colors.headerBg,
-          colors.headerBorder
-        )}
+        className="px-3 py-1.5 border-b border-dashed border-gray-200/50 flex items-center justify-between"
+        style={{
+          background: "linear-gradient(to right, #e5e7eb, white 40%, white 60%, #e5e7eb)",
+        }}
       >
         <div className="flex items-center gap-2">
-          {Icon && <Icon className={cn("h-4 w-4", colors.iconColor)} strokeWidth={1.5} />}
-          <h3 className={cn("text-sm font-semibold", colors.titleColor)}>{title}</h3>
+          {Icon && <Icon className="h-4 w-4 text-foreground" strokeWidth={1.5} />}
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
           {rightBadge && <div>{rightBadge}</div>}

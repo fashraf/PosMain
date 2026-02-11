@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
 import {
   Select,
@@ -32,9 +33,9 @@ export function BranchTaxRow({ tax, onChange, onDelete }: BranchTaxRowProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 items-end p-3 rounded-lg border bg-card animate-in fade-in-0 slide-in-from-top-2 duration-200">
-      {/* Tax Name - col-3 */}
-      <div className="lg:col-span-3 space-y-1">
-        <label className="text-sm font-medium">Tax Name <span className="text-destructive">*</span></label>
+      {/* Tax Name - col-4 */}
+      <div className="lg:col-span-4 space-y-1">
+        <Label className="text-lg font-medium">Tax Name <span className="text-destructive">*</span></Label>
         <Input
           value={tax.tax_name}
           onChange={(e) => set("tax_name", e.target.value)}
@@ -45,7 +46,7 @@ export function BranchTaxRow({ tax, onChange, onDelete }: BranchTaxRowProps) {
 
       {/* Tax Type - col-3 */}
       <div className="lg:col-span-3 space-y-1">
-        <label className="text-sm font-medium">Tax Type</label>
+        <Label className="text-lg font-medium">Tax Type</Label>
         <Select value={tax.tax_type} onValueChange={(v) => set("tax_type", v as BranchTax["tax_type"])}>
           <SelectTrigger className="h-9 text-sm">
             <SelectValue />
@@ -57,9 +58,9 @@ export function BranchTaxRow({ tax, onChange, onDelete }: BranchTaxRowProps) {
         </Select>
       </div>
 
-      {/* Value - col-2 */}
-      <div className="lg:col-span-2 space-y-1">
-        <label className="text-sm font-medium">Value <span className="text-destructive">*</span></label>
+      {/* Value - col-3 */}
+      <div className="lg:col-span-3 space-y-1">
+        <Label className="text-lg font-medium">Value <span className="text-destructive">*</span></Label>
         <Input
           type="number"
           value={tax.value || ""}
@@ -68,20 +69,6 @@ export function BranchTaxRow({ tax, onChange, onDelete }: BranchTaxRowProps) {
           className="h-9 text-sm"
           min="0"
         />
-      </div>
-
-      {/* Apply On - col-2 */}
-      <div className="lg:col-span-2 space-y-1">
-        <label className="text-sm font-medium">Apply On</label>
-        <Select value={tax.apply_on} onValueChange={(v) => set("apply_on", v as BranchTax["apply_on"])}>
-          <SelectTrigger className="h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="before_discount">Before Discount</SelectItem>
-            <SelectItem value="after_discount">After Discount</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Active + Delete - col-2 */}
