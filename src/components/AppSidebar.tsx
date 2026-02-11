@@ -9,13 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Link2,
   Building2,
-  Tag,
   Package,
   ClipboardList,
   ArrowRightLeft,
-  Sliders,
   Calendar,
   BarChart3,
   Wrench,
@@ -50,12 +47,10 @@ const mainNavItems = [
   { titleKey: "nav.order", url: "/pos", icon: ShoppingCart },
   { titleKey: "nav.orderList", url: "/pos/orders", icon: ClipboardList },
   { titleKey: "nav.kitchen", url: "/pos/kitchen", icon: ChefHat },
-  { titleKey: "nav.salesChannels", url: "/sales-channels", icon: Store },
   { titleKey: "nav.ingredients", url: "/inventory/ingredients", icon: Carrot },
 ];
 
 const inventorySubItems = [
-  { titleKey: "nav.itemMaster", url: "/inventory/items", icon: Package },
   { 
     titleKey: "nav.stockOperations", 
     url: "/inventory/operations",
@@ -71,6 +66,7 @@ const inventorySubItems = [
 ];
 
 const maintenanceSubItems = [
+  { titleKey: "nav.salesChannels", url: "/maintenance/sales-channels" },
   { titleKey: "maintenance.categories", url: "/maintenance/categories" },
   { titleKey: "maintenance.subcategories", url: "/maintenance/subcategories" },
   { titleKey: "maintenance.servingTimes", url: "/maintenance/serving-times" },
@@ -87,8 +83,6 @@ const otherNavItems = [
   { titleKey: "nav.users", url: "/users", icon: Users },
   { titleKey: "nav.roleMaster", url: "/roles", icon: Shield },
   { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
-  { titleKey: "nav.categories", url: "/categories", icon: Tag },
-  { titleKey: "nav.itemIngredients", url: "/item-ingredient-mapping", icon: Link2 },
   { titleKey: "nav.itemPricing", url: "/item-pricing", icon: DollarSign },
   { titleKey: "branches.title", url: "/branches", icon: Building2 },
   { titleKey: "nav.settings", url: "/settings", icon: Settings },

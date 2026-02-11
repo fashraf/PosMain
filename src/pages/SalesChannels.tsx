@@ -49,8 +49,8 @@ export default function SalesChannels() {
     return (channel[nameKey] as string) || channel.name_en;
   };
 
-  const handleAddChannel = () => navigate("/sales-channels/add");
-  const handleEditChannel = (channel: SalesChannel) => navigate(`/sales-channels/${channel.id}/edit`);
+  const handleAddChannel = () => navigate("/maintenance/sales-channels/add");
+  const handleEditChannel = (channel: SalesChannel) => navigate(`/maintenance/sales-channels/${channel.id}/edit`);
   const handleDeleteChannel = (channel: SalesChannel) => setDeleteChannel(channel);
 
   const confirmDelete = async () => {

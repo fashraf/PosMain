@@ -22,7 +22,7 @@ export const translations = {
       reportsAlerts: "Reports & Alerts",
       users: "Users",
       roleMaster: "Role Master",
-      orderList: "Orders",
+      orderList: "Order List",
       kitchen: "Kitchen",
     },
     // Maintenance
@@ -847,7 +847,7 @@ export const translations = {
       categories: "الفئات",
       settings: "الإعدادات",
       users: "المستخدمون",
-      orderList: "الطلبات",
+      orderList: "قائمة الطلبات",
       kitchen: "المطبخ",
     },
     // Common
@@ -1198,7 +1198,7 @@ export const translations = {
       categories: "زمرے",
       settings: "سیٹنگز",
       users: "صارفین",
-      orderList: "آرڈرز",
+      orderList: "آرڈر لسٹ",
     },
     // Common
     common: {

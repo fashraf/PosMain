@@ -119,7 +119,7 @@ export default function SalesChannelsEdit() {
       });
       setIsSaving(false);
       setShowConfirmModal(false);
-      navigate("/sales-channels");
+      navigate("/maintenance/sales-channels");
     }, 500);
   };
 
@@ -129,7 +129,7 @@ export default function SalesChannelsEdit() {
     <div className="space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/sales-channels")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/maintenance/sales-channels")}>
           <BackIcon className="h-5 w-5" />
         </Button>
         <h1 className="text-3xl font-bold text-foreground">{t("salesChannels.editChannel")}</h1>
@@ -227,7 +227,7 @@ export default function SalesChannelsEdit() {
         )}
       >
         <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" onClick={() => navigate("/sales-channels")} disabled={isSaving}>
+          <Button variant="outline" onClick={() => navigate("/maintenance/sales-channels")} disabled={isSaving}>
             <X className="h-4 w-4 me-2" />
             {t("common.cancel")}
           </Button>
