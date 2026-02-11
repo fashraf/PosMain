@@ -1,83 +1,89 @@
 
 
-# Cleanup and Enhancement Plan
+# Shift Management Module
 
-## 1. Global Scrollbar Styling
+## Overview
 
-Add custom scrollbar CSS to `src/index.css` using WebKit and Firefox scrollbar properties:
-- 6px thin scrollbar with rounded edges
-- Semi-transparent track, slightly visible thumb
-- Darker thumb on hover
-- Applied globally via `*` selector
-- No layout shift (overlay scrollbar where supported)
+Create a standalone Shift Definition module under **Maintenance** for defining reusable shift templates (e.g., "Weekend Evening Shift"). This is separate from the existing user-shift assignment in User Management.
 
-## 2. Remove Unused Modules
+## 1. Database: New `shifts` Table
 
-### Routes to remove from `src/App.tsx`:
-- `/categories`, `/categories/add`, `/categories/:id/edit`
-- `/item-ingredient-mapping`, `/item-ingredient-mapping/:id/edit`
-- `/inventory/items`, `/inventory/items/add`, `/inventory/items/:id/edit`
-- All associated imports (Categories, CategoriesAdd, CategoriesEdit, ItemIngredientMapping, ItemIngredientMappingEdit, ItemMaster, ItemMasterAdd, ItemMasterEdit)
+Create a new `shifts` table to store shift definitions:
 
-### Sidebar entries to remove from `src/components/AppSidebar.tsx` (`otherNavItems`):
-- Categories (`/categories`)
-- Item Ingredients (`/item-ingredient-mapping`)
-- Item Master from `inventorySubItems` (`/inventory/items`)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid (PK) | Auto-generated |
+| name | text | Required, shift name |
+| is_active | boolean | Default true |
+| effective_from | date | Required |
+| effective_to | date | Required |
+| days_of_week | text[] | Array of day names |
+| start_time | time | Required |
+| end_time | time | Required |
+| allow_overnight | boolean | Default false |
+| allow_early_clock_in | boolean | Default false |
+| early_tolerance_minutes | integer | Default 15 |
+| allow_late_clock_out | boolean | Default false |
+| force_close_after_hours | integer | Nullable |
+| require_fingerprint | boolean | Default false |
+| created_at | timestamptz | Default now() |
+| updated_at | timestamptz | Default now() |
 
-### Files left in place (not deleted) to avoid orphan imports elsewhere, but fully disconnected from navigation and routing.
+RLS policies: Admin full access, authenticated users can view.
 
-## 3. Item Pricing - Fetch from /items
+Add a unique constraint on `(name, start_time, end_time, effective_from, effective_to)` to prevent duplicate shifts.
 
-Update `src/pages/ItemPricing.tsx`:
-- Replace `mockItems` with a Supabase query to the `items` table
-- Replace `mockChannels` with a Supabase query to the `sales_channels` table
-- Add loading state
-- Items list dynamically reflects any changes made in `/items`
+## 2. New Files
 
-## 4. Move Sales Channels into Maintenance
+### Pages
+- **`src/pages/maintenance/Shifts.tsx`** -- Shift List page following the standard maintenance table pattern (search, status filter, pagination, add/edit/delete actions)
+- **`src/pages/maintenance/ShiftsAdd.tsx`** -- Thin wrapper calling `ShiftFormPage`
+- **`src/pages/maintenance/ShiftsEdit.tsx`** -- Thin wrapper calling `ShiftFormPage` with loaded data
 
-### Sidebar (`src/components/AppSidebar.tsx`):
-- Remove `salesChannels` entry from `mainNavItems`
-- Add `Sales Channels` as a new sub-item in `maintenanceSubItems` array
+### Components
+- **`src/components/shifts/ShiftFormPage.tsx`** -- Full-page form with four `DashedSectionCard` sections:
+  1. **Shift Information**: Name input + Active toggle
+  2. **Effective Period**: From/To date pickers + weekday toggle buttons with Select All / Clear All
+  3. **Shift Timing**: Start/End time inputs + Allow Overnight toggle + auto-calculated duration badge (with overnight detection prompt)
+  4. **Operational Rules**: Four toggle fields (early clock-in with tolerance input, late clock-out, force close with hours input, fingerprint)
 
-### Routes (`src/App.tsx`):
-- Change `/sales-channels` to `/maintenance/sales-channels`
-- Change `/sales-channels/add` to `/maintenance/sales-channels/add`
-- Change `/sales-channels/:id/edit` to `/maintenance/sales-channels/:id/edit`
+### Form Layout Details
+- Uses `DashedSectionCard` with gradient headers matching existing design
+- Fixed footer with Cancel / Save Shift buttons (left-[16rem] offset)
+- Touch-friendly 48px minimum tap targets
+- Inline validation (no alert dialogs)
+- Save disabled until all required fields are valid
+- `ConfirmActionModal` before final save
 
-### Update navigation references in:
-- `src/pages/SalesChannels.tsx` (add button navigates)
-- `src/pages/SalesChannelsAdd.tsx` (back/save redirects)
-- `src/pages/SalesChannelsEdit.tsx` (back/save redirects)
-
-## 5. Rename "Orders" to "Order List"
-
-### Sidebar (`src/components/AppSidebar.tsx`):
-- Change the label for `/pos/orders` entry: update `titleKey` translation value from "Orders" to "Order List"
-
-### Translations (`src/lib/i18n/translations.ts`):
-- EN: `orderList: "Order List"` (was "Orders")
-- AR: `orderList: "قائمة الطلبات"` (was "الطلبات")  
-- UR: `orderList: "آرڈر لسٹ"` (was "آرڈرز")
-
-Route stays at `/pos/orders` (already correct per requirement).
-
-## 6. Validation
-
-All changes are cosmetic/structural with no database schema modifications. The POS flow, order processing, and existing pricing logic remain untouched.
-
----
-
-## Technical Summary
+## 3. Modified Files
 
 | File | Change |
 |------|--------|
-| `src/index.css` | Add global custom scrollbar styles |
-| `src/App.tsx` | Remove 8 route entries, update 3 sales-channel routes |
-| `src/components/AppSidebar.tsx` | Remove 3 nav entries, move Sales Channels to maintenance, remove unused imports |
-| `src/pages/ItemPricing.tsx` | Replace mock data with Supabase queries for items and sales_channels |
-| `src/pages/SalesChannels.tsx` | Update navigation paths |
-| `src/pages/SalesChannelsAdd.tsx` | Update navigation paths |
-| `src/pages/SalesChannelsEdit.tsx` | Update navigation paths |
-| `src/lib/i18n/translations.ts` | Rename "Orders" to "Order List" in all 3 languages |
+| `src/App.tsx` | Add 3 routes: `/maintenance/shifts`, `/maintenance/shifts/add`, `/maintenance/shifts/:id/edit` |
+| `src/components/AppSidebar.tsx` | Add "Shift Management" entry to `maintenanceSubItems` array |
+| `src/lib/i18n/translations.ts` | Add shift-related translation keys in EN/AR/UR |
+| `src/pages/maintenance/index.ts` | Export the new ShiftsPage |
+
+## 4. Navigation
+
+Sidebar entry added to the Maintenance collapsible menu:
+- Label: "Shift Management"
+- Route: `/maintenance/shifts`
+- Position: After Employee Types (last item in maintenance list)
+
+## 5. Key Behaviors
+
+- **Overnight detection**: When end time is earlier than start time, show an inline warning with an "Enable" button to toggle `allow_overnight`
+- **Duration auto-calc**: Displayed as a read-only badge (e.g., "8h 00m"), accounts for overnight wrapping
+- **Weekday toggles**: Styled as pill buttons matching the existing `ShiftRow` pattern, with "Select All" and "Clear All" helper buttons
+- **Date pickers**: Using Shadcn Popover + Calendar component with `pointer-events-auto`
+- **Validation**: From Date must be <= To Date, at least one weekday selected, duration > 0, name required
+- **Duplicate prevention**: Enforced via DB unique constraint; caught and displayed as inline error on save
+
+## 6. No Changes To
+
+- Existing `user_shifts` table or user assignment flow
+- POS module, order flow, or pricing
+- Database schema of any existing tables
+- UI layout system or design language
 
