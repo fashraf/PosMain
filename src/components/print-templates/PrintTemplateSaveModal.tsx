@@ -51,7 +51,7 @@ export function PrintTemplateSaveModal({ open, onOpenChange, onConfirm, data }: 
               <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Header</p>
               <div className="flex flex-wrap gap-1.5">
                 <Pill on={data.show_logo} label="Logo" />
-                <Pill on={data.show_branch_name} label="Branch Name" />
+                <Pill on={data.show_branch_name} label="Restaurant Name" />
                 <Pill on={data.show_branch_mobile} label="Mobile" />
                 <Pill on={data.show_order_id} label="Order ID" />
                 <Pill on={data.show_order_taken_by} label="Taken By" />

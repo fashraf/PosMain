@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
 import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
-import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
+
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
 import { ReceiptPreview, PrintTemplateData } from "./ReceiptPreview";
 import { PrintTemplateSaveModal } from "./PrintTemplateSaveModal";
@@ -212,7 +212,7 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
           <div className="grid grid-cols-12 gap-3 items-end">
             <div className="col-span-10 space-y-1">
               <Label className="text-xs font-semibold">Template Name *</Label>
-              <Input value={data.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Default Receipt" className="h-9 text-[13px]" />
+              <Input data-field="name" value={data.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Default Receipt" className="h-9 text-[13px]" />
             </div>
             <div className="col-span-2 flex items-center gap-2 pb-0.5">
               <Label className="text-xs font-semibold">Active</Label>
@@ -223,12 +223,10 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
           {/* Template Info */}
           <DashedSectionCard title="Template Info" icon={Printer}>
             <div className="grid grid-cols-2 gap-3 p-1">
-              <CompactMultiLanguageInput
-                label="Restaurant Name"
-                values={{ en: data.restaurant_name_en, ar: data.restaurant_name_ar, ur: data.restaurant_name_ur }}
-                onChange={(lang, val) => set(`restaurant_name_${lang}` as any, val)}
-                placeholder="Restaurant Name"
-              />
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Restaurant Name *</Label>
+                <Input data-field="restaurant_name" value={data.restaurant_name_en} onChange={(e) => set("restaurant_name_en", e.target.value)} placeholder="Enter Restaurant Name" className="h-9 text-[13px]" />
+              </div>
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Tel #</Label>
                 <Input value={data.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+966 12 345 6789" className="h-9 text-[13px]" />
@@ -283,7 +281,7 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
                   </div>
                   <div className="space-y-2">
                     {([
-                      ["show_branch_name", "Branch Name"],
+                      ["show_branch_name", "Restaurant Name"],
                       ["show_branch_mobile", "Branch Mobile"],
                       ["show_order_id", "Order ID"],
                       ["show_order_taken_by", "Order Taken By"],
@@ -424,14 +422,30 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
 
       {/* Sticky Footer */}
       <div className={cn(
-        "fixed bottom-0 inset-x-0 bg-background border-t p-4 z-30 flex items-center gap-3",
-        isRTL ? "flex-row-reverse pe-[16rem] ps-4" : "ps-[16rem] pe-4"
+        "fixed bottom-0 bg-background border-t p-4 z-30 flex items-center gap-3",
+        isRTL ? "flex-row-reverse right-[16rem] left-0" : "left-[16rem] right-0"
       )}>
         <div className={cn("flex-1 flex gap-3 justify-end", isRTL && "flex-row-reverse")}>
           <Button variant="outline" onClick={() => navigate("/maintenance/print-templates")} disabled={saving}>
             <X className="h-4 w-4 me-2" /> Cancel
           </Button>
-          <Button onClick={() => setShowSaveModal(true)} disabled={saving}>
+          <Button onClick={() => {
+            if (!data.name.trim()) {
+              toast.error("Template name is required");
+              const el = document.querySelector<HTMLInputElement>('[data-field="name"]');
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+              setTimeout(() => el?.focus(), 300);
+              return;
+            }
+            if (!data.restaurant_name_en.trim()) {
+              toast.error("Restaurant name is required");
+              const el = document.querySelector<HTMLInputElement>('[data-field="restaurant_name"]');
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+              setTimeout(() => el?.focus(), 300);
+              return;
+            }
+            setShowSaveModal(true);
+          }} disabled={saving}>
             <Save className="h-4 w-4 me-2" /> {saving ? "Saving..." : "Save Template"}
           </Button>
         </div>
