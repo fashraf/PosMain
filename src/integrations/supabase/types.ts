@@ -1205,6 +1205,63 @@ export type Database = {
         }
         Relationships: []
       }
+      shifts: {
+        Row: {
+          allow_early_clock_in: boolean
+          allow_late_clock_out: boolean
+          allow_overnight: boolean
+          created_at: string
+          days_of_week: string[]
+          early_tolerance_minutes: number
+          effective_from: string
+          effective_to: string
+          end_time: string
+          force_close_after_hours: number | null
+          id: string
+          is_active: boolean
+          name: string
+          require_fingerprint: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          allow_early_clock_in?: boolean
+          allow_late_clock_out?: boolean
+          allow_overnight?: boolean
+          created_at?: string
+          days_of_week?: string[]
+          early_tolerance_minutes?: number
+          effective_from: string
+          effective_to: string
+          end_time: string
+          force_close_after_hours?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          require_fingerprint?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          allow_early_clock_in?: boolean
+          allow_late_clock_out?: boolean
+          allow_overnight?: boolean
+          created_at?: string
+          days_of_week?: string[]
+          early_tolerance_minutes?: number
+          effective_from?: string
+          effective_to?: string
+          end_time?: string
+          force_close_after_hours?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          require_fingerprint?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       storage_types: {
         Row: {
           created_at: string
