@@ -1,57 +1,44 @@
 
 
-# Branch Form UI Polish & Fixes
+# User Form UI Polish — Match Branch Form Design
 
-## Changes Summary
+## Overview
+Apply the same typography and styling updates from the Branch form to the User Add/Edit form, ensuring consistent enterprise-grade appearance across all forms.
 
-### 1. Remove "Hybrid" from Pricing Mode
-Remove the third "Hybrid" option -- only keep **Tax Inclusive** and **Tax Exclusive**.
+## Changes
 
-### 2. Remove "Apply On" column from Tax Row
-Simplify the `BranchTaxRow` component by removing the "Apply On" dropdown. Each tax row will only have: Tax Name, Tax Type, Value, Active toggle, and Delete button.
+### 1. Upgrade all labels from `text-xs` to `text-lg font-medium`
+Every `Label` in UserFormPage.tsx currently uses `text-xs`. Update all to `text-lg font-medium` to match the Branch form standard.
 
-### 3. "Add Tax" button font size to 16px
-Update the "Add Tax" button text to use `text-base` (16px) instead of `text-sm`.
+Affected labels: Full Name, Mobile, Email, Age, Nationality, Status, National ID / Iqama, Iqama Expiry, Passport Number, Passport Expiry, Employee Type, Default Language, Password, Role, Branch -- all labels in the form.
 
-### 4. Upgrade all labels to `text-lg font-medium`
-Replace the current `text-sm font-medium` on all `Label` elements across the branch form and tax row with `text-lg font-medium` for better readability.
+### 2. Increase input heights from `h-7` to `h-9`
+Inputs at `h-7` look too small with `text-lg` labels. Bump to `h-9` for visual balance.
 
-### 5. DashedSectionCard header redesign
-Update the `DashedSectionCard` component header to use a **gradient background** that fades from light grey on the edges to white at the center, with black text -- matching the reference screenshot. This replaces the current colored header backgrounds (purple-50, green-50, etc.).
+### 3. Increase input font from `text-xs` to `text-sm` (14px)
+Match the Branch form's 14px input standard.
 
-### 6. Confirmation Modal -- show full details instead of summary counts
-Redesign the `BranchSaveConfirmModal` to display actual branch details instead of just counts:
-- Branch Name, Branch Code, Currency
-- List of selected Sales Channel names (resolved from IDs)
-- Each tax rule with name, type, and value
-- Pricing Mode and Status
-- Rounding Rule
+### 4. Increase spacing
+- Section inner spacing: `space-y-1.5` to `space-y-3`
+- Grid gaps: `gap-1.5` to `gap-3`
+- Field spacing: `space-y-0.5` to `space-y-1`
 
-The modal will accept the full form data and channel options to render rich details.
+### 5. DashedSectionCard header (already done)
+The gradient header (`linear-gradient(to right, #e5e7eb, white 40%, white 60%, #e5e7eb)`) with black text is already applied globally via the shared component. No changes needed here.
 
 ---
 
 ## Technical Details
 
-### Files to Modify
+### File to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/shared/DashedSectionCard.tsx` | Replace colored headers with gradient grey-to-white background, black text |
-| `src/components/branches/BranchFormPage.tsx` | Remove "Hybrid" from PRICING_MODES, upgrade labels to `text-lg`, "Add Tax" button to `text-base`, pass full data to confirmation modal |
-| `src/components/branches/BranchTaxRow.tsx` | Remove "Apply On" column, upgrade labels to `text-lg`, redistribute grid columns |
-| `src/components/branches/BranchSaveConfirmModal.tsx` | Accept full form data + channel names, show detailed breakdown instead of counts |
+| `src/components/users/UserFormPage.tsx` | Replace all `text-xs` on Labels with `text-lg font-medium`, increase input heights to `h-9`, input text to `text-sm`, increase gaps and spacing throughout |
 
-### DashedSectionCard Header Style
-The header will use:
-```
-background: linear-gradient(to right, #e5e7eb, white 40%, white 60%, #e5e7eb)
-```
-With `text-base font-semibold text-foreground` for the title, centered.
-
-### Tax Row Grid (after removing Apply On)
-- Tax Name: `col-span-4`
-- Tax Type: `col-span-3`
-- Value: `col-span-3`
-- Active + Delete: `col-span-2`
+### Scope
+- Only the UserFormPage component is affected
+- The DashedSectionCard header is already correct (shared component)
+- No database changes needed
+- No new files needed
 
