@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/use-toast";
@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
 import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
-import { CheckboxGroup } from "@/components/shared/CheckboxGroup";
+import { SearchableMultiSelect } from "@/components/shared/SearchableMultiSelect";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
-import { CompactRadioGroup } from "@/components/shared/CompactRadioGroup";
+import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
-import { ArrowLeft, ArrowRight, Save, X, Building2, ShoppingBag, Coins, Receipt, Calculator } from "lucide-react";
+import { BranchTaxRow, type BranchTax } from "./BranchTaxRow";
+import { BranchSaveConfirmModal } from "./BranchSaveConfirmModal";
+import { ArrowLeft, ArrowRight, Save, X, Building2, Store, Receipt, Coins, Calculator, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CURRENCY_OPTIONS = [
@@ -29,15 +31,10 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   SAR: "ر.س", USD: "$", AED: "د.إ", EGP: "ج.م", BDT: "৳", PKR: "₨",
 };
 
-const ORDER_TYPE_OPTIONS = [
-  { id: "dine_in", label: "Dine-In" },
-  { id: "takeaway", label: "Takeaway" },
-  { id: "delivery", label: "Delivery" },
-];
-
-const PRICING_MODE_OPTIONS = [
-  { value: "inclusive", label: "Inclusive", description: "Prices already include tax" },
-  { value: "exclusive", label: "Exclusive", description: "Tax added on top of prices" },
+const PRICING_MODES = [
+  { value: "inclusive", label: "Tax Inclusive", desc: "Prices already include tax" },
+  { value: "exclusive", label: "Tax Exclusive", desc: "Tax added on top of prices" },
+  { value: "hybrid", label: "Hybrid", desc: "Per-item tax inclusion" },
 ];
 
 const ROUNDING_OPTIONS = [
@@ -53,12 +50,11 @@ export interface BranchFormData {
   name_ur: string;
   branch_code: string;
   is_active: boolean;
-  order_types: string[];
+  sales_channel_ids: string[];
   currency: string;
   pricing_mode: string;
-  vat_enabled: boolean;
-  vat_rate: string;
   rounding_rule: string;
+  taxes: BranchTax[];
 }
 
 interface BranchFormPageProps {
@@ -69,9 +65,8 @@ interface BranchFormPageProps {
 
 const defaultData: BranchFormData = {
   name: "", name_ar: "", name_ur: "", branch_code: "",
-  is_active: true, order_types: [], currency: "SAR",
-  pricing_mode: "exclusive", vat_enabled: false, vat_rate: "15",
-  rounding_rule: "none",
+  is_active: true, sales_channel_ids: [], currency: "SAR",
+  pricing_mode: "exclusive", rounding_rule: "none", taxes: [],
 };
 
 export default function BranchFormPage({ title, initialData, branchId }: BranchFormPageProps) {
@@ -82,23 +77,79 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
   const [form, setForm] = useState<BranchFormData>(initialData || defaultData);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Sales channels from DB
+  const [channelOptions, setChannelOptions] = useState<{ id: string; label: string }[]>([]);
+  const [channelsLoading, setChannelsLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("sales_channels")
+      .select("id, name_en, icon, is_active")
+      .eq("is_active", true)
+      .order("name_en")
+      .then(({ data }) => {
+        setChannelOptions(
+          (data || []).map((c: any) => ({ id: c.id, label: `${c.icon || ""} ${c.name_en}`.trim() }))
+        );
+        setChannelsLoading(false);
+      });
+  }, []);
 
   const set = <K extends keyof BranchFormData>(key: K, value: BranchFormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => { const n = { ...prev }; delete n[key]; return n; });
   };
 
-  const handleSave = async () => {
+  const addTax = () => {
+    const newTax: BranchTax = {
+      id: crypto.randomUUID(),
+      tax_name: "",
+      tax_type: "percentage",
+      value: 0,
+      apply_on: "before_discount",
+      is_active: true,
+      sort_order: form.taxes.length,
+    };
+    set("taxes", [...form.taxes, newTax]);
+  };
+
+  const updateTax = (index: number, updated: BranchTax) => {
+    const taxes = [...form.taxes];
+    taxes[index] = updated;
+    set("taxes", taxes);
+  };
+
+  const deleteTax = (index: number) => {
+    set("taxes", form.taxes.filter((_, i) => i !== index));
+  };
+
+  const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = "Branch name is required";
+    // Validate taxes
+    form.taxes.forEach((tax, i) => {
+      if (!tax.tax_name.trim()) newErrors[`tax_${i}_name`] = "Tax name required";
+      if (tax.value <= 0) newErrors[`tax_${i}_value`] = "Value must be positive";
+    });
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
       const el = document.querySelector('[data-field="name"]');
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       (el?.querySelector("input") as HTMLInputElement)?.focus();
-      return;
+      return false;
     }
+    return true;
+  };
 
+  const handleSaveClick = () => {
+    if (!validate()) return;
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowConfirm(false);
     setIsSaving(true);
     try {
       const payload = {
@@ -107,24 +158,47 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
         name_ur: form.name_ur.trim() || null,
         branch_code: form.branch_code.trim() || null,
         is_active: form.is_active,
-        order_types: form.order_types,
+        sales_channel_ids: form.sales_channel_ids,
         currency: form.currency,
         currency_symbol: CURRENCY_SYMBOLS[form.currency] || form.currency,
         pricing_mode: form.pricing_mode,
-        vat_enabled: form.vat_enabled,
-        vat_rate: form.vat_enabled ? parseFloat(form.vat_rate) || 0 : 0,
         rounding_rule: form.rounding_rule,
+        // Keep legacy fields in sync
+        vat_enabled: form.taxes.some((t) => t.is_active),
+        vat_rate: form.taxes.find((t) => t.is_active && t.tax_type === "percentage")?.value || 0,
+        order_types: [] as string[],
       };
+
+      let savedBranchId = branchId;
 
       if (branchId) {
         const { error } = await supabase.from("branches").update(payload as any).eq("id", branchId);
         if (error) throw error;
-        toast({ title: t("common.success"), description: "Branch updated successfully" });
       } else {
-        const { error } = await supabase.from("branches").insert(payload as any);
+        const { data, error } = await supabase.from("branches").insert(payload as any).select("id").single();
         if (error) throw error;
-        toast({ title: t("common.success"), description: "Branch created successfully" });
+        savedBranchId = data.id;
       }
+
+      // Save taxes: delete existing, then insert new
+      if (savedBranchId) {
+        await supabase.from("branch_taxes").delete().eq("branch_id", savedBranchId);
+        if (form.taxes.length > 0) {
+          const taxRows = form.taxes.map((tax, i) => ({
+            branch_id: savedBranchId!,
+            tax_name: tax.tax_name,
+            tax_type: tax.tax_type,
+            value: tax.value,
+            apply_on: tax.apply_on,
+            is_active: tax.is_active,
+            sort_order: i,
+          }));
+          const { error: taxError } = await supabase.from("branch_taxes").insert(taxRows as any);
+          if (taxError) throw taxError;
+        }
+      }
+
+      toast({ title: t("common.success"), description: branchId ? "Branch updated successfully" : "Branch created successfully" });
       navigate("/branches");
     } catch (error) {
       toast({ title: t("common.error"), description: error instanceof Error ? error.message : String(error), variant: "destructive" });
@@ -136,24 +210,24 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
   return (
-    <div className="p-1 space-y-1.5 pb-14">
+    <div className="p-3 space-y-3 pb-16">
       <LoadingOverlay visible={isSaving} />
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate("/branches")}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/branches")}>
           <BackIcon className="h-4 w-4" />
         </Button>
-        <div className="flex items-center gap-1.5">
-          <Building2 className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2">
+          <Building2 className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">{title}</h1>
         </div>
       </div>
 
-      <div className="max-w-2xl space-y-1.5">
+      <div className="space-y-3">
         {/* Section 1: Basic Information */}
         <DashedSectionCard title="Basic Information" icon={Building2} variant="purple" id="section-basic">
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             <div data-field="name">
               <CompactMultiLanguageInput
                 label="Branch Name"
@@ -165,112 +239,159 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
                   else set("name_ur", val);
                 }}
               />
-              {errors.name && <p className="text-[10px] text-destructive mt-0.5">{errors.name}</p>}
+              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 items-end">
-              <div className="space-y-0.5">
-                <Label className="text-xs">Branch Code</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Branch Code</Label>
                 <Input
                   value={form.branch_code}
                   onChange={(e) => set("branch_code", e.target.value.toUpperCase())}
                   placeholder="e.g., MAIN"
-                  className="h-7 text-xs font-mono"
+                  className="h-9 text-sm font-mono"
                 />
               </div>
-              <div className="flex items-center justify-end gap-1.5 pb-0.5">
-                <Label className="text-xs">Status</Label>
-                <span className="text-xs text-muted-foreground">{form.is_active ? t("common.active") : t("common.inactive")}</span>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Currency</Label>
+                <SearchableSelect
+                  value={form.currency}
+                  onChange={(v) => set("currency", v)}
+                  options={CURRENCY_OPTIONS}
+                  placeholder="Select currency..."
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1">
+                  <Label className="text-sm font-medium">Pricing Mode</Label>
+                  <TooltipInfo content="Determines how tax is applied to item prices in POS." />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {PRICING_MODES.map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => set("pricing_mode", mode.value)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-md border text-sm transition-all",
+                        form.pricing_mode === mode.value
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-card text-muted-foreground border-input hover:bg-accent"
+                      )}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-end justify-end gap-2 pb-1">
+                <Label className="text-sm font-medium">Status</Label>
+                <span className="text-sm text-muted-foreground">{form.is_active ? "Active" : "Inactive"}</span>
                 <Switch checked={form.is_active} onCheckedChange={(v) => set("is_active", v)} />
               </div>
             </div>
           </div>
         </DashedSectionCard>
 
-        {/* Section 2: Order Types */}
-        <DashedSectionCard title="Order Types" icon={ShoppingBag} variant="green" id="section-orders">
-          <CheckboxGroup
-            options={ORDER_TYPE_OPTIONS}
-            value={form.order_types}
-            onChange={(v) => set("order_types", v)}
-            columns={3}
-          />
-        </DashedSectionCard>
-
-        {/* Section 3: Currency & Pricing */}
-        <DashedSectionCard title="Currency & Pricing" icon={Coins} variant="blue" id="section-currency">
-          <div className="space-y-1.5">
-            <div className="space-y-0.5">
-              <Label className="text-xs">Currency</Label>
-              <SearchableSelect
-                value={form.currency}
-                onChange={(v) => set("currency", v)}
-                options={CURRENCY_OPTIONS}
-                placeholder="Select currency..."
-                className="h-7 text-xs"
-              />
+        {/* Section 2: Sales Channels */}
+        <DashedSectionCard title="Sales Channels" icon={Store} variant="green" id="section-channels">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <Label className="text-sm font-medium">Active Channels</Label>
+              <TooltipInfo content="Select which sales channels this branch supports. Only active channels are shown." />
             </div>
-            <CompactRadioGroup
-              label="Pricing Mode"
-              options={PRICING_MODE_OPTIONS}
-              value={form.pricing_mode}
-              onChange={(v) => set("pricing_mode", v)}
+            <SearchableMultiSelect
+              value={form.sales_channel_ids}
+              onChange={(v) => set("sales_channel_ids", v)}
+              options={channelOptions}
+              placeholder="Select sales channels..."
+              searchPlaceholder="Search channels..."
+              isLoading={channelsLoading}
             />
           </div>
         </DashedSectionCard>
 
-        {/* Section 4: Tax & VAT Settings */}
-        <DashedSectionCard title="Tax & VAT Settings" icon={Receipt} variant="amber" id="section-vat">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">VAT Enabled</Label>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">{form.vat_enabled ? "Yes" : "No"}</span>
-                <Switch checked={form.vat_enabled} onCheckedChange={(v) => set("vat_enabled", v)} />
-              </div>
+        {/* Section 3: Tax Configuration */}
+        <DashedSectionCard title="Tax Configuration" icon={Receipt} variant="amber" id="section-tax">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1">
+              <TooltipInfo content="Configure multiple tax rules. Each can be percentage-based or fixed, applied before or after discounts." />
+              <span className="text-xs text-muted-foreground">
+                {form.taxes.length === 0 ? "No taxes configured" : `${form.taxes.length} tax rule(s)`}
+              </span>
             </div>
-            {form.vat_enabled && (
-              <div className="space-y-0.5">
-                <Label className="text-xs">VAT Rate (%)</Label>
-                <Input
-                  type="number"
-                  value={form.vat_rate}
-                  onChange={(e) => set("vat_rate", e.target.value)}
-                  placeholder="15"
-                  className="h-7 text-xs max-w-[120px]"
-                  min="0"
-                  max="100"
-                />
-              </div>
-            )}
+
+            {form.taxes.map((tax, index) => (
+              <BranchTaxRow
+                key={tax.id}
+                tax={tax}
+                onChange={(updated) => updateTax(index, updated)}
+                onDelete={() => deleteTax(index)}
+              />
+            ))}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addTax}
+              type="button"
+              className="text-sm"
+            >
+              <Plus className="h-4 w-4 me-1.5" />
+              Add Tax
+            </Button>
           </div>
         </DashedSectionCard>
 
-        {/* Section 5: Rounding Rules */}
+        {/* Section 4: Rounding Rules */}
         <DashedSectionCard title="Rounding Rules" icon={Calculator} variant="muted" id="section-rounding">
-          <CompactRadioGroup
-            options={ROUNDING_OPTIONS}
-            value={form.rounding_rule}
-            onChange={(v) => set("rounding_rule", v)}
-            orientation="horizontal"
-          />
+          <div className="flex gap-2 flex-wrap">
+            {ROUNDING_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => set("rounding_rule", opt.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-md border text-sm transition-all",
+                  form.rounding_rule === opt.value
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-card text-muted-foreground border-input hover:bg-accent"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </DashedSectionCard>
       </div>
 
       {/* Sticky Footer */}
       <div className={cn(
-        "fixed bottom-0 bg-background/95 backdrop-blur-sm border-t p-2 z-30",
+        "fixed bottom-0 bg-background/95 backdrop-blur-sm border-t p-3 z-30",
         isRTL ? "right-0 left-[16rem]" : "left-[16rem] right-0"
       )}>
-        <div className={cn("flex gap-1.5 justify-end", isRTL && "flex-row-reverse")}>
-          <Button variant="outline" size="sm" onClick={() => navigate("/branches")} disabled={isSaving} className="h-7 text-xs">
-            <X className="h-3 w-3 me-1" /> {t("common.cancel")}
+        <div className={cn("flex gap-2 justify-end", isRTL && "flex-row-reverse")}>
+          <Button variant="outline" size="sm" onClick={() => navigate("/branches")} disabled={isSaving} className="text-sm">
+            <X className="h-4 w-4 me-1" /> Cancel
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving} className="h-7 text-xs">
-            <Save className="h-3 w-3 me-1" /> {isSaving ? t("common.loading") : "Save Branch"}
+          <Button size="sm" onClick={handleSaveClick} disabled={isSaving} className="text-sm">
+            <Save className="h-4 w-4 me-1" /> {isSaving ? "Saving..." : "Save Branch"}
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <BranchSaveConfirmModal
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        onConfirm={handleConfirmSave}
+        branchName={form.name}
+        salesChannelsCount={form.sales_channel_ids.length}
+        taxCount={form.taxes.length}
+        pricingMode={form.pricing_mode}
+        isActive={form.is_active}
+      />
     </div>
   );
 }

@@ -50,6 +50,50 @@ export type Database = {
         }
         Relationships: []
       }
+      branch_taxes: {
+        Row: {
+          apply_on: string
+          branch_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          tax_name: string
+          tax_type: string
+          value: number
+        }
+        Insert: {
+          apply_on?: string
+          branch_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          tax_name: string
+          tax_type?: string
+          value?: number
+        }
+        Update: {
+          apply_on?: string
+          branch_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          tax_name?: string
+          tax_type?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_taxes_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -65,6 +109,7 @@ export type Database = {
           order_types: string[]
           pricing_mode: string
           rounding_rule: string
+          sales_channel_ids: string[]
           updated_at: string
           vat_enabled: boolean
           vat_rate: number
@@ -83,6 +128,7 @@ export type Database = {
           order_types?: string[]
           pricing_mode?: string
           rounding_rule?: string
+          sales_channel_ids?: string[]
           updated_at?: string
           vat_enabled?: boolean
           vat_rate?: number
@@ -101,6 +147,7 @@ export type Database = {
           order_types?: string[]
           pricing_mode?: string
           rounding_rule?: string
+          sales_channel_ids?: string[]
           updated_at?: string
           vat_enabled?: boolean
           vat_rate?: number
@@ -1079,6 +1126,42 @@ export type Database = {
           is_active?: boolean
           is_system?: boolean
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sales_channels: {
+        Row: {
+          code: string
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          name_ur: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          name_ur?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          name_ur?: string | null
           updated_at?: string
         }
         Relationships: []

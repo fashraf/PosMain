@@ -31,6 +31,7 @@ interface Branch {
   pricing_mode: string;
   rounding_rule: string;
   order_types: string[];
+  sales_channel_ids: string[];
   created_at: string;
 }
 
@@ -83,7 +84,7 @@ export default function Branches() {
         { label: "VAT", value: branch.vat_enabled ? `Yes (${branch.vat_rate}%)` : "No" },
         { label: "Pricing Mode", value: branch.pricing_mode },
         { label: "Rounding", value: branch.rounding_rule === "none" ? "None" : branch.rounding_rule },
-        { label: "Order Types", value: (branch.order_types || []).join(", ") || "—" },
+        { label: "Sales Channels", value: `${(branch.sales_channel_ids || []).length} channel(s)` },
         { label: t("common.status"), value: <StatusBadge isActive={branch.is_active} /> },
       ],
     },
