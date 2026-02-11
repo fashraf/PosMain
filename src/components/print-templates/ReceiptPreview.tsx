@@ -107,23 +107,14 @@ export function ReceiptPreview({ data }: { data: PrintTemplateData }) {
         </p>
         <div className="bg-white rounded-lg shadow-sm mx-auto max-w-[280px] px-4 py-5 font-mono text-[11px] leading-relaxed space-y-2">
           {/* LOGO */}
-          {data.show_logo && (
+          {data.show_logo && data.logo_url && (
             <div className={cn("flex", data.logo_position === "left" ? "justify-start" : data.logo_position === "right" ? "justify-end" : "justify-center")}>
-              {data.logo_url ? (
-                <img
-                  src={data.logo_url}
-                  alt="Logo"
-                  style={{ width: data.logo_width, height: data.logo_height }}
-                  className="object-contain"
-                />
-              ) : (
-                <div
-                  style={{ width: data.logo_width, height: data.logo_height }}
-                  className="rounded bg-muted/60 flex items-center justify-center text-[9px] text-muted-foreground border border-dashed border-muted-foreground/30"
-                >
-                  LOGO
-                </div>
-              )}
+              <img
+                src={data.logo_url}
+                alt="Logo"
+                style={{ width: data.logo_width, height: data.logo_height }}
+                className="object-contain"
+              />
             </div>
           )}
 
@@ -134,7 +125,7 @@ export function ReceiptPreview({ data }: { data: PrintTemplateData }) {
 
           {/* BRANCH INFO */}
           <div className="text-center space-y-0.5">
-            {data.show_branch_name && <p className="font-bold text-[12px]">Al Riyadh Main Branch</p>}
+            {data.show_branch_name && <p className="font-bold text-[12px]">{data.restaurant_name_en || "Sample Restaurant"}</p>}
             {data.show_branch_mobile && <p className="text-muted-foreground">+966 50 123 4567</p>}
             {(data.telephone) && <p className="text-muted-foreground">Tel: {data.telephone}</p>}
             {data.show_cr_number && <p className="text-muted-foreground">CR# {data.cr_number || "1010XXXXXX"}</p>}
