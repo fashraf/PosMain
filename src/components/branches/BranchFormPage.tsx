@@ -34,7 +34,6 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 const PRICING_MODES = [
   { value: "inclusive", label: "Tax Inclusive", desc: "Prices already include tax" },
   { value: "exclusive", label: "Tax Exclusive", desc: "Tax added on top of prices" },
-  { value: "hybrid", label: "Hybrid", desc: "Per-item tax inclusion" },
 ];
 
 const ROUNDING_OPTIONS = [
@@ -244,7 +243,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="space-y-1">
-                <Label className="text-sm font-medium">Branch Code</Label>
+                <Label className="text-lg font-medium">Branch Code</Label>
                 <Input
                   value={form.branch_code}
                   onChange={(e) => set("branch_code", e.target.value.toUpperCase())}
@@ -253,7 +252,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-sm font-medium">Currency</Label>
+                <Label className="text-lg font-medium">Currency</Label>
                 <SearchableSelect
                   value={form.currency}
                   onChange={(v) => set("currency", v)}
@@ -264,7 +263,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-1">
-                  <Label className="text-sm font-medium">Pricing Mode</Label>
+                  <Label className="text-lg font-medium">Pricing Mode</Label>
                   <TooltipInfo content="Determines how tax is applied to item prices in POS." />
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
@@ -286,7 +285,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
                 </div>
               </div>
               <div className="flex items-end justify-end gap-2 pb-1">
-                <Label className="text-sm font-medium">Status</Label>
+                <Label className="text-lg font-medium">Status</Label>
                 <span className="text-sm text-muted-foreground">{form.is_active ? "Active" : "Inactive"}</span>
                 <Switch checked={form.is_active} onCheckedChange={(v) => set("is_active", v)} />
               </div>
@@ -298,7 +297,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
         <DashedSectionCard title="Sales Channels" icon={Store} variant="green" id="section-channels">
           <div className="space-y-1">
             <div className="flex items-center gap-1">
-              <Label className="text-sm font-medium">Active Channels</Label>
+              <Label className="text-lg font-medium">Active Channels</Label>
               <TooltipInfo content="Select which sales channels this branch supports. Only active channels are shown." />
             </div>
             <SearchableMultiSelect
@@ -336,7 +335,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
               size="sm"
               onClick={addTax}
               type="button"
-              className="text-sm"
+              className="text-base"
             >
               <Plus className="h-4 w-4 me-1.5" />
               Add Tax
@@ -386,11 +385,8 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
         open={showConfirm}
         onOpenChange={setShowConfirm}
         onConfirm={handleConfirmSave}
-        branchName={form.name}
-        salesChannelsCount={form.sales_channel_ids.length}
-        taxCount={form.taxes.length}
-        pricingMode={form.pricing_mode}
-        isActive={form.is_active}
+        formData={form}
+        channelOptions={channelOptions}
       />
     </div>
   );
