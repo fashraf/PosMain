@@ -118,14 +118,9 @@ export function ReceiptPreview({ data }: { data: PrintTemplateData }) {
             </div>
           )}
 
-          {/* RESTAURANT NAME */}
-          {restaurantName && (
-            <p className="text-center font-bold text-[13px]">{restaurantName}</p>
-          )}
-
           {/* BRANCH INFO */}
           <div className="text-center space-y-0.5">
-            {data.show_branch_name && <p className="font-bold text-[12px]">{data.restaurant_name_en || "Sample Restaurant"}</p>}
+            {data.show_branch_name && data.restaurant_name_en?.trim() && <p className="font-bold text-[13px]">{data.restaurant_name_en}</p>}
             {data.show_branch_mobile && <p className="text-muted-foreground">+966 50 123 4567</p>}
             {(data.telephone) && <p className="text-muted-foreground">Tel: {data.telephone}</p>}
             {data.show_cr_number && <p className="text-muted-foreground">CR# {data.cr_number || "1010XXXXXX"}</p>}
