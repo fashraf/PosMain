@@ -33,6 +33,7 @@ const defaultData: PrintTemplateData = {
   show_vat_number: false,
   cr_number: "",
   vat_number: "",
+  telephone: "",
   header_text: "Welcome to Our Restaurant",
   header_alignment: "center",
   show_item_name: true,
@@ -90,6 +91,7 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         show_vat_number: row.show_vat_number,
         cr_number: (row as any).cr_number ?? "",
         vat_number: (row as any).vat_number ?? "",
+        telephone: (row as any).telephone ?? "",
         header_text: row.header_text || "",
         header_alignment: row.header_alignment as any,
         show_item_name: row.show_item_name,
@@ -149,6 +151,7 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
       show_vat_number: data.show_vat_number,
       cr_number: data.cr_number,
       vat_number: data.vat_number,
+      telephone: data.telephone,
       header_text: data.header_text,
       header_alignment: data.header_alignment,
       show_item_name: data.show_item_name,
@@ -202,31 +205,44 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         <h1 className="text-lg font-semibold">{mode === "add" ? "New Print Template" : "Edit Print Template"}</h1>
       </div>
 
-      <div className="max-w-[65%] mx-auto">
-        <div className="grid grid-cols-12 gap-5">
-          {/* LEFT: Form */}
-          <div className="col-span-6 space-y-4">
-            {/* Template Info */}
-            <DashedSectionCard title="Template Info" icon={Printer}>
-              <div className="space-y-3 p-1">
-                <CompactMultiLanguageInput
-                  label="Restaurant Name"
-                  values={{ en: data.restaurant_name_en, ar: data.restaurant_name_ar, ur: data.restaurant_name_ur }}
-                  onChange={(lang, val) => set(`restaurant_name_${lang}` as any, val)}
-                  placeholder="Restaurant Name"
-                />
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Template Name *</Label>
-                    <Input value={data.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Default Receipt" className="h-9 text-[13px]" />
-                  </div>
-                  <div className="flex items-end gap-2 pb-0.5">
-                    <Label className="text-xs font-semibold">Active</Label>
-                    <Switch checked={isActive} onCheckedChange={setIsActive} />
-                  </div>
-                </div>
+      <div className="grid grid-cols-12 gap-5">
+        {/* LEFT: Form */}
+        <div className="col-span-8 space-y-4">
+          {/* Template Name - standalone top row */}
+          <div className="grid grid-cols-12 gap-3 items-end">
+            <div className="col-span-10 space-y-1">
+              <Label className="text-xs font-semibold">Template Name *</Label>
+              <Input value={data.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Default Receipt" className="h-9 text-[13px]" />
+            </div>
+            <div className="col-span-2 flex items-center gap-2 pb-0.5">
+              <Label className="text-xs font-semibold">Active</Label>
+              <Switch checked={isActive} onCheckedChange={setIsActive} />
+            </div>
+          </div>
+
+          {/* Template Info */}
+          <DashedSectionCard title="Template Info" icon={Printer}>
+            <div className="grid grid-cols-2 gap-3 p-1">
+              <CompactMultiLanguageInput
+                label="Restaurant Name"
+                values={{ en: data.restaurant_name_en, ar: data.restaurant_name_ar, ur: data.restaurant_name_ur }}
+                onChange={(lang, val) => set(`restaurant_name_${lang}` as any, val)}
+                placeholder="Restaurant Name"
+              />
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Tel #</Label>
+                <Input value={data.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+966 12 345 6789" className="h-9 text-[13px]" />
               </div>
-            </DashedSectionCard>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">CR #</Label>
+                <Input value={data.cr_number} onChange={(e) => set("cr_number", e.target.value)} placeholder="Enter CR Number" className="h-9 text-[13px]" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">VAT #</Label>
+                <Input value={data.vat_number} onChange={(e) => set("vat_number", e.target.value)} placeholder="Enter VAT Number" className="h-9 text-[13px]" />
+              </div>
+            </div>
+          </DashedSectionCard>
 
             {/* Header Section */}
             <DashedSectionCard title="Header" icon={FileText}>
@@ -274,21 +290,9 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
                       ["show_cr_number", "CR Number"],
                       ["show_vat_number", "VAT Number"],
                     ] as const).map(([key, label]) => (
-                      <div key={key}>
-                        <div className="flex items-center gap-3">
-                          <Checkbox checked={data[key]} onCheckedChange={(c) => set(key, !!c)} id={key} />
-                          <Label htmlFor={key} className="text-xs">{label}</Label>
-                        </div>
-                        {key === "show_cr_number" && data.show_cr_number && (
-                          <div className="pl-6 mt-1">
-                            <Input value={data.cr_number} onChange={(e) => set("cr_number", e.target.value)} placeholder="Enter CR Number" className="h-8 text-[12px]" />
-                          </div>
-                        )}
-                        {key === "show_vat_number" && data.show_vat_number && (
-                          <div className="pl-6 mt-1">
-                            <Input value={data.vat_number} onChange={(e) => set("vat_number", e.target.value)} placeholder="Enter VAT Number" className="h-8 text-[12px]" />
-                          </div>
-                        )}
+                      <div key={key} className="flex items-center gap-3">
+                        <Checkbox checked={data[key]} onCheckedChange={(c) => set(key, !!c)} id={key} />
+                        <Label htmlFor={key} className="text-xs">{label}</Label>
                       </div>
                     ))}
                   </div>
@@ -412,10 +416,9 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
             </DashedSectionCard>
           </div>
 
-          {/* RIGHT: Preview */}
-          <div className="col-span-6">
-            <ReceiptPreview data={data} />
-          </div>
+        {/* RIGHT: Preview */}
+        <div className="col-span-4">
+          <ReceiptPreview data={data} />
         </div>
       </div>
 

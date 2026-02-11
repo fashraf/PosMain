@@ -1027,6 +1027,7 @@ export type Database = {
           show_tax_breakdown: boolean
           show_total_amount: boolean
           show_vat_number: boolean
+          telephone: string | null
           updated_at: string
           vat_number: string | null
         }
@@ -1069,6 +1070,7 @@ export type Database = {
           show_tax_breakdown?: boolean
           show_total_amount?: boolean
           show_vat_number?: boolean
+          telephone?: string | null
           updated_at?: string
           vat_number?: string | null
         }
@@ -1111,6 +1113,7 @@ export type Database = {
           show_tax_breakdown?: boolean
           show_total_amount?: boolean
           show_vat_number?: boolean
+          telephone?: string | null
           updated_at?: string
           vat_number?: string | null
         }
