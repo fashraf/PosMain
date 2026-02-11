@@ -1,43 +1,63 @@
 
-
-# Fix: Branch and Role Not Displayed on User Edit
+# Fix: Role and Branch Save for User Management
 
 ## Root Cause
 
-The `user_roles` table is **empty** — no admin role has been assigned despite previous migration attempts. This causes a chain of failures:
+There are two interrelated problems:
 
-1. RLS on `user_roles` only allows admins or the user themselves to read rows
-2. RLS on `user_branches` has the same restriction
-3. When loading the edit form, queries for roles and branches return empty results
-4. When saving, writes to these tables are also blocked
+1. **Chicken-and-egg RLS deadlock**: The `user_roles` table is empty. The RLS policy on `user_roles` requires `is_admin(auth.uid())` for writes. Since nobody has a role, `is_admin()` returns false for everyone, so nobody can insert roles -- including making someone an admin. Previous data-insert attempts have not persisted.
 
-## Fix
+2. **Silent failures in edit code**: The `UsersEdit.tsx` save handler (lines 109-119) performs delete+insert on `user_roles` and `user_branches` using the client-side connection (which enforces RLS), but **never checks for errors** on these operations. The profile update succeeds, but role and branch changes are silently rejected.
 
-### 1. Database Migration (Critical)
-Insert the Admin role for user `222d0e7a-8f79-4b75-a858-676b59886c25` with role ID `ce3de3f2-aa33-480f-81f3-634583cdb3f0`:
+## Solution
+
+### 1. Database Migration: Seed Admin Role
+Use a schema migration (which runs with elevated privileges) to insert the admin role assignment. This breaks the chicken-and-egg cycle.
 
 ```sql
 INSERT INTO user_roles (user_id, role_id)
-VALUES ('222d0e7a-8f79-4b75-a858-676b59886c25', 'ce3de3f2-aa33-480f-81f3-634583cdb3f0');
+VALUES (
+  '222d0e7a-8f79-4b75-a858-676b59886c25',
+  'ce3de3f2-aa33-480f-81f3-634583cdb3f0'
+)
+ON CONFLICT ON CONSTRAINT user_roles_user_role_unique DO NOTHING;
 ```
 
-This is the same fix attempted before. If it fails silently due to a constraint, we will verify immediately after and investigate.
+### 2. New Edge Function: `update-user`
+Create a new backend function at `supabase/functions/update-user/index.ts` that mirrors the existing `create-user` pattern:
+- Validates the caller is an admin (using service_role to check `user_roles`)
+- Accepts `user_id`, profile fields, `role_id`, and `branch_ids`
+- Uses service_role key to bypass RLS for updating `profiles`, `user_roles`, and `user_branches`
+- Returns success/error response
 
-### 2. Add Verification Step
-After the migration, query `user_roles` to confirm the row exists. If it doesn't, we may need to check for unique constraints or triggers that could be silently rejecting the insert.
+This follows the same architecture as `create-user` and `reset-password`.
 
-### 3. No Code Changes Needed
-The code in `UsersEdit.tsx` already correctly:
-- Queries `user_roles` with `user_id` and `role_id` (line 35)
-- Filters by `profile.user_id` in JS (line 52-54)
-- Sets `role_id` and `branch_ids` into `initialData` (lines 70-71)
+### 3. Update `UsersEdit.tsx`
+Replace the direct Supabase client calls (lines 88-120) with a single call to the new `update-user` edge function:
 
-The only issue is the empty data returned due to missing admin permissions.
+```typescript
+const { data: result, error } = await supabase.functions.invoke("update-user", {
+  body: {
+    user_id: userId,
+    full_name: data.full_name,
+    phone: data.phone || null,
+    role_id: data.role_id,
+    branch_ids: data.branch_ids,
+    // ...all other profile fields
+  },
+});
+```
 
-## Summary
-| Step | Action |
+This ensures role and branch saves go through the service_role path and errors are properly surfaced.
+
+## Files to Create/Modify
+
+| File | Action |
 |------|--------|
-| 1 | Run migration to insert admin role assignment |
-| 2 | Verify the row persisted in `user_roles` |
-| 3 | Test: reload the edit page and confirm role/branches appear |
+| Database migration | Seed admin role for user 222d0e7a |
+| `supabase/functions/update-user/index.ts` | New backend function for user updates |
+| `src/pages/UsersEdit.tsx` | Replace direct DB calls with edge function call |
 
+## Why Previous Fixes Failed
+
+The "Change data" operations inserted rows, but those inserts did not persist because they ran through a read-only or session-scoped connection. A **schema migration** runs with superuser privileges and will persist the data correctly.
