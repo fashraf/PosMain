@@ -14,16 +14,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="rounded-lg border bg-background px-3 py-2 shadow-lg text-xs">
       <p className="font-medium text-foreground">{label}:00</p>
-      <p style={{ color: TEAL }}>Revenue: SAR {payload[0]?.value?.toLocaleString()}</p>
+      <p style={{ color: TEAL }}>Today: SAR {payload[0]?.value?.toLocaleString()}</p>
       {payload[1] && (
-        <p className="text-muted-foreground">Target: SAR {payload[1]?.value?.toLocaleString()}</p>
+        <p className="text-muted-foreground">Yesterday: SAR {payload[1]?.value?.toLocaleString()}</p>
       )}
     </div>
   );
 };
 
 export default function RevenueTrendChart({ data }: Props) {
-  // Find peak
+  const hasData = data.some((d) => d.revenue > 0 || d.yesterday > 0);
   const peak = data.reduce((max, d) => (d.revenue > max.revenue ? d : max), data[0]);
 
   return (
@@ -31,32 +31,42 @@ export default function RevenueTrendChart({ data }: Props) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <div className="w-1 h-4 rounded-full" style={{ backgroundColor: TEAL }} />
-          Revenue Trend (Today – Hourly)
+          Revenue Trend – Today vs Yesterday (Hourly)
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-4">
         <div className="h-[220px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={TEAL} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={TEAL} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="hour" tick={{ fontSize: 11 }} stroke="#a09888" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#a09888" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="revenue" stroke={TEAL} strokeWidth={2.5} fill="url(#revGrad)" />
-              <Area type="monotone" dataKey="target" stroke={CYAN} strokeWidth={1.5} strokeDasharray="5 5" fill="none" />
-              <ReferenceDot x={peak.hour} y={peak.revenue} r={5} fill="#dc8c3c" stroke="white" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+          {!hasData ? (
+            <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+              No revenue data yet for today or yesterday
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={TEAL} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={TEAL} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="hour" tick={{ fontSize: 11 }} stroke="#a09888" />
+                <YAxis tick={{ fontSize: 11 }} stroke="#a09888" tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="revenue" name="Today" stroke={TEAL} strokeWidth={2.5} fill="url(#revGrad)" />
+                <Area type="monotone" dataKey="yesterday" name="Yesterday" stroke={CYAN} strokeWidth={1.5} strokeDasharray="5 5" fill="none" />
+                {peak.revenue > 0 && (
+                  <ReferenceDot x={peak.hour} y={peak.revenue} r={5} fill="#dc8c3c" stroke="white" strokeWidth={2} />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
-        <p className="text-[11px] mt-2" style={{ color: "#a09888" }}>
-          Peak at {peak.hour}:00 · Lunch peak strong – dinner buildup expected
-        </p>
+        {hasData && peak.revenue > 0 && (
+          <p className="text-[11px] mt-2" style={{ color: "#a09888" }}>
+            Peak at {peak.hour}:00 · SAR {peak.revenue.toFixed(2)}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

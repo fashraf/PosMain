@@ -6,33 +6,47 @@ import BranchContributionChart from "@/components/dashboard/BranchContributionCh
 import StaffAttendanceCard from "@/components/dashboard/StaffAttendanceCard";
 import KeyMetricsGrid from "@/components/dashboard/KeyMetricsGrid";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
-import {
-  kpiData,
-  quickStats,
-  hourlyRevenue,
-  branchContribution,
-  staffMetrics,
-  keyMetrics,
-  alerts,
-} from "@/components/dashboard/mockDashboardData";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
+  const {
+    kpiData,
+    quickStats,
+    hourlyRevenue,
+    branchContribution,
+    staffMetrics,
+    keyMetrics,
+    alerts,
+    branchCount,
+    isLoading,
+  } = useDashboardData();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-[260px] w-full rounded-lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <DashboardHeader />
+      <DashboardHeader branchCount={branchCount} />
 
-      {/* KPI Gauges */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiData.map((kpi) => (
           <KPIGaugeCard key={kpi.label} data={kpi} />
         ))}
       </div>
 
-      {/* Quick Stats Strip */}
       <QuickStatsStrip stats={quickStats} />
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-3">
           <RevenueTrendChart data={hourlyRevenue} />
@@ -42,13 +56,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Staff + Key Metrics Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <StaffAttendanceCard data={staffMetrics} />
         <KeyMetricsGrid data={keyMetrics} />
       </div>
 
-      {/* Alerts */}
       <AlertsPanel data={alerts} />
     </div>
   );

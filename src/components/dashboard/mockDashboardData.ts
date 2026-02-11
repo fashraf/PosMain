@@ -22,7 +22,7 @@ export interface QuickStat {
 export interface HourlyRevenue {
   hour: string;
   revenue: number;
-  target: number;
+  yesterday: number;
 }
 
 export interface BranchContribution {
@@ -110,21 +110,21 @@ export const quickStats: QuickStat[] = [
 ];
 
 export const hourlyRevenue: HourlyRevenue[] = [
-  { hour: "08", revenue: 1200, target: 1400 },
-  { hour: "09", revenue: 2800, target: 2600 },
-  { hour: "10", revenue: 4100, target: 3800 },
-  { hour: "11", revenue: 6500, target: 5500 },
-  { hour: "12", revenue: 11200, target: 9000 },
-  { hour: "13", revenue: 15800, target: 13000 },
-  { hour: "14", revenue: 19200, target: 16500 },
-  { hour: "15", revenue: 20100, target: 18000 },
-  { hour: "16", revenue: 21400, target: 20000 },
-  { hour: "17", revenue: 22000, target: 21500 },
-  { hour: "18", revenue: 22800, target: 22500 },
-  { hour: "19", revenue: 23200, target: 23500 },
-  { hour: "20", revenue: 23500, target: 24500 },
-  { hour: "21", revenue: 23600, target: 25000 },
-  { hour: "22", revenue: 23650, target: 25400 },
+  { hour: "08", revenue: 1200, yesterday: 1400 },
+  { hour: "09", revenue: 2800, yesterday: 2600 },
+  { hour: "10", revenue: 4100, yesterday: 3800 },
+  { hour: "11", revenue: 6500, yesterday: 5500 },
+  { hour: "12", revenue: 11200, yesterday: 9000 },
+  { hour: "13", revenue: 15800, yesterday: 13000 },
+  { hour: "14", revenue: 19200, yesterday: 16500 },
+  { hour: "15", revenue: 20100, yesterday: 18000 },
+  { hour: "16", revenue: 21400, yesterday: 20000 },
+  { hour: "17", revenue: 22000, yesterday: 21500 },
+  { hour: "18", revenue: 22800, yesterday: 22500 },
+  { hour: "19", revenue: 23200, yesterday: 23500 },
+  { hour: "20", revenue: 23500, yesterday: 24500 },
+  { hour: "21", revenue: 23600, yesterday: 25000 },
+  { hour: "22", revenue: 23650, yesterday: 25400 },
 ];
 
 export const branchContribution: BranchContribution[] = [
