@@ -46,6 +46,9 @@ import EmployeeTypesPage from "@/pages/maintenance/EmployeeTypes";
 import ShiftsPage from "@/pages/maintenance/Shifts";
 import ShiftsAdd from "@/pages/maintenance/ShiftsAdd";
 import ShiftsEdit from "@/pages/maintenance/ShiftsEdit";
+import PrintTemplatesPage from "@/pages/maintenance/PrintTemplates";
+import PrintTemplatesAdd from "@/pages/maintenance/PrintTemplatesAdd";
+import PrintTemplatesEdit from "@/pages/maintenance/PrintTemplatesEdit";
 import Users from "@/pages/Users";
 import UsersAdd from "@/pages/UsersAdd";
 import UsersEdit from "@/pages/UsersEdit";
@@ -157,6 +160,9 @@ const App = () => (
                       <Route path="/maintenance/shifts" element={<ShiftsPage />} />
                       <Route path="/maintenance/shifts/add" element={<ShiftsAdd />} />
                       <Route path="/maintenance/shifts/:id/edit" element={<ShiftsEdit />} />
+                      <Route path="/maintenance/print-templates" element={<PrintTemplatesPage />} />
+                      <Route path="/maintenance/print-templates/add" element={<PrintTemplatesAdd />} />
+                      <Route path="/maintenance/print-templates/:id/edit" element={<PrintTemplatesEdit />} />
                       <Route path="/users" element={<Users />} />
                       <Route path="/users/add" element={<UsersAdd />} />
                       <Route path="/users/:id/edit" element={<UsersEdit />} />

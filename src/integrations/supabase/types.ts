@@ -987,6 +987,119 @@ export type Database = {
           },
         ]
       }
+      print_templates: {
+        Row: {
+          branch_id: string
+          created_at: string
+          footer_alignment: string
+          footer_text: string | null
+          header_alignment: string
+          header_text: string | null
+          id: string
+          is_active: boolean
+          logo_position: string
+          logo_url: string | null
+          name: string
+          qr_content: string
+          qr_size: string
+          show_amount_above_qr: boolean
+          show_branch_mobile: boolean
+          show_branch_name: boolean
+          show_cr_number: boolean
+          show_discount: boolean
+          show_footer: boolean
+          show_item_name: boolean
+          show_line_total: boolean
+          show_logo: boolean
+          show_order_id: boolean
+          show_order_id_near_qr: boolean
+          show_order_taken_by: boolean
+          show_price: boolean
+          show_qr: boolean
+          show_qty: boolean
+          show_tax_breakdown: boolean
+          show_total_amount: boolean
+          show_vat_number: boolean
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          footer_alignment?: string
+          footer_text?: string | null
+          header_alignment?: string
+          header_text?: string | null
+          id?: string
+          is_active?: boolean
+          logo_position?: string
+          logo_url?: string | null
+          name: string
+          qr_content?: string
+          qr_size?: string
+          show_amount_above_qr?: boolean
+          show_branch_mobile?: boolean
+          show_branch_name?: boolean
+          show_cr_number?: boolean
+          show_discount?: boolean
+          show_footer?: boolean
+          show_item_name?: boolean
+          show_line_total?: boolean
+          show_logo?: boolean
+          show_order_id?: boolean
+          show_order_id_near_qr?: boolean
+          show_order_taken_by?: boolean
+          show_price?: boolean
+          show_qr?: boolean
+          show_qty?: boolean
+          show_tax_breakdown?: boolean
+          show_total_amount?: boolean
+          show_vat_number?: boolean
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          footer_alignment?: string
+          footer_text?: string | null
+          header_alignment?: string
+          header_text?: string | null
+          id?: string
+          is_active?: boolean
+          logo_position?: string
+          logo_url?: string | null
+          name?: string
+          qr_content?: string
+          qr_size?: string
+          show_amount_above_qr?: boolean
+          show_branch_mobile?: boolean
+          show_branch_name?: boolean
+          show_cr_number?: boolean
+          show_discount?: boolean
+          show_footer?: boolean
+          show_item_name?: boolean
+          show_line_total?: boolean
+          show_logo?: boolean
+          show_order_id?: boolean
+          show_order_id_near_qr?: boolean
+          show_order_taken_by?: boolean
+          show_price?: boolean
+          show_qr?: boolean
+          show_qty?: boolean
+          show_tax_breakdown?: boolean
+          show_total_amount?: boolean
+          show_vat_number?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_templates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
