@@ -85,9 +85,9 @@ export default function UsersEdit() {
     if (!userId) return;
     setIsSaving(true);
     try {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
+      const { data: result, error } = await supabase.functions.invoke("update-user", {
+        body: {
+          user_id: userId,
           full_name: data.full_name,
           phone: data.phone || null,
           is_active: data.is_active,
@@ -101,23 +101,12 @@ export default function UsersEdit() {
           default_language: data.default_language,
           force_password_change: data.force_password_change,
           profile_image: data.profile_image || null,
-        } as any)
-        .eq("user_id", userId);
-      if (profileError) throw profileError;
-
-      // Sync role
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-      if (data.role_id) {
-        await supabase.from("user_roles").insert({ user_id: userId, role_id: data.role_id });
-      }
-
-      // Sync branches
-      await supabase.from("user_branches").delete().eq("user_id", userId);
-      if (data.branch_ids.length > 0) {
-        await supabase
-          .from("user_branches")
-          .insert(data.branch_ids.map((bid) => ({ user_id: userId, branch_id: bid })));
-      }
+          role_id: data.role_id || null,
+          branch_ids: data.branch_ids || [],
+        },
+      });
+      if (error) throw error;
+      if (result?.error) throw new Error(result.error);
 
       toast({ title: t("common.success"), description: t("users.userUpdated") });
       navigate("/users");
