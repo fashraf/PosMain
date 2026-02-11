@@ -16,9 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAuth } from "@/hooks/useAuth";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { User, LogOut, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 // Mock branches for now - will come from database later
 const mockBranches = [
@@ -35,6 +37,16 @@ interface TopBarProps {
 
 export function TopBar({ selectedBranch, onBranchChange }: TopBarProps) {
   const { t, isRTL } = useLanguage();
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const displayEmail = user?.email || "";
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <header className={cn(
@@ -71,20 +83,20 @@ export function TopBar({ selectedBranch, onBranchChange }: TopBarProps) {
                 <User className="h-4 w-4 text-primary" />
               </div>
               <div className="hidden md:flex flex-col items-start text-sm">
-                <span className="font-medium">Admin User</span>
-                <span className="text-xs text-muted-foreground">{t("roles.admin")}</span>
+                <span className="font-medium">{displayName}</span>
+                <span className="text-xs text-muted-foreground">{displayEmail}</span>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">Admin User</p>
-                <p className="text-xs text-muted-foreground">admin@example.com</p>
+                <p className="text-sm font-medium">{displayName}</p>
+                <p className="text-xs text-muted-foreground">{displayEmail}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer text-destructive">
+            <DropdownMenuItem className="cursor-pointer text-destructive" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               {t("auth.logout")}
             </DropdownMenuItem>
