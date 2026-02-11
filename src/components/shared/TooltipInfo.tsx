@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -7,12 +8,13 @@ import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TooltipInfoProps {
-  content: string;
+  content?: string;
+  richContent?: ReactNode;
   side?: "top" | "bottom" | "left" | "right";
   className?: string;
 }
 
-export function TooltipInfo({ content, side = "top", className }: TooltipInfoProps) {
+export function TooltipInfo({ content, richContent, side = "top", className }: TooltipInfoProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -27,8 +29,13 @@ export function TooltipInfo({ content, side = "top", className }: TooltipInfoPro
           <span className="sr-only">Info</span>
         </button>
       </TooltipTrigger>
-      <TooltipContent side={side} className="max-w-[250px]">
-        <p className="text-sm">{content}</p>
+      <TooltipContent
+        side={side}
+        className={cn(
+          richContent ? "max-w-[400px] p-3" : "max-w-[250px]"
+        )}
+      >
+        {richContent || <p className="text-sm">{content}</p>}
       </TooltipContent>
     </Tooltip>
   );

@@ -127,6 +127,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = "Branch name is required";
+    if (form.taxes.length === 0) newErrors.taxes = "At least one tax rule is required";
     // Validate taxes
     form.taxes.forEach((tax, i) => {
       if (!tax.tax_name.trim()) newErrors[`tax_${i}_name`] = "Tax name required";
@@ -200,7 +201,8 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
       toast({ title: t("common.success"), description: branchId ? "Branch updated successfully" : "Branch created successfully" });
       navigate("/branches");
     } catch (error) {
-      toast({ title: t("common.error"), description: error instanceof Error ? error.message : String(error), variant: "destructive" });
+      const errMsg = error instanceof Error ? error.message : (error as any)?.message || JSON.stringify(error);
+      toast({ title: t("common.error"), description: errMsg, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -264,7 +266,21 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
               <div className="space-y-1">
                 <div className="flex items-center gap-1">
                   <Label className="text-lg font-medium">Pricing Mode</Label>
-                  <TooltipInfo content="Determines how tax is applied to item prices in POS." />
+                  <TooltipInfo richContent={
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <p className="font-semibold text-foreground">Tax Exclusive</p>
+                        <p className="text-muted-foreground">Price = 100 SAR + Tax (15%) = 15 SAR</p>
+                        <p className="font-medium text-foreground">Customer pays <span className="text-primary">115 SAR</span></p>
+                      </div>
+                      <div className="border-t pt-2">
+                        <p className="font-semibold text-foreground">Tax Inclusive</p>
+                        <p className="text-muted-foreground">Price = 100 SAR (already includes tax)</p>
+                        <p className="text-muted-foreground">Base = 86.96 SAR | Tax = 13.04 SAR</p>
+                        <p className="font-medium text-foreground">Customer pays <span className="text-primary">100 SAR</span></p>
+                      </div>
+                    </div>
+                  } />
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
                   {PRICING_MODES.map((mode) => (
@@ -319,6 +335,7 @@ export default function BranchFormPage({ title, initialData, branchId }: BranchF
               <span className="text-xs text-muted-foreground">
                 {form.taxes.length === 0 ? "No taxes configured" : `${form.taxes.length} tax rule(s)`}
               </span>
+              {errors.taxes && <p className="text-xs text-destructive">{errors.taxes}</p>}
             </div>
 
             {form.taxes.map((tax, index) => (
