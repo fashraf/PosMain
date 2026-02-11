@@ -16,6 +16,7 @@ export interface PrintTemplateData {
   show_vat_number: boolean;
   cr_number: string;
   vat_number: string;
+  telephone: string;
   header_text: string;
   header_alignment: "left" | "center" | "right";
   show_item_name: boolean;
@@ -135,6 +136,7 @@ export function ReceiptPreview({ data }: { data: PrintTemplateData }) {
           <div className="text-center space-y-0.5">
             {data.show_branch_name && <p className="font-bold text-[12px]">Al Riyadh Main Branch</p>}
             {data.show_branch_mobile && <p className="text-muted-foreground">+966 50 123 4567</p>}
+            {(data.telephone) && <p className="text-muted-foreground">Tel: {data.telephone}</p>}
             {data.show_cr_number && <p className="text-muted-foreground">CR# {data.cr_number || "1010XXXXXX"}</p>}
             {data.show_vat_number && <p className="text-muted-foreground">VAT# {data.vat_number || "3100XXXXXXXX03"}</p>}
           </div>
