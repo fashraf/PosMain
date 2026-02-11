@@ -32,7 +32,7 @@ export default function UsersEdit() {
           supabase.from("roles").select("id, name, color").eq("is_active", true).order("name"),
           supabase.from("maintenance_emp_types").select("id, name_en").eq("is_active", true).order("name_en"),
           supabase.from("profiles").select("*").eq("id", id).single(),
-          supabase.from("user_roles").select("role_id"),
+          supabase.from("user_roles").select("user_id, role_id"),
           supabase.from("user_branches").select("user_id, branch_id"),
         ]);
 
@@ -122,9 +122,10 @@ export default function UsersEdit() {
       toast({ title: t("common.success"), description: t("users.userUpdated") });
       navigate("/users");
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : (error as any)?.message || JSON.stringify(error);
       toast({
         title: t("common.error"),
-        description: error instanceof Error ? error.message : String(error),
+        description: errMsg,
         variant: "destructive",
       });
     } finally {

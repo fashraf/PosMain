@@ -183,7 +183,7 @@ export function UserFormPage({
         <div className="col-span-8 space-y-3">
           {/* Profile Information + Status */}
           <div id="section-profile">
-            <DashedSectionCard title="Profile Information" icon={User} variant="purple">
+            <DashedSectionCard title="Profile Information" icon={User} variant="purple" className="shadow-sm">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <ImageUploadHero
@@ -291,7 +291,7 @@ export function UserFormPage({
 
           {/* Identification */}
           <div id="section-identification">
-            <DashedSectionCard title="Identification (Optional)" icon={FileText} variant="amber">
+            <DashedSectionCard title="Identification (Optional)" icon={FileText} variant="amber" className="shadow-sm">
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -345,7 +345,7 @@ export function UserFormPage({
 
           {/* Employment & Access */}
           <div id="section-employment">
-            <DashedSectionCard title="Employment & Access" icon={Briefcase} variant="blue">
+            <DashedSectionCard title="Employment & Access" icon={Briefcase} variant="blue" className="shadow-sm">
               <div className="grid grid-cols-3 gap-3">
                 {/* Column 1: Employee Type */}
                 <div className="space-y-1">
@@ -427,7 +427,7 @@ export function UserFormPage({
         {/* Right Column */}
         <div className="col-span-4 space-y-3">
           {/* Branch */}
-          <DashedSectionCard title="Branch" icon={GitBranch} variant="green">
+          <DashedSectionCard title="Branch" icon={GitBranch} variant="green" className="shadow-sm">
             <div className="space-y-1" data-field="branch_ids">
               <Label className="text-lg font-medium">Assigned Branches *</Label>
               {branches.length === 0 ? (
@@ -454,7 +454,7 @@ export function UserFormPage({
           </DashedSectionCard>
 
           {/* Role */}
-          <DashedSectionCard title="Role" icon={Shield} variant="blue">
+          <DashedSectionCard title="Role" icon={Shield} variant="blue" className="shadow-sm">
             <div className="space-y-1" data-field="role_id">
               <div className="flex items-center gap-1">
                 <Label className="text-lg font-medium">Role *</Label>
@@ -516,8 +516,8 @@ export function UserFormPage({
             <X className="h-3 w-3 me-1" />
             {t("common.cancel")}
           </Button>
-          <Button size="sm" onClick={handleSubmit} disabled={isSaving} className="h-7 text-xs">
-            <Save className="h-3 w-3 me-1" />
+          <Button size="sm" onClick={handleSubmit} disabled={isSaving} className="h-8 text-xs px-4 shadow-sm">
+            <Save className="h-3.5 w-3.5 me-1" />
             {isSaving ? t("common.loading") : "Save User"}
           </Button>
         </div>
