@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ArrowLeft, ArrowRight, Info, Save, User, X, Shield, Briefcase, FileText, Lock, CheckCircle, Check, Circle, Mail } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Info, Save, User, X, Shield, Briefcase, FileText, Lock, Mail, GitBranch } from "lucide-react";
 import { RoleBadge } from "@/components/roles/RoleBadge";
 import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
+import { SearchableMultiSelect } from "@/components/shared/SearchableMultiSelect";
 import { TooltipInfo } from "@/components/shared/TooltipInfo";
 import { ConfirmActionModal } from "@/components/shared/ConfirmActionModal";
 import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
@@ -67,13 +67,6 @@ const NATIONALITY_OPTIONS = [
   "Saudi", "Indian", "Egyptian", "Bangladeshi", "Pakistani", "Yemeni", "Sudanese", "Other",
 ];
 
-interface SectionNav {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  isComplete: boolean;
-}
-
 export function UserFormPage({
   mode,
   initialData,
@@ -124,16 +117,6 @@ export function UserFormPage({
     if (errors[key]) setErrors((e) => ({ ...e, [key]: "" }));
   };
 
-  const toggleBranch = (branchId: string) => {
-    setForm((f) => ({
-      ...f,
-      branch_ids: f.branch_ids.includes(branchId)
-        ? f.branch_ids.filter((id) => id !== branchId)
-        : [...f.branch_ids, branchId],
-    }));
-    if (errors.branch_ids) setErrors((e) => ({ ...e, branch_ids: "" }));
-  };
-
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.full_name.trim()) newErrors.full_name = "Required";
@@ -166,18 +149,6 @@ export function UserFormPage({
     onSubmit(form);
   };
 
-  // Section completion
-  const sections: SectionNav[] = [
-    { id: "profile", label: "Profile", icon: User, isComplete: !!form.full_name.trim() && !!form.phone.trim() },
-    { id: "identification", label: "Identification", icon: FileText, isComplete: true },
-    { id: "employment", label: "Employment", icon: Briefcase, isComplete: !!form.emp_type_id || !!form.default_language },
-    { id: "role-branches", label: "Role & Branches", icon: Shield, isComplete: !!form.role_id && form.branch_ids.length > 0 },
-  ];
-
-  const scrollToSection = (id: string) => {
-    document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const title = mode === "add" ? t("users.addUser") : `Edit User — ${editUserName || ""}`;
 
@@ -206,23 +177,13 @@ export function UserFormPage({
         </div>
       </div>
 
-      {/* Edit Warning */}
-      {mode === "edit" && (
-        <Alert variant="destructive" className="bg-amber-50 border-amber-200 py-1.5 px-2">
-          <AlertTriangle className="h-3 w-3 text-amber-600" />
-          <AlertDescription className="text-amber-800 text-[11px]">
-            Changes will apply immediately across all assigned branches
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Two Column Grid */}
       <div className="grid grid-cols-12 gap-3">
         {/* Left Column */}
         <div className="col-span-8 space-y-3">
           {/* Profile Information + Status */}
           <div id="section-profile">
-            <DashedSectionCard title="Profile Information" icon={User} variant="purple" isComplete={sections[0].isComplete}>
+            <DashedSectionCard title="Profile Information" icon={User} variant="purple">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <ImageUploadHero
@@ -330,7 +291,7 @@ export function UserFormPage({
 
           {/* Identification */}
           <div id="section-identification">
-            <DashedSectionCard title="Identification (Optional)" icon={FileText} variant="amber" isComplete={true}>
+            <DashedSectionCard title="Identification (Optional)" icon={FileText} variant="amber">
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
@@ -382,106 +343,79 @@ export function UserFormPage({
             </DashedSectionCard>
           </div>
 
-          {/* Employment & Access + Security merged */}
+          {/* Employment & Access */}
           <div id="section-employment">
-            <DashedSectionCard title="Employment & Access" icon={Briefcase} variant="blue" isComplete={sections[2].isComplete}>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-lg font-medium">Employee Type</Label>
-                    <Select value={form.emp_type_id} onValueChange={(v) => updateField("emp_type_id", v)}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {empTypes.map((et) => (
-                          <SelectItem key={et.id} value={et.id}>{et.name_en}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1">
-                      <Label className="text-lg font-medium">Default Language</Label>
-                      <TooltipInfo content="Sets the default UI language for this user" />
-                    </div>
-                    <div className="flex gap-2">
-                      {[
-                        { value: "en", label: "EN" },
-                        { value: "ar", label: "AR" },
-                        { value: "ur", label: "UR" },
-                      ].map((lang) => (
-                        <label
-                          key={lang.value}
-                          className={cn(
-                            "flex items-center px-3 py-1.5 border rounded cursor-pointer transition-colors text-sm",
-                            form.default_language === lang.value
-                              ? "border-primary bg-primary/5"
-                              : "border-input"
-                          )}
-                        >
-                          <input
-                            type="radio"
-                            name="language"
-                            value={lang.value}
-                            checked={form.default_language === lang.value}
-                            onChange={() => updateField("default_language", lang.value)}
-                            className="sr-only"
-                          />
-                          {lang.label}
-                        </label>
+            <DashedSectionCard title="Employment & Access" icon={Briefcase} variant="blue">
+              <div className="grid grid-cols-3 gap-3">
+                {/* Column 1: Employee Type */}
+                <div className="space-y-1">
+                  <Label className="text-lg font-medium">Employee Type</Label>
+                  <Select value={form.emp_type_id} onValueChange={(v) => updateField("emp_type_id", v)}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empTypes.map((et) => (
+                        <SelectItem key={et.id} value={et.id}>{et.name_en}</SelectItem>
                       ))}
-                    </div>
-                  </div>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Security sub-section */}
-                <div className="border-t border-dashed pt-3 mt-1">
-                  <div className="flex items-center gap-1 mb-1">
-                    <Lock className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase">Security</span>
+                {/* Column 2: Default Language */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    <Label className="text-lg font-medium">Default Language</Label>
+                    <TooltipInfo content="Sets the default UI language for this user" />
+                  </div>
+                  <Select value={form.default_language} onValueChange={(v) => updateField("default_language", v)}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="ar">Arabic</SelectItem>
+                      <SelectItem value="ur">Urdu</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Column 3: Security */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-lg font-medium">Security</Label>
                   </div>
                   {mode === "add" ? (
-                    <div className="space-y-1" data-field="password">
-                      <Label className="text-lg font-medium">Default Password</Label>
-                      <Input value={form.password} readOnly className="max-w-xs bg-muted h-9 text-sm" />
+                    <div className="space-y-1.5" data-field="password">
+                      <Input value={form.password} readOnly className="bg-muted h-9 text-sm" />
                       <p className="text-[10px] text-muted-foreground">Auto-generated default password</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={form.force_password_change}
                           onCheckedChange={(checked) => updateField("force_password_change", !!checked)}
                           className="h-3.5 w-3.5"
                         />
-                        <Label className="cursor-pointer text-sm">
-                          Reset password & force change at next login
+                        <Label className="cursor-pointer text-xs">Force change at first login</Label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={form.force_password_change}
+                          onCheckedChange={(checked) => updateField("force_password_change", !!checked)}
+                          className="h-3.5 w-3.5"
+                        />
+                        <Label className="cursor-pointer text-xs">
+                          Force change at next login
                         </Label>
                       </div>
                       {onResetPassword && (
-                        <Button variant="outline" size="sm" type="button" onClick={onResetPassword} className="h-6 text-[11px] px-2">
+                        <Button variant="outline" size="sm" type="button" onClick={onResetPassword} className="h-7 text-xs px-2 w-full">
                           Reset Password Now
                         </Button>
                       )}
-                      <p className="text-[10px] text-amber-600 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        Resetting will immediately invalidate current credentials
-                      </p>
-                    </div>
-                  )}
-
-                  {mode === "add" && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <Checkbox
-                        checked={form.force_password_change}
-                        onCheckedChange={(checked) => updateField("force_password_change", !!checked)}
-                        className="h-3.5 w-3.5"
-                      />
-                      <div className="flex items-center gap-1">
-                        <Label className="cursor-pointer text-sm">Force change at first login</Label>
-                        <TooltipInfo content="User will be required to set a new password on their next login" />
-                      </div>
                     </div>
                   )}
                 </div>
@@ -492,101 +426,72 @@ export function UserFormPage({
 
         {/* Right Column */}
         <div className="col-span-4 space-y-3">
-          {/* Section Navigation Tabs */}
-          <div className="sticky top-0 z-10 bg-background rounded-lg border p-1.5 space-y-0.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase px-1">Sections</span>
-            {sections.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => scrollToSection(s.id)}
-                className="w-full flex items-center gap-1.5 px-2 py-1 rounded text-xs hover:bg-muted/60 transition-colors text-left"
-              >
-                <s.icon className="h-3 w-3 text-muted-foreground shrink-0" />
-                <span className="flex-1 truncate">{s.label}</span>
-                {s.isComplete ? (
-                  <Check className="h-3 w-3 text-green-600 shrink-0" strokeWidth={2.5} />
-                ) : (
-                  <Circle className="h-3 w-3 text-muted-foreground/40 shrink-0" strokeWidth={1.5} />
-                )}
-              </button>
-            ))}
-          </div>
+          {/* Branch */}
+          <DashedSectionCard title="Branch" icon={GitBranch} variant="green">
+            <div className="space-y-1" data-field="branch_ids">
+              <Label className="text-lg font-medium">Assigned Branches *</Label>
+              {branches.length === 0 ? (
+                <div className="text-center py-2 space-y-1">
+                  <p className="text-xs text-amber-600 flex items-center justify-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    No branches found
+                  </p>
+                  <Link to="/branches/add" className="text-[11px] text-primary hover:underline">
+                    + Add branches first
+                  </Link>
+                </div>
+              ) : (
+                <SearchableMultiSelect
+                  value={form.branch_ids}
+                  onChange={(ids) => updateField("branch_ids", ids)}
+                  options={branches.map((b) => ({ id: b.id, label: b.name }))}
+                  placeholder="Select branches"
+                  searchPlaceholder="Search branches..."
+                />
+              )}
+              {errors.branch_ids && <p className="text-[10px] text-destructive">{errors.branch_ids}</p>}
+            </div>
+          </DashedSectionCard>
 
-          {/* Role & Branches */}
-          <div id="section-role-branches">
-            <DashedSectionCard title="Role & Branches" icon={Shield} variant="blue" isComplete={sections[3].isComplete}>
-              <div className="space-y-3">
-                <div className="space-y-1" data-field="role_id">
-                  <div className="flex items-center gap-1">
-                    <Label className="text-lg font-medium">Role *</Label>
-                    {form.role_id && (
-                      <button
-                        type="button"
-                        onClick={() => setShowRolePreview(true)}
-                        className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
-                      >
-                        <Info className="h-3 w-3" />
-                        View
-                      </button>
-                    )}
-                  </div>
-                  <Select
-                    value={form.role_id}
-                    onValueChange={(v) => {
-                      updateField("role_id", v);
-                      setShowRolePreview(true);
-                    }}
+          {/* Role */}
+          <DashedSectionCard title="Role" icon={Shield} variant="blue">
+            <div className="space-y-1" data-field="role_id">
+              <div className="flex items-center gap-1">
+                <Label className="text-lg font-medium">Role *</Label>
+                {form.role_id && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRolePreview(true)}
+                    className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
                   >
-                    <SelectTrigger className={cn("h-9 text-sm", errors.role_id && "border-destructive")}>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          <div className="flex items-center gap-1.5">
-                            <RoleBadge name={r.name} color={r.color} />
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.role_id && <p className="text-[10px] text-destructive">{errors.role_id}</p>}
-                </div>
-
-                {/* Branches */}
-                <div className="space-y-1" data-field="branch_ids">
-                  <Label className="text-lg font-medium">Branches *</Label>
-                  {errors.branch_ids && (
-                    <p className="text-[10px] text-destructive">{errors.branch_ids}</p>
-                  )}
-                  <div className="border rounded p-2 space-y-1 max-h-28 overflow-y-auto">
-                    {branches.map((b) => (
-                      <div key={b.id} className="flex items-center gap-1.5">
-                        <Checkbox
-                          checked={form.branch_ids.includes(b.id)}
-                          onCheckedChange={() => toggleBranch(b.id)}
-                          className="h-3.5 w-3.5"
-                        />
-                        <span className="text-sm">{b.name}</span>
-                      </div>
-                    ))}
-                    {branches.length === 0 && (
-                      <div className="text-center py-2 space-y-1">
-                        <p className="text-xs text-amber-600 flex items-center justify-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          No branches found
-                        </p>
-                        <Link to="/branches/add" className="text-[11px] text-primary hover:underline">
-                          + Add branches first
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                    <Info className="h-3 w-3" />
+                    View
+                  </button>
+                )}
               </div>
-            </DashedSectionCard>
-          </div>
+              <Select
+                value={form.role_id}
+                onValueChange={(v) => {
+                  updateField("role_id", v);
+                  setShowRolePreview(true);
+                }}
+              >
+                <SelectTrigger className={cn("h-9 text-sm", errors.role_id && "border-destructive")}>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      <div className="flex items-center gap-1.5">
+                        <RoleBadge name={r.name} color={r.color} />
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.role_id && <p className="text-[10px] text-destructive">{errors.role_id}</p>}
+            </div>
+          </DashedSectionCard>
 
           {/* Role Preview Panel */}
           {showRolePreview && form.role_id && (
