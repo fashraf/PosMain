@@ -1,19 +1,20 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Clock, Info } from "lucide-react";
+import { Plus, Clock, Calendar, ToggleLeft, Pencil, Hash, ListChecks, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
 import { SimplePagination } from "@/components/maintenance/SimplePagination";
-import { MaintenanceTable, MaintenanceColumn, DeleteConfirmModal } from "@/components/maintenance";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DeleteConfirmModal } from "@/components/maintenance";
+import { GridFilters } from "@/components/shared/GridFilters";
+import { GridStatusBadge } from "@/components/shared/GridStatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Shift {
   id: string;
@@ -106,96 +107,134 @@ export default function ShiftsPage() {
     return `${h12}:${m} ${ampm}`;
   };
 
-  const columns: MaintenanceColumn<Shift>[] = [
-    {
-      key: "name",
-      header: "Shift Name",
-      render: item => (
-        <div>
-          <span className="font-medium">{item.name}</span>
-          {item.allow_overnight && <Badge variant="outline" className="ml-2 text-[10px]">Overnight</Badge>}
-        </div>
-      ),
-    },
-    {
-      key: "timing",
-      header: "Timing",
-      render: item => (
-        <span className="text-xs">{formatTime(item.start_time)} – {formatTime(item.end_time)}</span>
-      ),
-    },
-    {
-      key: "days",
-      header: "Days",
-      render: item => (
-        <div className="flex flex-wrap gap-1">
-          {item.days_of_week.map(d => (
-            <Badge key={d} variant="secondary" className="text-[10px] px-1.5 py-0">{d}</Badge>
-          ))}
-        </div>
-      ),
-    },
-    {
-      key: "period",
-      header: "Effective Period",
-      render: item => (
-        <span className="text-xs text-muted-foreground">
-          {format(new Date(item.effective_from), "dd/MM/yyyy")} – {format(new Date(item.effective_to), "dd/MM/yyyy")}
-        </span>
-      ),
-    },
-    {
-      key: "is_active",
-      header: t("common.status"),
-      render: item => <StatusBadge isActive={item.is_active} />,
-      className: "w-24",
-    },
+  const statusFilterOptions = [
+    { value: "all", label: "All Status" },
+    { value: "active", label: t("common.active") },
+    { value: "inactive", label: t("common.inactive") },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <LoadingOverlay visible={isSaving} />
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{t("maintenance.title")} - Shift Management</h1>
-            <Tooltip>
-              <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-              <TooltipContent><p>Define reusable shift templates for scheduling</p></TooltipContent>
-            </Tooltip>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">Manage shift definitions and schedules</p>
-        </div>
-        <Button onClick={() => navigate("/maintenance/shifts/add")} className="gap-2">
-          <Plus className="h-4 w-4" />Add Shift
-        </Button>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search shifts..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">{t("common.active")}</SelectItem>
-            <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <MaintenanceTable
-        data={paginatedData}
-        columns={columns}
-        onEdit={handleEdit}
-        onToggleStatus={handleToggleStatus}
-        isLoading={isLoading}
-        emptyMessage="No shifts found. Add your first shift to get started."
-        currentPage={currentPage}
-        pageSize={pageSize}
+      <GridFilters
+        title="Shift Management"
+        filters={[{ key: "status", label: "Status", options: statusFilterOptions, defaultValue: "all" }]}
+        filterValues={{ status: statusFilter }}
+        onFilterChange={(key, value) => { if (key === "status") setStatusFilter(value); }}
+        searchPlaceholder="Search shifts..."
+        searchValue={searchQuery}
+        onSearch={setSearchQuery}
+        actionButton={
+          <Button onClick={() => navigate("/maintenance/shifts/add")} size="sm" className="gap-2 h-9">
+            <Plus className="h-4 w-4" />Add Shift
+          </Button>
+        }
       />
+
+      <div className="rounded-lg border border-input overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : paginatedData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <p className="text-[13px]">No shifts found. Add your first shift to get started.</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-muted/80 via-muted/40 to-muted/80 h-[42px] hover:bg-transparent">
+                <TableHead className="w-[50px] text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <Hash className="w-3.5 h-3.5" />#
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <ListChecks className="w-3.5 h-3.5" />Shift Name
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <Clock className="w-3.5 h-3.5" />Timing
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <Calendar className="w-3.5 h-3.5" />Days
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <Calendar className="w-3.5 h-3.5" />Effective Period
+                  </div>
+                </TableHead>
+                <TableHead className="w-24">
+                  <div className="flex items-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <ToggleLeft className="w-3.5 h-3.5" />{t("common.status")}
+                  </div>
+                </TableHead>
+                <TableHead className="w-28 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-foreground/70 font-semibold text-[13px]">
+                    <Settings className="w-3.5 h-3.5" />{t("common.actions")}
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedData.map((item, index) => {
+                const serial = (currentPage - 1) * pageSize + index + 1;
+                return (
+                  <TableRow
+                    key={item.id}
+                    className={cn(
+                      "h-[42px]",
+                      index % 2 === 0 ? "bg-background" : "bg-muted/30",
+                      "hover:bg-[#F3F0FF] transition-colors"
+                    )}
+                  >
+                    <TableCell className="text-center text-[13px] text-muted-foreground">{serial}</TableCell>
+                    <TableCell className="text-[13px]">
+                      <span className="font-medium">{item.name}</span>
+                      {item.allow_overnight && <Badge variant="outline" className="ml-2 text-[10px]">Overnight</Badge>}
+                    </TableCell>
+                    <TableCell className="text-[13px]">
+                      {formatTime(item.start_time)} – {formatTime(item.end_time)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {item.days_of_week.map(d => (
+                          <Badge key={d} variant="secondary" className="text-[10px] px-1.5 py-0">{d}</Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-[13px] text-muted-foreground">
+                      {format(new Date(item.effective_from), "dd/MM/yyyy")} – {format(new Date(item.effective_to), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <GridStatusBadge isActive={item.is_active} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-1">
+                        <Switch
+                          checked={item.is_active}
+                          onCheckedChange={() => handleToggleStatus(item)}
+                          className="scale-75"
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}>
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
       <SimplePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
       <DeleteConfirmModal
