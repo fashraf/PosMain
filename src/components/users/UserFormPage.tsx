@@ -190,7 +190,7 @@ export function UserFormPage({
   }
 
   return (
-    <div className="space-y-1.5 pb-14">
+    <div className="space-y-3 pb-14">
       {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate("/users")}>
@@ -217,45 +217,45 @@ export function UserFormPage({
       )}
 
       {/* Two Column Grid */}
-      <div className="grid grid-cols-12 gap-2">
+      <div className="grid grid-cols-12 gap-3">
         {/* Left Column */}
-        <div className="col-span-8 space-y-1.5">
+        <div className="col-span-8 space-y-3">
           {/* Profile Information + Status */}
           <div id="section-profile">
             <DashedSectionCard title="Profile Information" icon={User} variant="purple" isComplete={sections[0].isComplete}>
-              <div className="space-y-1.5">
-                <div className="flex items-start gap-2">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
                   <ImageUploadHero
                     value={form.profile_image}
                     onChange={(url) => updateField("profile_image", url)}
                     size={72}
                   />
-                  <div className="flex-1 grid grid-cols-2 gap-1.5">
-                    <div className="space-y-0.5" data-field="full_name">
-                      <Label className="text-xs">Full Name *</Label>
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <div className="space-y-1" data-field="full_name">
+                      <Label className="text-lg font-medium">Full Name *</Label>
                       <Input
                         value={form.full_name}
                         onChange={(e) => updateField("full_name", e.target.value)}
-                        className={cn("h-7 text-xs", errors.full_name && "border-destructive")}
+                        className={cn("h-9 text-sm", errors.full_name && "border-destructive")}
                       />
                       {errors.full_name && <p className="text-[10px] text-destructive">{errors.full_name}</p>}
                     </div>
-                    <div className="space-y-0.5" data-field="phone">
+                    <div className="space-y-1" data-field="phone">
                       <div className="flex items-center gap-1">
-                        <Label className="text-xs">Mobile *</Label>
+                        <Label className="text-lg font-medium">Mobile *</Label>
                         <TooltipInfo content="Used as login ID" />
                       </div>
                       <Input
                         value={form.phone}
                         onChange={(e) => updateField("phone", e.target.value)}
                         placeholder="+966 50 123 4567"
-                        className={cn("h-7 text-xs", errors.phone && "border-destructive")}
+                        className={cn("h-9 text-sm", errors.phone && "border-destructive")}
                       />
                       {errors.phone && <p className="text-[10px] text-destructive">{errors.phone}</p>}
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-1">
-                        <Label className="text-xs">Email</Label>
+                        <Label className="text-lg font-medium">Email</Label>
                         <Mail className="h-3 w-3 text-muted-foreground" />
                       </div>
                       <Input
@@ -263,25 +263,25 @@ export function UserFormPage({
                         value={form.email}
                         onChange={(e) => updateField("email", e.target.value)}
                         placeholder="Optional"
-                        className="h-7 text-xs"
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-1">
-                        <Label className="text-xs">Age</Label>
+                        <Label className="text-lg font-medium">Age</Label>
                         <TooltipInfo content="Used for compliance reporting" />
                       </div>
                       <Input
                         type="number"
                         value={form.age}
                         onChange={(e) => updateField("age", e.target.value)}
-                        className="h-7 text-xs"
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-0.5">
-                      <Label className="text-xs">Nationality</Label>
+                    <div className="space-y-1">
+                      <Label className="text-lg font-medium">Nationality</Label>
                       <Select value={form.nationality} onValueChange={(v) => updateField("nationality", v)}>
-                        <SelectTrigger className="h-7 text-xs">
+                        <SelectTrigger className="h-9 text-sm">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent>
@@ -291,12 +291,12 @@ export function UserFormPage({
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-1">
-                        <Label className="text-xs">Status</Label>
+                        <Label className="text-lg font-medium">Status</Label>
                         <TooltipInfo content="Inactive users cannot log in but historical data remains intact" />
                       </div>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-2">
                         {[
                           { value: true, label: t("common.active") },
                           { value: false, label: t("common.inactive") },
@@ -304,7 +304,7 @@ export function UserFormPage({
                           <label
                             key={String(opt.value)}
                             className={cn(
-                              "flex items-center gap-1 px-2 py-1 border rounded cursor-pointer transition-colors text-xs",
+                              "flex items-center gap-1 px-3 py-1.5 border rounded cursor-pointer transition-colors text-sm",
                               form.is_active === opt.value
                                 ? "border-primary bg-primary/5"
                                 : "border-input"
@@ -331,46 +331,46 @@ export function UserFormPage({
           {/* Identification */}
           <div id="section-identification">
             <DashedSectionCard title="Identification (Optional)" icon={FileText} variant="amber" isComplete={true}>
-              <div className="space-y-1.5">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="space-y-0.5">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-1">
-                      <Label className="text-xs">National ID / Iqama</Label>
+                      <Label className="text-lg font-medium">National ID / Iqama</Label>
                       <TooltipInfo content="Iqama number for Saudi-based employees" />
                     </div>
                     <Input
                       value={form.national_id}
                       onChange={(e) => updateField("national_id", e.target.value)}
-                      className="h-7 text-xs"
+                      className="h-9 text-sm"
                     />
                   </div>
-                  <div className="space-y-0.5">
-                    <Label className="text-xs">Iqama Expiry</Label>
+                  <div className="space-y-1">
+                    <Label className="text-lg font-medium">Iqama Expiry</Label>
                     <Input
                       type="date"
                       value={form.national_id_expiry}
                       onChange={(e) => updateField("national_id_expiry", e.target.value)}
-                      className="h-7 text-xs"
+                      className="h-9 text-sm"
                     />
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-1">
-                      <Label className="text-xs">Passport Number</Label>
+                      <Label className="text-lg font-medium">Passport Number</Label>
                       <TooltipInfo content="Required for non-Saudi employees" />
                     </div>
                     <Input
                       value={form.passport_number}
                       onChange={(e) => updateField("passport_number", e.target.value)}
-                      className="h-7 text-xs"
+                      className="h-9 text-sm"
                     />
                   </div>
-                  <div className="space-y-0.5">
-                    <Label className="text-xs">Passport Expiry</Label>
+                  <div className="space-y-1">
+                    <Label className="text-lg font-medium">Passport Expiry</Label>
                     <Input
                       type="date"
                       value={form.passport_expiry}
                       onChange={(e) => updateField("passport_expiry", e.target.value)}
-                      className="h-7 text-xs"
+                      className="h-9 text-sm"
                     />
                   </div>
                 </div>
@@ -385,12 +385,12 @@ export function UserFormPage({
           {/* Employment & Access + Security merged */}
           <div id="section-employment">
             <DashedSectionCard title="Employment & Access" icon={Briefcase} variant="blue" isComplete={sections[2].isComplete}>
-              <div className="space-y-1.5">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="space-y-0.5">
-                    <Label className="text-xs">Employee Type</Label>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-lg font-medium">Employee Type</Label>
                     <Select value={form.emp_type_id} onValueChange={(v) => updateField("emp_type_id", v)}>
-                      <SelectTrigger className="h-7 text-xs">
+                      <SelectTrigger className="h-9 text-sm">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -400,12 +400,12 @@ export function UserFormPage({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     <div className="flex items-center gap-1">
-                      <Label className="text-xs">Default Language</Label>
+                      <Label className="text-lg font-medium">Default Language</Label>
                       <TooltipInfo content="Sets the default UI language for this user" />
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-2">
                       {[
                         { value: "en", label: "EN" },
                         { value: "ar", label: "AR" },
@@ -414,7 +414,7 @@ export function UserFormPage({
                         <label
                           key={lang.value}
                           className={cn(
-                            "flex items-center px-2 py-1 border rounded cursor-pointer transition-colors text-xs",
+                            "flex items-center px-3 py-1.5 border rounded cursor-pointer transition-colors text-sm",
                             form.default_language === lang.value
                               ? "border-primary bg-primary/5"
                               : "border-input"
@@ -436,15 +436,15 @@ export function UserFormPage({
                 </div>
 
                 {/* Security sub-section */}
-                <div className="border-t border-dashed pt-1.5 mt-1">
+                <div className="border-t border-dashed pt-3 mt-1">
                   <div className="flex items-center gap-1 mb-1">
                     <Lock className="h-3 w-3 text-muted-foreground" />
                     <span className="text-[11px] font-semibold text-muted-foreground uppercase">Security</span>
                   </div>
                   {mode === "add" ? (
                     <div className="space-y-1" data-field="password">
-                      <Label className="text-xs">Default Password</Label>
-                      <Input value={form.password} readOnly className="max-w-xs bg-muted h-7 text-xs" />
+                      <Label className="text-lg font-medium">Default Password</Label>
+                      <Input value={form.password} readOnly className="max-w-xs bg-muted h-9 text-sm" />
                       <p className="text-[10px] text-muted-foreground">Auto-generated default password</p>
                     </div>
                   ) : (
@@ -455,7 +455,7 @@ export function UserFormPage({
                           onCheckedChange={(checked) => updateField("force_password_change", !!checked)}
                           className="h-3.5 w-3.5"
                         />
-                        <Label className="cursor-pointer text-xs">
+                        <Label className="cursor-pointer text-sm">
                           Reset password & force change at next login
                         </Label>
                       </div>
@@ -479,7 +479,7 @@ export function UserFormPage({
                         className="h-3.5 w-3.5"
                       />
                       <div className="flex items-center gap-1">
-                        <Label className="cursor-pointer text-xs">Force change at first login</Label>
+                        <Label className="cursor-pointer text-sm">Force change at first login</Label>
                         <TooltipInfo content="User will be required to set a new password on their next login" />
                       </div>
                     </div>
@@ -491,7 +491,7 @@ export function UserFormPage({
         </div>
 
         {/* Right Column */}
-        <div className="col-span-4 space-y-1.5">
+        <div className="col-span-4 space-y-3">
           {/* Section Navigation Tabs */}
           <div className="sticky top-0 z-10 bg-background rounded-lg border p-1.5 space-y-0.5">
             <span className="text-[10px] font-semibold text-muted-foreground uppercase px-1">Sections</span>
@@ -516,10 +516,10 @@ export function UserFormPage({
           {/* Role & Branches */}
           <div id="section-role-branches">
             <DashedSectionCard title="Role & Branches" icon={Shield} variant="blue" isComplete={sections[3].isComplete}>
-              <div className="space-y-1.5">
-                <div className="space-y-0.5" data-field="role_id">
+              <div className="space-y-3">
+                <div className="space-y-1" data-field="role_id">
                   <div className="flex items-center gap-1">
-                    <Label className="text-xs">Role *</Label>
+                    <Label className="text-lg font-medium">Role *</Label>
                     {form.role_id && (
                       <button
                         type="button"
@@ -538,7 +538,7 @@ export function UserFormPage({
                       setShowRolePreview(true);
                     }}
                   >
-                    <SelectTrigger className={cn("h-7 text-xs", errors.role_id && "border-destructive")}>
+                    <SelectTrigger className={cn("h-9 text-sm", errors.role_id && "border-destructive")}>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -555,12 +555,12 @@ export function UserFormPage({
                 </div>
 
                 {/* Branches */}
-                <div className="space-y-0.5" data-field="branch_ids">
-                  <Label className="text-xs">Branches *</Label>
+                <div className="space-y-1" data-field="branch_ids">
+                  <Label className="text-lg font-medium">Branches *</Label>
                   {errors.branch_ids && (
                     <p className="text-[10px] text-destructive">{errors.branch_ids}</p>
                   )}
-                  <div className="border rounded p-1.5 space-y-0.5 max-h-28 overflow-y-auto">
+                  <div className="border rounded p-2 space-y-1 max-h-28 overflow-y-auto">
                     {branches.map((b) => (
                       <div key={b.id} className="flex items-center gap-1.5">
                         <Checkbox
@@ -568,7 +568,7 @@ export function UserFormPage({
                           onCheckedChange={() => toggleBranch(b.id)}
                           className="h-3.5 w-3.5"
                         />
-                        <span className="text-xs">{b.name}</span>
+                        <span className="text-sm">{b.name}</span>
                       </div>
                     ))}
                     {branches.length === 0 && (
