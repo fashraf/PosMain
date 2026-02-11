@@ -100,6 +100,7 @@ export default function UsersEdit() {
           emp_type_id: data.emp_type_id || null,
           default_language: data.default_language,
           force_password_change: data.force_password_change,
+          profile_image: data.profile_image || null,
         } as any)
         .eq("user_id", userId);
       if (profileError) throw profileError;
