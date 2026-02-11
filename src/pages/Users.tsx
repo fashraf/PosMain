@@ -16,19 +16,18 @@ export default function Users() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (profilesError) throw profilesError;
+      const [profilesRes, userRolesRes, userBranchesRes, branchesRes, empTypesRes] = await Promise.all([
+        supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+        supabase.from("user_roles").select("user_id, role_id, roles(name, color)"),
+        supabase.from("user_branches").select("user_id, branch_id"),
+        supabase.from("branches").select("id, name"),
+        supabase.from("maintenance_emp_types").select("id, name_en"),
+      ]);
 
-      const { data: userRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id, role_id, roles(name, color)");
-      if (rolesError) throw rolesError;
+      if (profilesRes.error) throw profilesRes.error;
 
       const roleMap = new Map<string, { name: string; color: string | null; role_id: string }>();
-      (userRoles || []).forEach((ur: any) => {
+      (userRolesRes.data || []).forEach((ur: any) => {
         roleMap.set(ur.user_id, {
           name: ur.roles?.name || "Unknown",
           color: ur.roles?.color || null,
@@ -36,14 +35,25 @@ export default function Users() {
         });
       });
 
-      const { data: userBranches } = await supabase.from("user_branches").select("user_id, branch_id");
+      const branchNameMap = new Map<string, string>();
+      (branchesRes.data || []).forEach((b) => branchNameMap.set(b.id, b.name));
+
+      const empTypeMap = new Map<string, string>();
+      (empTypesRes.data || []).forEach((et) => empTypeMap.set(et.id, et.name_en));
+
       const branchMap = new Map<string, string[]>();
-      (userBranches || []).forEach((ub) => {
-        if (!branchMap.has(ub.user_id)) branchMap.set(ub.user_id, []);
+      const branchNamesByUser = new Map<string, string[]>();
+      (userBranchesRes.data || []).forEach((ub) => {
+        if (!branchMap.has(ub.user_id)) {
+          branchMap.set(ub.user_id, []);
+          branchNamesByUser.set(ub.user_id, []);
+        }
         branchMap.get(ub.user_id)!.push(ub.branch_id);
+        const name = branchNameMap.get(ub.branch_id);
+        if (name) branchNamesByUser.get(ub.user_id)!.push(name);
       });
 
-      const usersData: UserData[] = (profiles || []).map((profile) => {
+      const usersData: UserData[] = (profilesRes.data || []).map((profile) => {
         const roleInfo = roleMap.get(profile.user_id);
         return {
           id: profile.id,
@@ -55,20 +65,24 @@ export default function Users() {
           is_active: profile.is_active,
           last_login_at: profile.last_login_at,
           avatar_url: profile.avatar_url,
+          profile_image: profile.profile_image,
           role: roleInfo?.name || "Unknown",
           role_color: roleInfo?.color || null,
           role_id: roleInfo?.role_id || "",
           branch_ids: branchMap.get(profile.user_id) || [],
-          emp_type_id: (profile as any).emp_type_id || null,
-          nationality: (profile as any).nationality || null,
-          age: (profile as any).age || null,
+          branch_names: branchNamesByUser.get(profile.user_id) || [],
+          emp_type_id: profile.emp_type_id || null,
+          emp_type_name: profile.emp_type_id ? empTypeMap.get(profile.emp_type_id) || null : null,
+          nationality: profile.nationality || null,
+          age: profile.age || null,
         };
       });
 
       setUsers(usersData);
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast({ title: t("common.error"), description: String(error), variant: "destructive" });
+      const msg = error instanceof Error ? error.message : (error as any)?.message || JSON.stringify(error);
+      toast({ title: t("common.error"), description: msg, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +93,7 @@ export default function Users() {
   }, []);
 
   return (
-    <div className="p-6">
+    <div className="p-2">
       <UserTable
         users={users}
         isLoading={isLoading}
