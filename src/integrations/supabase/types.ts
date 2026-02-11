@@ -989,7 +989,8 @@ export type Database = {
       }
       print_templates: {
         Row: {
-          branch_id: string
+          branch_id: string | null
+          cr_number: string | null
           created_at: string
           footer_alignment: string
           footer_text: string | null
@@ -997,15 +998,21 @@ export type Database = {
           header_text: string | null
           id: string
           is_active: boolean
+          logo_height: number
           logo_position: string
           logo_url: string | null
+          logo_width: number
           name: string
           qr_content: string
           qr_size: string
+          restaurant_name_ar: string | null
+          restaurant_name_en: string | null
+          restaurant_name_ur: string | null
           show_amount_above_qr: boolean
           show_branch_mobile: boolean
           show_branch_name: boolean
           show_cr_number: boolean
+          show_customization: boolean
           show_discount: boolean
           show_footer: boolean
           show_item_name: boolean
@@ -1021,9 +1028,11 @@ export type Database = {
           show_total_amount: boolean
           show_vat_number: boolean
           updated_at: string
+          vat_number: string | null
         }
         Insert: {
-          branch_id: string
+          branch_id?: string | null
+          cr_number?: string | null
           created_at?: string
           footer_alignment?: string
           footer_text?: string | null
@@ -1031,15 +1040,21 @@ export type Database = {
           header_text?: string | null
           id?: string
           is_active?: boolean
+          logo_height?: number
           logo_position?: string
           logo_url?: string | null
+          logo_width?: number
           name: string
           qr_content?: string
           qr_size?: string
+          restaurant_name_ar?: string | null
+          restaurant_name_en?: string | null
+          restaurant_name_ur?: string | null
           show_amount_above_qr?: boolean
           show_branch_mobile?: boolean
           show_branch_name?: boolean
           show_cr_number?: boolean
+          show_customization?: boolean
           show_discount?: boolean
           show_footer?: boolean
           show_item_name?: boolean
@@ -1055,9 +1070,11 @@ export type Database = {
           show_total_amount?: boolean
           show_vat_number?: boolean
           updated_at?: string
+          vat_number?: string | null
         }
         Update: {
-          branch_id?: string
+          branch_id?: string | null
+          cr_number?: string | null
           created_at?: string
           footer_alignment?: string
           footer_text?: string | null
@@ -1065,15 +1082,21 @@ export type Database = {
           header_text?: string | null
           id?: string
           is_active?: boolean
+          logo_height?: number
           logo_position?: string
           logo_url?: string | null
+          logo_width?: number
           name?: string
           qr_content?: string
           qr_size?: string
+          restaurant_name_ar?: string | null
+          restaurant_name_en?: string | null
+          restaurant_name_ur?: string | null
           show_amount_above_qr?: boolean
           show_branch_mobile?: boolean
           show_branch_name?: boolean
           show_cr_number?: boolean
+          show_customization?: boolean
           show_discount?: boolean
           show_footer?: boolean
           show_item_name?: boolean
@@ -1089,6 +1112,7 @@ export type Database = {
           show_total_amount?: boolean
           show_vat_number?: boolean
           updated_at?: string
+          vat_number?: string | null
         }
         Relationships: [
           {

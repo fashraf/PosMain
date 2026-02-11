@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashedSectionCard } from "@/components/shared/DashedSectionCard";
-import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { ImageUploadHero } from "@/components/shared/ImageUploadHero";
+import { CompactMultiLanguageInput } from "@/components/shared/CompactMultiLanguageInput";
 import { LoadingOverlay } from "@/components/shared/LoadingOverlay";
 import { ReceiptPreview, PrintTemplateData } from "./ReceiptPreview";
 import { PrintTemplateSaveModal } from "./PrintTemplateSaveModal";
@@ -23,12 +23,16 @@ const defaultData: PrintTemplateData = {
   show_logo: true,
   logo_url: null,
   logo_position: "center",
+  logo_width: 80,
+  logo_height: 40,
   show_branch_name: true,
   show_branch_mobile: true,
   show_order_id: true,
   show_order_taken_by: true,
   show_cr_number: false,
   show_vat_number: false,
+  cr_number: "",
+  vat_number: "",
   header_text: "Welcome to Our Restaurant",
   header_alignment: "center",
   show_item_name: true,
@@ -38,6 +42,7 @@ const defaultData: PrintTemplateData = {
   show_total_amount: true,
   show_discount: false,
   show_tax_breakdown: false,
+  show_customization: true,
   show_qr: false,
   qr_content: "order_url",
   qr_size: "medium",
@@ -46,6 +51,9 @@ const defaultData: PrintTemplateData = {
   show_footer: true,
   footer_text: "Thank you for visiting!",
   footer_alignment: "center",
+  restaurant_name_en: "Sample Restaurant",
+  restaurant_name_ar: "",
+  restaurant_name_ur: "",
 };
 
 interface Props {
@@ -57,19 +65,10 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
   const navigate = useNavigate();
   const { isRTL } = useLanguage();
   const [data, setData] = useState<PrintTemplateData>({ ...defaultData });
-  const [branchId, setBranchId] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [branches, setBranches] = useState<{ id: string; label: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(mode === "edit");
   const [showSaveModal, setShowSaveModal] = useState(false);
-
-  // Load branches
-  useEffect(() => {
-    supabase.from("branches").select("id, name").eq("is_active", true).then(({ data: rows }) => {
-      if (rows) setBranches(rows.map((r) => ({ id: r.id, label: r.name })));
-    });
-  }, []);
 
   // Load template for edit
   useEffect(() => {
@@ -81,12 +80,16 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         show_logo: row.show_logo,
         logo_url: row.logo_url,
         logo_position: row.logo_position as any,
+        logo_width: (row as any).logo_width ?? 80,
+        logo_height: (row as any).logo_height ?? 40,
         show_branch_name: row.show_branch_name,
         show_branch_mobile: row.show_branch_mobile,
         show_order_id: row.show_order_id,
         show_order_taken_by: row.show_order_taken_by,
         show_cr_number: row.show_cr_number,
         show_vat_number: row.show_vat_number,
+        cr_number: (row as any).cr_number ?? "",
+        vat_number: (row as any).vat_number ?? "",
         header_text: row.header_text || "",
         header_alignment: row.header_alignment as any,
         show_item_name: row.show_item_name,
@@ -96,6 +99,7 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         show_total_amount: row.show_total_amount,
         show_discount: row.show_discount,
         show_tax_breakdown: row.show_tax_breakdown,
+        show_customization: (row as any).show_customization ?? true,
         show_qr: row.show_qr,
         qr_content: row.qr_content,
         qr_size: row.qr_size as any,
@@ -104,8 +108,10 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         show_footer: row.show_footer,
         footer_text: row.footer_text || "",
         footer_alignment: row.footer_alignment as any,
+        restaurant_name_en: (row as any).restaurant_name_en ?? "",
+        restaurant_name_ar: (row as any).restaurant_name_ar ?? "",
+        restaurant_name_ur: (row as any).restaurant_name_ur ?? "",
       });
-      setBranchId(row.branch_id);
       setIsActive(row.is_active);
       setLoading(false);
     });
@@ -126,9 +132,45 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
   const handleSave = async () => {
     setShowSaveModal(false);
     if (!data.name.trim()) { toast.error("Template name is required"); return; }
-    if (!branchId) { toast.error("Branch is required"); return; }
     setSaving(true);
-    const payload = { ...data, branch_id: branchId, is_active: isActive };
+    const payload: any = {
+      name: data.name,
+      is_active: isActive,
+      show_logo: data.show_logo,
+      logo_url: data.logo_url,
+      logo_position: data.logo_position,
+      logo_width: data.logo_width,
+      logo_height: data.logo_height,
+      show_branch_name: data.show_branch_name,
+      show_branch_mobile: data.show_branch_mobile,
+      show_order_id: data.show_order_id,
+      show_order_taken_by: data.show_order_taken_by,
+      show_cr_number: data.show_cr_number,
+      show_vat_number: data.show_vat_number,
+      cr_number: data.cr_number,
+      vat_number: data.vat_number,
+      header_text: data.header_text,
+      header_alignment: data.header_alignment,
+      show_item_name: data.show_item_name,
+      show_qty: data.show_qty,
+      show_price: data.show_price,
+      show_line_total: data.show_line_total,
+      show_total_amount: data.show_total_amount,
+      show_discount: data.show_discount,
+      show_tax_breakdown: data.show_tax_breakdown,
+      show_customization: data.show_customization,
+      show_qr: data.show_qr,
+      qr_content: data.qr_content,
+      qr_size: data.qr_size,
+      show_amount_above_qr: data.show_amount_above_qr,
+      show_order_id_near_qr: data.show_order_id_near_qr,
+      show_footer: data.show_footer,
+      footer_text: data.footer_text,
+      footer_alignment: data.footer_alignment,
+      restaurant_name_en: data.restaurant_name_en,
+      restaurant_name_ar: data.restaurant_name_ar,
+      restaurant_name_ur: data.restaurant_name_ur,
+    };
     try {
       if (mode === "add") {
         const { error } = await supabase.from("print_templates").insert(payload);
@@ -141,14 +183,12 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
       }
       navigate("/maintenance/print-templates");
     } catch (err: any) {
-      if (err?.code === "23505") toast.error("A template with this name already exists for this branch");
+      if (err?.code === "23505") toast.error("A template with this name already exists");
       else toast.error(err?.message || "Save failed");
     } finally {
       setSaving(false);
     }
   };
-
-  const selectedBranch = branches.find((b) => b.id === branchId);
 
   if (loading) return <LoadingOverlay visible={true} message="Loading template..." />;
 
@@ -162,172 +202,105 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         <h1 className="text-lg font-semibold">{mode === "add" ? "New Print Template" : "Edit Print Template"}</h1>
       </div>
 
-      <div className="grid grid-cols-12 gap-5">
-        {/* LEFT: Form */}
-        <div className="col-span-8 space-y-4">
-          {/* Template Info */}
-          <DashedSectionCard title="Template Info" icon={Printer}>
-            <div className="grid grid-cols-3 gap-3 p-1">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold">Template Name *</Label>
-                <Input value={data.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Default Receipt" className="h-9 text-[13px]" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold">Branch *</Label>
-                <SearchableSelect value={branchId} onChange={setBranchId} options={branches} placeholder="Select branch" className="h-9 text-[13px]" />
-              </div>
-              <div className="flex items-end gap-2 pb-0.5">
-                <Label className="text-xs font-semibold">Active</Label>
-                <Switch checked={isActive} onCheckedChange={setIsActive} />
-              </div>
-            </div>
-          </DashedSectionCard>
-
-          {/* Header Section */}
-          <DashedSectionCard title="Header" icon={FileText}>
-            <div className="space-y-3 p-1">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <Checkbox checked={data.show_logo} onCheckedChange={(c) => set("show_logo", !!c)} id="show_logo" />
-                    <Label htmlFor="show_logo" className="text-xs">Show Logo</Label>
+      <div className="max-w-[65%] mx-auto">
+        <div className="grid grid-cols-12 gap-5">
+          {/* LEFT: Form */}
+          <div className="col-span-6 space-y-4">
+            {/* Template Info */}
+            <DashedSectionCard title="Template Info" icon={Printer}>
+              <div className="space-y-3 p-1">
+                <CompactMultiLanguageInput
+                  label="Restaurant Name"
+                  values={{ en: data.restaurant_name_en, ar: data.restaurant_name_ar, ur: data.restaurant_name_ur }}
+                  onChange={(lang, val) => set(`restaurant_name_${lang}` as any, val)}
+                  placeholder="Restaurant Name"
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Template Name *</Label>
+                    <Input value={data.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Default Receipt" className="h-9 text-[13px]" />
                   </div>
-                  {data.show_logo && (
-                    <div className="flex items-start gap-4 pl-6">
-                      <ImageUploadHero value={data.logo_url} onChange={(url) => set("logo_url", url)} onFileChange={handleLogoUpload} size={64} />
-                      <div className="space-y-1">
-                        <Label className="text-xs font-semibold">Position</Label>
-                        <div className="flex gap-1">
-                          {(["left", "center", "right"] as const).map((pos) => (
-                            <Button key={pos} size="sm" variant={data.logo_position === pos ? "default" : "outline"} className="h-7 px-3 text-[11px] capitalize" onClick={() => set("logo_position", pos)}>
-                              {pos}
-                            </Button>
-                          ))}
+                  <div className="flex items-end gap-2 pb-0.5">
+                    <Label className="text-xs font-semibold">Active</Label>
+                    <Switch checked={isActive} onCheckedChange={setIsActive} />
+                  </div>
+                </div>
+              </div>
+            </DashedSectionCard>
+
+            {/* Header Section */}
+            <DashedSectionCard title="Header" icon={FileText}>
+              <div className="space-y-3 p-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Checkbox checked={data.show_logo} onCheckedChange={(c) => set("show_logo", !!c)} id="show_logo" />
+                      <Label htmlFor="show_logo" className="text-xs">Show Logo</Label>
+                    </div>
+                    {data.show_logo && (
+                      <div className="space-y-2 pl-6">
+                        <div className="flex items-start gap-4">
+                          <ImageUploadHero value={data.logo_url} onChange={(url) => set("logo_url", url)} onFileChange={handleLogoUpload} size={64} />
+                          <div className="space-y-1">
+                            <Label className="text-xs font-semibold">Position</Label>
+                            <div className="flex gap-1">
+                              {(["left", "center", "right"] as const).map((pos) => (
+                                <Button key={pos} size="sm" variant={data.logo_position === pos ? "default" : "outline"} className="h-7 px-3 text-[11px] capitalize" onClick={() => set("logo_position", pos)}>
+                                  {pos}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] font-semibold">W (px)</Label>
+                            <Input type="number" value={data.logo_width} onChange={(e) => set("logo_width", Number(e.target.value) || 80)} className="h-8 w-16 text-[12px]" min={20} max={200} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] font-semibold">H (px)</Label>
+                            <Input type="number" value={data.logo_height} onChange={(e) => set("logo_height", Number(e.target.value) || 40)} className="h-8 w-16 text-[12px]" min={20} max={200} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {([
-                    ["show_branch_name", "Branch Name"],
-                    ["show_branch_mobile", "Branch Mobile"],
-                    ["show_order_id", "Order ID"],
-                    ["show_order_taken_by", "Order Taken By"],
-                    ["show_cr_number", "CR Number"],
-                    ["show_vat_number", "VAT Number"],
-                  ] as const).map(([key, label]) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <Checkbox checked={data[key]} onCheckedChange={(c) => set(key, !!c)} id={key} />
-                      <Label htmlFor={key} className="text-xs">{label}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Header Text</Label>
-                  <Input value={data.header_text} onChange={(e) => set("header_text", e.target.value)} placeholder="Welcome message" className="h-9 text-[13px]" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Alignment</Label>
-                  <Select value={data.header_alignment} onValueChange={(v) => set("header_alignment", v as any)}>
-                    <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="left">Left</SelectItem>
-                      <SelectItem value="center">Center</SelectItem>
-                      <SelectItem value="right">Right</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          </DashedSectionCard>
-
-          {/* Body Section */}
-          <DashedSectionCard title="Body" icon={Layout}>
-            <div className="flex flex-wrap gap-x-6 gap-y-2 p-1">
-              {([
-                ["show_item_name", "Item Name"],
-                ["show_qty", "Qty"],
-                ["show_price", "Price"],
-                ["show_line_total", "Line Total"],
-                ["show_total_amount", "Total Amount"],
-                ["show_discount", "Discount"],
-                ["show_tax_breakdown", "Tax Breakdown"],
-              ] as const).map(([key, label]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <Checkbox checked={data[key]} onCheckedChange={(c) => set(key, !!c)} id={key} />
-                  <Label htmlFor={key} className="text-xs">{label}</Label>
-                </div>
-              ))}
-            </div>
-          </DashedSectionCard>
-
-          {/* QR Section */}
-          <DashedSectionCard title="QR / Special" icon={QrCode}>
-            <div className="space-y-3 p-1">
-              <div className="flex items-center gap-3">
-                <Checkbox checked={data.show_qr} onCheckedChange={(c) => set("show_qr", !!c)} id="show_qr" />
-                <Label htmlFor="show_qr" className="text-xs font-semibold">Generate QR Code</Label>
-              </div>
-              {data.show_qr && (
-                <div className="pl-6 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">QR Content</Label>
-                      <Select value={data.qr_content} onValueChange={(v) => set("qr_content", v)}>
-                        <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="order_url">Order URL</SelectItem>
-                          <SelectItem value="order_id">Order ID</SelectItem>
-                          <SelectItem value="custom">Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">QR Size</Label>
-                      <Select value={data.qr_size} onValueChange={(v) => set("qr_size", v as any)}>
-                        <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="small">Small</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="large">Large</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex gap-6">
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={data.show_amount_above_qr} onCheckedChange={(c) => set("show_amount_above_qr", !!c)} id="amt_qr" />
-                      <Label htmlFor="amt_qr" className="text-xs">Amount Above QR</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={data.show_order_id_near_qr} onCheckedChange={(c) => set("show_order_id_near_qr", !!c)} id="id_qr" />
-                      <Label htmlFor="id_qr" className="text-xs">Order ID Near QR</Label>
-                    </div>
+                  <div className="space-y-2">
+                    {([
+                      ["show_branch_name", "Branch Name"],
+                      ["show_branch_mobile", "Branch Mobile"],
+                      ["show_order_id", "Order ID"],
+                      ["show_order_taken_by", "Order Taken By"],
+                      ["show_cr_number", "CR Number"],
+                      ["show_vat_number", "VAT Number"],
+                    ] as const).map(([key, label]) => (
+                      <div key={key}>
+                        <div className="flex items-center gap-3">
+                          <Checkbox checked={data[key]} onCheckedChange={(c) => set(key, !!c)} id={key} />
+                          <Label htmlFor={key} className="text-xs">{label}</Label>
+                        </div>
+                        {key === "show_cr_number" && data.show_cr_number && (
+                          <div className="pl-6 mt-1">
+                            <Input value={data.cr_number} onChange={(e) => set("cr_number", e.target.value)} placeholder="Enter CR Number" className="h-8 text-[12px]" />
+                          </div>
+                        )}
+                        {key === "show_vat_number" && data.show_vat_number && (
+                          <div className="pl-6 mt-1">
+                            <Input value={data.vat_number} onChange={(e) => set("vat_number", e.target.value)} placeholder="Enter VAT Number" className="h-8 text-[12px]" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
-            </div>
-          </DashedSectionCard>
-
-          {/* Footer Section */}
-          <DashedSectionCard title="Footer" icon={MessageSquare}>
-            <div className="space-y-3 p-1">
-              <div className="flex items-center gap-3">
-                <Checkbox checked={data.show_footer} onCheckedChange={(c) => set("show_footer", !!c)} id="show_footer" />
-                <Label htmlFor="show_footer" className="text-xs font-semibold">Show Footer</Label>
-              </div>
-              {data.show_footer && (
-                <div className="grid grid-cols-2 gap-3 pl-6">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Footer Text</Label>
-                    <Input value={data.footer_text} onChange={(e) => set("footer_text", e.target.value)} placeholder="Thank you message" className="h-9 text-[13px]" />
+                    <Label className="text-xs font-semibold">Header Text</Label>
+                    <Input value={data.header_text} onChange={(e) => set("header_text", e.target.value)} placeholder="Welcome message" className="h-9 text-[13px]" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Alignment</Label>
-                    <Select value={data.footer_alignment} onValueChange={(v) => set("footer_alignment", v as any)}>
+                    <Select value={data.header_alignment} onValueChange={(v) => set("header_alignment", v as any)}>
                       <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="left">Left</SelectItem>
@@ -337,14 +310,112 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
                     </Select>
                   </div>
                 </div>
-              )}
-            </div>
-          </DashedSectionCard>
-        </div>
+              </div>
+            </DashedSectionCard>
 
-        {/* RIGHT: Preview */}
-        <div className="col-span-4">
-          <ReceiptPreview data={data} />
+            {/* Body Section */}
+            <DashedSectionCard title="Body" icon={Layout}>
+              <div className="flex flex-wrap gap-x-6 gap-y-2 p-1">
+                {([
+                  ["show_item_name", "Item Name"],
+                  ["show_qty", "Qty"],
+                  ["show_price", "Price"],
+                  ["show_line_total", "Line Total"],
+                  ["show_total_amount", "Total Amount"],
+                  ["show_discount", "Discount"],
+                  ["show_tax_breakdown", "Tax Breakdown"],
+                  ["show_customization", "Show Customization (+/- items)"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <Checkbox checked={data[key]} onCheckedChange={(c) => set(key, !!c)} id={key} />
+                    <Label htmlFor={key} className="text-xs">{label}</Label>
+                  </div>
+                ))}
+              </div>
+            </DashedSectionCard>
+
+            {/* QR Section */}
+            <DashedSectionCard title="QR / Special" icon={QrCode}>
+              <div className="space-y-3 p-1">
+                <div className="flex items-center gap-3">
+                  <Checkbox checked={data.show_qr} onCheckedChange={(c) => set("show_qr", !!c)} id="show_qr" />
+                  <Label htmlFor="show_qr" className="text-xs font-semibold">Generate QR Code</Label>
+                </div>
+                {data.show_qr && (
+                  <div className="pl-6 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">QR Content</Label>
+                        <Select value={data.qr_content} onValueChange={(v) => set("qr_content", v)}>
+                          <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="order_url">Order URL</SelectItem>
+                            <SelectItem value="order_id">Order ID</SelectItem>
+                            <SelectItem value="custom">Custom</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">QR Size</Label>
+                        <Select value={data.qr_size} onValueChange={(v) => set("qr_size", v as any)}>
+                          <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="small">Small</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="large">Large</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="flex gap-6">
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={data.show_amount_above_qr} onCheckedChange={(c) => set("show_amount_above_qr", !!c)} id="amt_qr" />
+                        <Label htmlFor="amt_qr" className="text-xs">Amount Above QR</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={data.show_order_id_near_qr} onCheckedChange={(c) => set("show_order_id_near_qr", !!c)} id="id_qr" />
+                        <Label htmlFor="id_qr" className="text-xs">Order ID Near QR</Label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DashedSectionCard>
+
+            {/* Footer Section */}
+            <DashedSectionCard title="Footer" icon={MessageSquare}>
+              <div className="space-y-3 p-1">
+                <div className="flex items-center gap-3">
+                  <Checkbox checked={data.show_footer} onCheckedChange={(c) => set("show_footer", !!c)} id="show_footer" />
+                  <Label htmlFor="show_footer" className="text-xs font-semibold">Show Footer</Label>
+                </div>
+                {data.show_footer && (
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Footer Text</Label>
+                      <Input value={data.footer_text} onChange={(e) => set("footer_text", e.target.value)} placeholder="Thank you message" className="h-9 text-[13px]" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold">Alignment</Label>
+                      <Select value={data.footer_alignment} onValueChange={(v) => set("footer_alignment", v as any)}>
+                        <SelectTrigger className="h-9 text-[13px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="left">Left</SelectItem>
+                          <SelectItem value="center">Center</SelectItem>
+                          <SelectItem value="right">Right</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DashedSectionCard>
+          </div>
+
+          {/* RIGHT: Preview */}
+          <div className="col-span-6">
+            <ReceiptPreview data={data} />
+          </div>
         </div>
       </div>
 
@@ -368,7 +439,6 @@ export function PrintTemplateFormPage({ mode, templateId }: Props) {
         onOpenChange={setShowSaveModal}
         onConfirm={handleSave}
         data={data}
-        branchName={selectedBranch?.label || ""}
       />
     </div>
   );
