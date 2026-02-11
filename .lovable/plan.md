@@ -1,91 +1,64 @@
 
 
-# User Form Page - Layout & Save Fixes
+# Fix Branch Saving + Enhanced Tax Tooltip
 
-## Overview
-Restructure the User Add/Edit form to match the reference design, fix save issues, and clean up the right column layout.
+## Issue 1: Branch Not Saving (Error `[object Object]`)
 
----
+**Root Cause**: Your user account does not have the "Admin" role assigned in the database. The security policy requires admin access to create/update branches. The `[object Object]` error happens because the Supabase error object is not being properly converted to a readable message.
 
-## Changes
+**Fix (2 parts)**:
 
-### 1. Remove "Sections" navigation panel (right column)
-Delete the sticky section navigation box (lines 496-514) that shows Profile / Identification / Employment / Role & Branches with checkmark indicators.
+1. **Assign Admin role to your account** via a database migration -- insert a row into `user_roles` linking your user ID to the Admin role.
 
-### 2. Remove "Changes will apply immediately" warning
-Delete the amber Alert banner shown in edit mode (lines 210-217).
+2. **Fix error display** in `BranchFormPage.tsx` -- the catch block at line 203 shows `String(error)` which produces `[object Object]` for Supabase errors. Update to properly extract `.message` from the error object.
 
-### 3. Restructure Right Column: Branch above Role (separate DashedSectionCards)
+## Issue 2: Tax Inclusive vs Exclusive Tooltip
 
-**Branch section** (its own DashedSectionCard):
-- Title: "Branch"
-- Replace the checkbox list with `SearchableMultiSelect` component (already exists)
-- Maps branches to `{ id, label }` options
-- Shows selected branches as dismissible badge tags with search
+Replace the small tooltip on "Pricing Mode" with a rich, detailed tooltip that explains both modes using a 100 Riyal bill example.
 
-**Role section** (its own DashedSectionCard, below Branch):
-- Title: "Role"
-- Keep the existing Role dropdown (Select)
-- Keep RoleBadge display and "Edit Role" link
-- Keep RolePreviewPanel below
+**New tooltip content** (wider, with structured example):
+- **Tax Exclusive**: Price = 100 SAR, Tax (15%) = 15 SAR, Customer pays **115 SAR**
+- **Tax Inclusive**: Price = 100 SAR (already includes tax), Base = 86.96 SAR, Tax = 13.04 SAR, Customer pays **100 SAR**
 
-### 4. Employment & Access section - match reference layout
+The `TooltipInfo` component will be enhanced to support a `richContent` prop (React node) for rendering structured HTML tooltips with a wider max-width (400px).
 
-Restructure to a **3-column grid** matching the screenshot:
-- Column 1: Employee Type (dropdown, unchanged)
-- Column 2: Default Language (change from radio buttons to a **Select dropdown** with EN/AR/UR options)
-- Column 3: Security sub-section inline -- show Lock icon + "SECURITY" label, "force change at next login" checkbox, and "Reset Password Now" button all in a compact horizontal layout
+## Issue 3: Tax is Mandatory (at least 1)
 
-### 5. Fix profile_image not saving on Edit
-
-In `UsersEdit.tsx` `handleSubmit`, the update object is missing `profile_image`. Add it:
-```typescript
-profile_image: data.profile_image || null,
-```
-
-### 6. Fix user_roles query missing filter
-
-In `UsersEdit.tsx`, the `user_roles` query at line 35 has no `.eq("user_id", ...)` filter (it fetches ALL user_roles). This needs to be fixed to filter by the current user's `user_id`. Since we don't know `user_id` before loading the profile, we'll filter in JS (current approach at line 52-54), but should add the filter to the query for efficiency.
+Add validation in `BranchFormPage.tsx` that requires at least one tax rule before saving. If no taxes exist, show an error message under the Tax Configuration section and block the save.
 
 ---
 
 ## Technical Details
 
+### Database Fix
+```sql
+INSERT INTO user_roles (user_id, role_id)
+VALUES ('222d0e7a-8f79-4b75-a858-676b59886c25', 'ce3de3f2-aa33-480f-81f3-634583cdb3f0');
+```
+
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/users/UserFormPage.tsx` | Remove Sections nav, remove edit warning, split Branch/Role into separate cards with Branch above Role, Branch uses SearchableMultiSelect, Default Language becomes dropdown, Employment layout to 3-col |
-| `src/pages/UsersEdit.tsx` | Add `profile_image` to update payload, add user_id filter to user_roles query |
+| `src/components/shared/TooltipInfo.tsx` | Add optional `richContent` prop (ReactNode) for structured tooltip content, increase max-width to 400px when rich content is used |
+| `src/components/branches/BranchFormPage.tsx` | 1) Replace Pricing Mode tooltip with rich content showing the 100 SAR example. 2) Add validation: `if (form.taxes.length === 0)` set error and block save. 3) Fix error catch to handle Supabase error objects properly |
 
-### Branch SearchableMultiSelect usage
-```tsx
-<SearchableMultiSelect
-  value={form.branch_ids}
-  onChange={(ids) => updateField("branch_ids", ids)}
-  options={branches.map(b => ({ id: b.id, label: b.name }))}
-  placeholder="Select branches"
-  searchPlaceholder="Search branches..."
-/>
+### Pricing Mode Tooltip Design
+The tooltip will show a mini comparison table:
 ```
+Tax Exclusive:
+  Bill: 100 SAR + 15% tax = 115 SAR total
 
-### Default Language Dropdown
-Replace the 3 radio buttons with:
-```tsx
-<Select value={form.default_language} onValueChange={(v) => updateField("default_language", v)}>
-  <SelectTrigger className="h-9 text-sm">
-    <SelectValue placeholder="Select language" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="en">English</SelectItem>
-    <SelectItem value="ar">Arabic</SelectItem>
-    <SelectItem value="ur">Urdu</SelectItem>
-  </SelectContent>
-</Select>
+Tax Inclusive:
+  Bill: 100 SAR (includes tax)
+  Base: 86.96 SAR | Tax: 13.04 SAR
 ```
 
-### Employment & Access 3-column layout
+### Validation Rule
+In the `validate()` function, add:
+```typescript
+if (form.taxes.length === 0) {
+  newErrors.taxes = "At least one tax rule is required";
+}
 ```
-| Employee Type (dropdown) | Default Language (dropdown) | Security (checkbox + button) |
-```
-All in one row using `grid-cols-3 gap-3`.
+Display the error below the "No taxes configured" text in the Tax Configuration section.
