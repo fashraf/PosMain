@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Building2, Clock, BadgeDollarSign } from "lucide-react";
+import { Clock, RefreshCw, BadgeDollarSign } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const DASH_TEAL = "#2c8cb4";
 
@@ -9,7 +10,19 @@ function getStatus(hour: number) {
   return { label: "Normal", color: "#32c080" };
 }
 
-export default function DashboardHeader({ branchCount = 0 }: { branchCount?: number }) {
+interface Branch {
+  id: string;
+  name: string;
+}
+
+interface Props {
+  branches: Branch[];
+  selectedBranchId: string | null;
+  onBranchChange: (id: string) => void;
+  isFetching?: boolean;
+}
+
+export default function DashboardHeader({ branches, selectedBranchId, onBranchChange, isFetching }: Props) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -20,24 +33,34 @@ export default function DashboardHeader({ branchCount = 0 }: { branchCount?: num
   const status = getStatus(now.getHours());
   const dateStr = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const branchName = branches.find((b) => b.id === selectedBranchId)?.name || "Select Branch";
 
   return (
     <div
       className="rounded-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-3"
       style={{ background: `linear-gradient(135deg, ${DASH_TEAL}14, ${DASH_TEAL}08)`, border: `1px solid ${DASH_TEAL}30` }}
     >
-      <h1 className="text-lg font-bold tracking-tight" style={{ color: DASH_TEAL }}>
-        Restaurant Group Dashboard
-      </h1>
+      <div className="flex items-center gap-3">
+        <Select value={selectedBranchId || ""} onValueChange={onBranchChange}>
+          <SelectTrigger className="w-[220px] h-9 text-sm font-semibold" style={{ borderColor: `${DASH_TEAL}40` }}>
+            <SelectValue placeholder="Select Branch" />
+          </SelectTrigger>
+          <SelectContent>
+            {branches.map((b) => (
+              <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <h1 className="text-base font-bold tracking-tight hidden sm:block" style={{ color: DASH_TEAL }}>
+          {branchName} — Dashboard
+        </h1>
+      </div>
 
       <div className="flex flex-wrap items-center gap-4 text-sm">
+        {isFetching && <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {dateStr} &middot; {timeStr}
-        </span>
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <Building2 className="h-3.5 w-3.5" />
-          Branches: <strong className="text-foreground">{branchCount}</strong>
         </span>
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <BadgeDollarSign className="h-3.5 w-3.5" />
