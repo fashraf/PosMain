@@ -38,6 +38,7 @@ export const translations = {
       storageTypes: "Storage Types",
       ingredientGroups: "Ingredient Groups",
       employeeTypes: "Employee Types",
+      shiftManagement: "Shift Management",
       addNew: "Add New",
       editEntry: "Edit Entry",
       deleteConfirm: "Delete this entry?",
