@@ -78,6 +78,7 @@ const maintenanceSubItems = [
   { titleKey: "maintenance.ingredientGroups", url: "/maintenance/ingredient-groups" },
   { titleKey: "maintenance.employeeTypes", url: "/maintenance/employee-types" },
   { titleKey: "maintenance.shiftManagement", url: "/maintenance/shifts" },
+  { titleKey: "maintenance.printTemplates", url: "/maintenance/print-templates" },
 ];
 
 const otherNavItems = [

@@ -9,3 +9,4 @@ export { default as StorageTypesPage } from "./StorageTypes";
 export { default as IngredientGroupsPage } from "./IngredientGroups";
 export { default as EmployeeTypesPage } from "./EmployeeTypes";
 export { default as ShiftsPage } from "./Shifts";
+export { default as PrintTemplatesPage } from "./PrintTemplates";

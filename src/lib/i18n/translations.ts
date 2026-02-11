@@ -39,6 +39,7 @@ export const translations = {
       ingredientGroups: "Ingredient Groups",
       employeeTypes: "Employee Types",
       shiftManagement: "Shift Management",
+      printTemplates: "Print Templates",
       addNew: "Add New",
       editEntry: "Edit Entry",
       deleteConfirm: "Delete this entry?",
