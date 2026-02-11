@@ -1,188 +1,140 @@
 
-# Print Template Management Module
+
+# Print Template Improvements
 
 ## Overview
 
-Build a full Print Template management system under **Maintenance** that lets users design receipt/invoice templates per branch with a live preview. The form uses an 8/4 column split -- configuration on the left, a scaled-down receipt preview on the right that updates in real-time.
+Several enhancements to the Print Template form, preview, save modal, and database schema. The template becomes a standalone entity (no branch dropdown on the form -- branches will reference templates instead). Layout changes to 6/6 column split at 65% container width. Receipt preview shown in both the form page and the save confirmation modal. Customization section added to preview. Multilingual restaurant name support.
 
 ---
 
-## 1. Database: New `print_templates` Table
+## 1. Database Changes
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | Auto-generated |
-| name | text | Required, template name |
-| branch_id | uuid | FK to branches(id), required |
-| is_active | boolean | Default true |
-| show_logo | boolean | Default true |
-| logo_url | text | Nullable, uploaded logo URL |
-| logo_position | text | 'left', 'center', 'right' -- default 'center' |
-| show_branch_name | boolean | Default true |
-| show_branch_mobile | boolean | Default true |
-| show_order_id | boolean | Default true |
-| show_order_taken_by | boolean | Default true |
-| header_text | text | Nullable, e.g. "Welcome to Our Restaurant" |
-| header_alignment | text | 'left', 'center', 'right' -- default 'center' |
-| show_item_name | boolean | Default true |
-| show_qty | boolean | Default true |
-| show_price | boolean | Default true |
-| show_line_total | boolean | Default true |
-| show_total_amount | boolean | Default true |
-| show_discount | boolean | Default false |
-| show_tax_breakdown | boolean | Default false |
-| show_qr | boolean | Default false |
-| qr_content | text | 'order_url', 'order_id', 'custom' -- default 'order_url' |
-| qr_size | text | 'small', 'medium', 'large' -- default 'medium' |
-| show_amount_above_qr | boolean | Default false |
-| show_order_id_near_qr | boolean | Default false |
-| show_footer | boolean | Default true |
-| footer_text | text | Nullable, e.g. "Thank you for visiting" |
-| footer_alignment | text | 'left', 'center', 'right' -- default 'center' |
-| created_at | timestamptz | Default now() |
-| updated_at | timestamptz | Default now() |
+### Modify `print_templates` table
 
-RLS: Admin full access, authenticated users can view.
+- **Add columns:**
+  - `logo_width` (integer, default 80) -- logo width in px for the receipt
+  - `logo_height` (integer, default 40) -- logo height in px for the receipt
+  - `show_customization` (boolean, default true) -- show item customizations (+/- with cost)
+  - `restaurant_name_en` (text, nullable) -- restaurant name in English
+  - `restaurant_name_ar` (text, nullable) -- restaurant name in Arabic
+  - `restaurant_name_ur` (text, nullable) -- restaurant name in Urdu
+  - `cr_number` (text, nullable) -- actual CR number value
+  - `vat_number` (text, nullable) -- actual VAT number value
 
-Unique constraint on `(name, branch_id)` to prevent duplicate template names per branch.
+- **Make `branch_id` nullable** -- template is no longer tied to a branch at creation time; branches will reference templates. Drop the unique constraint on `(name, branch_id)` and add a unique constraint on just `name`.
+
+### Future: Branch-template linking
+
+The plan is to assign templates from the Branch form. This can be done later by adding a `print_template_ids` (uuid array) column to the `branches` table, or a junction table. For now, we just remove the branch requirement from the template form.
 
 ---
 
-## 2. New Files
+## 2. File Changes
 
-### Pages
+### `src/components/print-templates/ReceiptPreview.tsx`
 
-- **`src/pages/maintenance/PrintTemplates.tsx`** -- List page with GridFilters (search + branch filter + status filter), premium gradient table header, branch name column, status toggle, edit/view actions.
-- **`src/pages/maintenance/PrintTemplatesAdd.tsx`** -- Thin wrapper calling `PrintTemplateFormPage` in add mode.
-- **`src/pages/maintenance/PrintTemplatesEdit.tsx`** -- Wrapper loading data then calling `PrintTemplateFormPage` in edit mode.
+- **Update `PrintTemplateData` interface** to add: `logo_width`, `logo_height`, `show_customization`, `restaurant_name_en`, `restaurant_name_ar`, `restaurant_name_ur`, `cr_number`, `vat_number`
+- **Restaurant name display**: Show the first non-empty value from `restaurant_name_en` / `restaurant_name_ar` / `restaurant_name_ur` (fallback chain). Use bold, larger font.
+- **Logo size**: Apply `logo_width` and `logo_height` (in px) to the logo image/placeholder instead of a fixed `h-10`.
+- **CR/VAT values**: When `show_cr_number` is true, display `CR# {cr_number}` (or placeholder if empty). Same for VAT.
+- **Customization section**: Add demo customization data below each item row:
+  ```
+  Chicken Shawarma   x2   15.00   30.00
+    + Extra Cheese         +2.00
+    - No Onion
+  ```
+  Only shown when `show_customization` is true. Use green text for additions (+cost), red/muted for removals.
+- **Container width**: Keep `max-w-[280px]` for the receipt itself (thermal printer mock).
 
-### Components
+### `src/components/print-templates/PrintTemplateFormPage.tsx`
 
-- **`src/components/print-templates/PrintTemplateFormPage.tsx`** -- The main form with 8/4 split layout:
-  - **Left column (col-span-8)**: Four `DashedSectionCard` sections:
-    1. **Template Info**: Name input + Branch dropdown (SearchableSelect) + Active toggle
-    2. **Header**: Show Logo toggle + Logo Position radio (Left/Center/Right) + Upload Logo (ImageUploadHero) + Show Branch Name / Branch Mobile / Order ID / Order Taken By checkboxes + Header Text input + Header Alignment dropdown
-    3. **Body**: Checkboxes for Item Name, Qty, Price, Line Total, Total Amount, Discount, Tax Breakdown
-    4. **QR / Special**: Generate QR toggle + QR Content dropdown (Order URL/Order ID/Custom) + QR Size dropdown + Amount Above QR / Order ID Near QR toggles
-    5. **Footer**: Show Footer toggle + Footer Text input + Footer Alignment dropdown
-  - **Right column (col-span-4)**: Sticky live receipt preview card
+- **Remove branch dropdown** from Template Info section. Remove `branchId` state, `branches` fetch, and branch validation.
+- **Layout**: Change from `grid-cols-12` with `col-span-8` / `col-span-4` to `col-span-6` / `col-span-6`, wrapped in a container with `max-w-[65%] mx-auto` (or `w-[65%]`).
+- **Template Info section**: Replace 3-column grid with:
+  - Row 1: Restaurant Name (multilingual -- 3 inputs for EN/AR/UR using `CompactMultiLanguageInput`)
+  - Row 2: Template Name (text input) + Active toggle
+- **Header section**: Add CR Number input field (text, shown when `show_cr_number` is checked) and VAT Number input field (text, shown when `show_vat_number` is checked). When the user checks "CR Number", a text input appears to enter the actual CR number. Same for VAT.
+- **Logo sub-section**: Add Width and Height number inputs (in px) next to the position selector. Small numeric inputs with labels "W" and "H" (default 80x40).
+- **Body section**: Add `show_customization` checkbox labeled "Show Customization (+/- items)"
+- **Save modal call**: Remove `branchName` prop.
 
-- **`src/components/print-templates/ReceiptPreview.tsx`** -- A scaled receipt mockup that renders inside a white card with dotted border, simulating a thermal printer output. It reads the form state and renders:
-  - Logo placeholder (with position)
-  - Branch name, mobile, order ID (if toggled on)
-  - "Order Taken By: Ahmad" (if toggled on)
-  - Header text (with alignment)
-  - A sample items table with 3 dummy items (showing only toggled-on columns)
-  - Discount row, tax breakdown (if toggled on)
-  - Total amount
-  - QR code placeholder (with size + surrounding labels)
-  - Footer text (with alignment)
-  - The preview uses a receipt-like narrow styling (max-w-[280px], mono font, thin borders)
+### `src/components/print-templates/PrintTemplateSaveModal.tsx`
 
-- **`src/components/print-templates/PrintTemplateSaveModal.tsx`** -- Confirmation modal before save, showing a summary of enabled sections.
+- **Remove branch display** from the summary.
+- **Add receipt preview**: Embed a scaled-down `ReceiptPreview` component inside the modal (below the pill summary), so the user sees both the configuration summary AND the actual receipt before confirming. Use a smaller scale wrapper.
+- **Modal width**: Increase to `max-w-2xl` to accommodate the preview alongside the summary. Use a 2-column layout inside: left = pill summary, right = receipt preview.
 
-### Sample Data for Preview
+### `src/components/print-templates/PrintTemplateFormPage.tsx` (defaults update)
 
-The preview will use hardcoded demo data:
-
-```text
-Branch: Al Riyadh Main Branch
-Mobile: +966 50 123 4567
-Order #: 1042
-Taken By: Ahmad
-
-------- ITEMS -------
-Chicken Shawarma   x2   15.00   30.00
-Arabic Coffee      x3    5.00   15.00
-Kunafa             x1   12.00   12.00
---------------------------
-Subtotal:                       57.00
-VAT 15%:                         8.55
-TOTAL:                          65.55
-
-[QR Code Placeholder]
-Order #1042
-
-Thank you for visiting!
+Update `defaultData` to include:
+```typescript
+logo_width: 80,
+logo_height: 40,
+show_customization: true,
+restaurant_name_en: "Sample Restaurant",
+restaurant_name_ar: "",
+restaurant_name_ur: "",
+cr_number: "",
+vat_number: "",
 ```
 
----
+### `src/pages/maintenance/PrintTemplates.tsx` (list page)
 
-## 3. Modified Files
-
-| File | Change |
-|------|--------|
-| `src/App.tsx` | Add 3 routes: `/maintenance/print-templates`, `/maintenance/print-templates/add`, `/maintenance/print-templates/:id/edit` |
-| `src/components/AppSidebar.tsx` | Add "Print Templates" entry to `maintenanceSubItems` array |
-| `src/lib/i18n/translations.ts` | Add print template translation keys |
-| `src/pages/maintenance/index.ts` | Export PrintTemplatesPage |
+- Remove the "Branch" column and branch filter since templates are no longer branch-specific.
+- Add a "Restaurant Name" column showing the first non-empty language value.
 
 ---
 
-## 4. List Page Design
+## 3. Receipt Preview Demo Data Updates
 
-The list page follows the premium grid standards:
+Add customization data to demo items:
 
-- **GridFilters** bar with:
-  - Title: "Print Templates"
-  - Branch filter dropdown (populated from branches table)
-  - Status filter (All / Active / Inactive)
-  - Search input
-  - "Add Template" button
-- **Table columns**: #, Template Name, Branch, Header, Body Fields, QR, Status, Actions
-- Gradient header: `bg-gradient-to-r from-muted/80 via-muted/40 to-muted/80`
-- Zebra striping, lavender hover
-- Status toggle with Switch + GridStatusBadge
-- Edit button navigates to edit page
-
----
-
-## 5. Form Page Layout (8/4 Split)
-
-```text
-+------ col-span-8 ------+---- col-span-4 ----+
-|                         |                     |
-| [Template Info Card]    |  .................  |
-|                         |  :               :  |
-| [Header Card]           |  : RECEIPT       :  |
-|   Logo / Branch / etc.  |  : PREVIEW       :  |
-|                         |  :               :  |
-| [Body Card]             |  : (live update) :  |
-|   Item columns toggles  |  :               :  |
-|                         |  :               :  |
-| [QR / Special Card]     |  :               :  |
-|                         |  :...............:  |
-| [Footer Card]           |                     |
-|                         |                     |
-+-------------------------+---------------------+
-|          [ Cancel ]   [ Save Template ]        |
-+------------------------------------------------+
+```typescript
+const DEMO_ITEMS = [
+  { 
+    name: "Chicken Shawarma", qty: 2, price: 15.0, total: 32.0,
+    customizations: [
+      { type: "add", name: "Extra Cheese", cost: 2.00 },
+      { type: "remove", name: "No Onion", cost: 0 }
+    ]
+  },
+  { 
+    name: "Arabic Coffee", qty: 3, price: 5.0, total: 15.0,
+    customizations: []
+  },
+  { 
+    name: "Kunafa", qty: 1, price: 12.0, total: 13.50,
+    customizations: [
+      { type: "add", name: "Extra Cream", cost: 1.50 }
+    ]
+  },
+];
 ```
 
-The right column uses `sticky top-4` so the preview stays visible while scrolling through sections.
+Customization rows render indented below each item with:
+- `+` prefix in green for additions, showing `+{cost}` on the right
+- `-` prefix in muted/red for removals
 
 ---
 
-## 6. Key Behaviors
+## 4. Summary of Field Additions to Form
 
-- **Live preview**: Every toggle/input change instantly reflects in the ReceiptPreview component -- no save needed to see the effect
-- **Logo upload**: Uses existing `ImageUploadHero` component, uploads to a new `print-logos` storage bucket
-- **Branch required**: Template must be linked to a branch; the branch dropdown fetches from the branches table
-- **Duplicate prevention**: DB unique constraint on (name, branch_id); error caught and shown inline
-- **Confirmation modal**: Before save, shows a summary modal listing which sections are enabled (e.g., "Header: Logo, Branch Name, Order ID / Body: 5 columns / Footer: Enabled")
-- **Sticky footer**: Fixed bottom bar with Cancel + Save Template buttons (left-[16rem] offset)
-
----
-
-## 7. Storage Bucket
-
-Create a new `print-logos` storage bucket for uploaded logos, with public access for rendering in receipts.
+| Section | New Field | Type | Notes |
+|---------|-----------|------|-------|
+| Template Info | Restaurant Name EN/AR/UR | CompactMultiLanguageInput | Shows first non-empty in preview |
+| Header | CR Number (value) | Text input | Appears when "CR Number" checkbox is checked |
+| Header | VAT Number (value) | Text input | Appears when "VAT Number" checkbox is checked |
+| Header / Logo | Logo Width | Number input (px) | Default 80 |
+| Header / Logo | Logo Height | Number input (px) | Default 40 |
+| Body | Show Customization | Checkbox | Shows +/- items with cost in preview |
 
 ---
 
-## 8. No Changes To
+## 5. No Changes To
 
-- Existing POS order flow or checkout
-- Existing branch, shift, or user management
-- Any existing database tables
-Need to add CR number and VAT Number also please 
+- Branch form (template assignment to branches is a future task)
+- POS or order flow
+- Existing routes (same 3 routes)
+- Database RLS policies (same admin-only write, authenticated read)
+
