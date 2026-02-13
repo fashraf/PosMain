@@ -52,19 +52,19 @@
        { auth: { autoRefreshToken: false, persistSession: false } }
      );
  
-     const { data: adminCheck, error: adminCheckError } = await supabaseAdmin
-       .from('user_roles')
-       .select('role')
-       .eq('user_id', requestingUserId)
-       .eq('role', 'admin')
-       .single();
- 
-     if (adminCheckError || !adminCheck) {
-       return new Response(
-         JSON.stringify({ error: 'Only admins can reset passwords' }),
-         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-       );
-     }
+      const { data: adminCheck } = await supabaseAdmin
+        .from('user_roles')
+        .select('role_id, roles(name)')
+        .eq('user_id', requestingUserId);
+
+      const isAdmin = (adminCheck || []).some((r: any) => r.roles?.name === 'Admin');
+
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: 'Only admins can reset passwords' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
  
      // Parse request body
      const body: ResetPasswordRequest = await req.json();
