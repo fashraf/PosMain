@@ -60,13 +60,9 @@ interface NavModule {
 
 const sidebarModules: NavModule[] = [
   { titleKey: "nav.dashboard", icon: LayoutDashboard, url: "/" },
-  {
-    titleKey: "nav.orders", icon: ShoppingCart,
-    subItems: [
-      { titleKey: "nav.orderList", url: "/pos/orders" },
-      { titleKey: "nav.kitchen", url: "/pos/kitchen" },
-    ],
-  },
+  { titleKey: "nav.orders", icon: ShoppingCart, url: "/pos" },
+  { titleKey: "nav.orderList", icon: ClipboardList, url: "/pos/orders" },
+  { titleKey: "nav.kitchen", icon: ChefHat, url: "/pos/kitchen" },
   {
     titleKey: "nav.menu", icon: UtensilsCrossed,
     subItems: [
