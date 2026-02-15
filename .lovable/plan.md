@@ -1,185 +1,65 @@
 
+# POS Category Bar Redesign -- Premium Floating Home + Bouncy Pills
 
-# Sidebar Restructure, TopBar Redesign & User Profile Panel
+## What Changes
 
-## Overview
-
-This plan covers three major changes:
-1. **Sidebar** -- Complete restructuring to match the new menu hierarchy with collapsible modules
-2. **TopBar** -- Remove branch selector dropdown, add user profile avatar/dropdown with rich menu (like the reference image)
-3. **User Profile Page** -- New `/profile` page with Account, Role, Change Password, Activities, Dark Mode, Alerts, Quick Links, and Language sections
+The CategoryBar on `/pos` gets a complete visual overhaul with a floating Dashboard home button, thicker/shorter selected pill with bouncy spring animation, and a premium dashed-border container.
 
 ---
 
-## Part 1: Sidebar Restructure
-
-The sidebar menu items will be reorganized into the following hierarchy. All top-level modules are always visible; sub-items collapse by default and expand on click. Active items get a left accent bar (4px indigo border) and bold text.
+## Visual Design
 
 ```text
-Dashboard              (LayoutDashboard icon)
-Orders                 (ShoppingCart icon)  -- collapsible
-  - Order List
-  - Kitchen
-Menu                   (UtensilsCrossed icon)  -- collapsible
-  - Categories
-  - Subcategories
-  - Items
-  - Item Pricing
-  - Serving Times
-  - Allergens
-  - Item Types
-Inventory              (Package icon)  -- collapsible
-  - Ingredients
-  - Stock Operations   -- nested collapsible (Issue, Transfer, Adjustment)
-  - Batch & Expiry
-  - Storage Groups
-  - Units
-  - Reports & Alerts
-Finance                (TrendingUp icon)  -- collapsible
-  - Overview
-  - Revenue Report
-  - VAT Report
-  - Expenses & Profit
-  - Sales Channels
-Staff                  (Users icon)  -- collapsible
-  - Users
-  - Role Master
-  - Employee Types
-  - Shift Management
-Settings               (Settings icon)  -- collapsible
-  - Branches
-  - Print Templates
-  - Classification Types
-  - Maintenance
-Audit                  (FileText icon)  -- standalone (placeholder page)
+┌─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
+│                                                                           │
+│  [Dashboard]     [All]  Vegetarian  Non-Veg  Drinks  Sheesha  Desserts  Fav  │
+│   (Home icon)    (blue,                                          (star)  │
+│   floating       thick)                                                  │
+└─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┘
 ```
 
-### Visual styling
-- Active state: 4px left indigo border + lighter background (`bg-sidebar-accent`) + bold text + primary icon color
-- Hover: subtle `bg-sidebar-accent/50` transition
-- Sub-items indented with dotted left border line for visual hierarchy
-- Collapse/expand uses ChevronDown with rotation animation
-- Mini-sidebar mode (icon-only) already supported via existing `collapsible="icon"` prop
-
----
-
-## Part 2: TopBar Redesign
-
-### Remove
-- Branch selector dropdown (the `Select` component with "All Branches")
-
-### Keep
-- SidebarTrigger (hamburger)
-
-### New right-side layout (matching reference image)
-Left side: SidebarTrigger only
-Right side (left to right):
-1. **Language switcher** -- compact globe icon with current language code (e.g., "US")
-2. **Grid/layout toggle** -- small icon buttons (optional, decorative)
-3. **User avatar + name** -- circular avatar with green online ring, clicking opens a rich dropdown
-
-### User dropdown menu items
-- **Profile header**: Avatar, full name, email, role badge
-- **My Profile** -- links to `/profile`
-- **Change Password** -- links to `/profile#password`
-- **Dark Mode** -- inline toggle switch
-- **Language** -- sub-menu or links to `/profile#language`
-- Separator
-- **Logout** -- destructive action
-
----
-
-## Part 3: User Profile Page (`/profile`)
-
-A new full page accessible from the user dropdown. Organized as a tabbed or sectioned card layout:
-
-### Sections
-
-**1. Account Overview** (read-only card)
-- Full name, email, role badge, employee ID (from profiles table), join date, last login
-- Profile photo placeholder (circular avatar)
-- "Edit" button for non-sensitive fields (display name, photo)
-
-**2. Role & Permissions** (read-only card)
-- Current role name with colored badge
-- Description of access level
-- List of granted permissions (fetched from `role_permissions` if available, otherwise static display)
-
-**3. Change Password** (interactive card)
-- Current password, new password, confirm new password fields
-- Password strength meter
-- Calls existing `reset-password` edge function
-- Success message with auto-redirect
-
-**4. Activities** (scrollable card)
-- Timeline of recent actions (placeholder/mock data for now)
-- Filter by date range
-- Shows: login events, order actions, clock-in/out
-
-**5. Dark Mode** (toggle card)
-- Light/Dark toggle switch
-- Uses `next-themes` (already installed) to apply theme
-- Persists preference
-
-**6. Alerts / Notifications** (settings card)
-- Toggle switches for notification types
-- Alert: "Order not closed for 30+ min"
-- Alert: "New shift assignment"
-- View recent alerts list
-
-**7. Quick Links** (grid of shortcut cards)
-- Dashboard, Order, Order List, Kitchen
-- Role-based visibility
-- Icon + label, clickable navigation
-
-**8. Language** (selector card)
-- Reuses the existing language selector pattern from Settings page
-- 3 language cards (English, Arabic, Urdu)
+### Key visual details:
+- **Dashed border container** around the entire bar (matching app design language)
+- **Dashboard button**: Appears on extreme left, slightly overlapping the bar top/bottom for a floating premium feel. Uses a `Home` icon with tooltip "Dashboard". Links back to `/` (main dashboard)
+- **20% left offset**: Invisible left padding (~20% of bar width) between the Dashboard button and the first pill, pushing categories toward center-right
+- **Selected pill (blue)**: Shorter text but thicker vertical padding (`py-3.5`), indigo/primary background, `rounded-full`, bold white text
+- **Unselected pills**: Light grey background (`bg-slate-100`), dark text, thinner padding
+- **Bouncy animation**: When switching categories, the selected pill uses a CSS spring/bounce keyframe animation (`animate-bounce-in`) -- quick scale from 0.85 to 1.05 back to 1.0
+- **Favorites pill**: Star icon + "Favorites" label, same pill style
 
 ---
 
 ## Technical Details
 
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/pages/Profile.tsx` | Main profile page with all sections |
-| `src/components/profile/AccountCard.tsx` | Read-only account info card |
-| `src/components/profile/RoleCard.tsx` | Role & permissions display |
-| `src/components/profile/ChangePasswordCard.tsx` | Password change form |
-| `src/components/profile/ActivitiesCard.tsx` | Activity timeline (mock) |
-| `src/components/profile/DarkModeCard.tsx` | Theme toggle card |
-| `src/components/profile/AlertsCard.tsx` | Notification preferences |
-| `src/components/profile/QuickLinksCard.tsx` | Shortcut navigation grid |
-| `src/components/profile/LanguageCard.tsx` | Language selector card |
-
-### Files to Update
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/AppSidebar.tsx` | Complete restructure of nav items to match new hierarchy |
-| `src/components/TopBar.tsx` | Remove branch selector, add avatar + rich dropdown |
-| `src/components/AdminLayout.tsx` | Remove `selectedBranch` state (no longer in TopBar) |
-| `src/App.tsx` | Add `/profile` route, add `/audit` placeholder route |
-| `src/index.css` | Dark mode variables already exist; ensure sidebar active state styles |
+| `src/components/pos/category/CategoryBar.tsx` | Add Dashboard home button with `useNavigate`, add left spacer div for 20% offset, wrap in dashed border container |
+| `src/components/pos/category/CategoryPill.tsx` | Update selected/unselected styles (thicker selected, lighter unselected), add bounce animation class when `isSelected` transitions |
+| `src/index.css` | Add `@keyframes bounce-in` animation (scale 0.85 -> 1.05 -> 1.0, 400ms cubic-bezier spring) |
 
-### Routing changes
-- New route: `/profile` -- Profile page
-- New route: `/audit` -- Placeholder page (coming soon)
-- Existing routes for menu items that moved groups (e.g., Categories from `/maintenance/categories` stays the same URL, just sidebar grouping changes)
+### Animation Keyframes (added to index.css or tailwind config)
 
-### Sidebar URL mapping for new groups
-- **Orders**: `/pos` (Order), `/pos/orders` (Order List), `/pos/kitchen` (Kitchen)
-- **Menu**: `/maintenance/categories`, `/maintenance/subcategories`, `/items`, `/item-pricing`, `/maintenance/serving-times`, `/maintenance/allergens`, `/maintenance/item-types`
-- **Inventory**: `/inventory/ingredients`, stock ops sub-menu, `/inventory/batch-expiry`, `/maintenance/storage-types`, `/maintenance/units`, `/inventory/reports`
-- **Finance**: `/finance`, `/finance/revenue`, `/finance/vat`, `/finance/expenses`, `/maintenance/sales-channels`
-- **Staff**: `/users`, `/roles`, `/maintenance/employee-types`, `/maintenance/shifts`
-- **Settings**: `/branches`, `/maintenance/print-templates`, `/maintenance/classification-types`, `/settings` (general maintenance)
-- **Audit**: `/audit` (placeholder)
+```css
+@keyframes bounce-in {
+  0%   { transform: scale(0.85); }
+  50%  { transform: scale(1.08); }
+  75%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+```
 
-### Dark mode integration
-- Wrap the app with `ThemeProvider` from `next-themes`
-- Add toggle in profile page and TopBar dropdown
-- CSS variables for `.dark` class already defined in `index.css`
+Duration: 400ms with ease-out timing for a "super bouncy" feel. Applied via a `key` prop change on the pill so React re-mounts and re-triggers the animation on selection change.
 
+### Dashboard Button
+- Uses `react-router-dom`'s `useNavigate` to go to `/`
+- Styled as a rounded square button with `Home` icon from lucide-react
+- Positioned with negative margin (`-my-2`) to slightly overlap the bar border
+- Has a `Tooltip` wrapper showing "Dashboard" on hover
+- Subtle shadow for floating effect (`shadow-md`)
+
+### CategoryPill Updates
+- Selected: `bg-indigo-600 text-white py-3.5 px-5 font-bold shadow-sm` + bounce animation
+- Unselected: `bg-slate-100 text-slate-600 py-2.5 px-5 font-medium hover:bg-slate-200`
+- The bounce animation triggers via a CSS class `animate-[bounce-in_0.4s_ease-out]` applied only when `isSelected` is true, using a `key` that includes selection state to force re-mount
