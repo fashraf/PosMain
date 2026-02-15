@@ -60,6 +60,8 @@ import { POSMain, OrderComplete, OrderList, KitchenDisplay } from "@/pages/pos";
 import { POSLayout } from "@/components/pos/layout";
 // Finance Module
 import { FinanceOverview, RevenueReport, VATReport, CancellationsReport, ExpensesProfit } from "@/pages/finance";
+import Profile from "@/pages/Profile";
+import Audit from "@/pages/Audit";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -177,6 +179,9 @@ const App = () => (
                       <Route path="/finance/vat" element={<VATReport />} />
                       <Route path="/finance/cancellations" element={<CancellationsReport />} />
                       <Route path="/finance/expenses" element={<ExpensesProfit />} />
+                      {/* Profile & Audit */}
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/audit" element={<Audit />} />
                       {/* Catch-all for 404 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
