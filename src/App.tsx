@@ -96,26 +96,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/pos/orders"
-              element={
-                <ProtectedRoute>
-                  <POSLayout>
-                    <OrderList />
-                  </POSLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/pos/kitchen"
-              element={
-                <ProtectedRoute>
-                  <POSLayout>
-                    <KitchenDisplay />
-                  </POSLayout>
-                </ProtectedRoute>
-              }
-            />
+            {/* Order List and Kitchen moved to AdminLayout below */}
             
             {/* Protected routes with AdminLayout */}
             <Route
@@ -125,7 +106,8 @@ const App = () => (
                   <AdminLayout>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
-                      
+                      <Route path="/pos/orders" element={<OrderList />} />
+                      <Route path="/pos/kitchen" element={<KitchenDisplay />} />
                       <Route path="/ingredients" element={<Ingredients />} />
                       <Route path="/ingredients/add" element={<IngredientsAdd />} />
                       <Route path="/ingredients/:id/edit" element={<IngredientsEdit />} />
