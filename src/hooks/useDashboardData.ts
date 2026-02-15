@@ -10,6 +10,10 @@ import type {
   DashboardAlert,
 } from "@/components/dashboard/mockDashboardData";
 import type { BranchInsight } from "@/components/dashboard/BranchInsightCard";
+import type { CollectionSummary } from "@/components/dashboard/CollectionSummaryStrip";
+import type { PaymentMethodItem } from "@/components/dashboard/PaymentMethodChart";
+import type { OrderTypeItem } from "@/components/dashboard/OrderTypeBarChart";
+import type { HourlyOrderItem } from "@/components/dashboard/HourlyOrdersChart";
 
 function todayRange() {
   const now = new Date();
@@ -267,10 +271,84 @@ export function useDashboardData() {
   if (branches.length === 0) alerts.push({ type: "warning", message: "No active branches found." });
   if (alerts.length === 0) alerts.push({ type: "success", message: "All systems operational. Dashboard ready." });
 
+  // === Collection Summary ===
+  const todayTotal = todayOrders.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayCollected = todayPaid.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayNotCollected = todayOrders.filter((o) => o.payment_status === "pending").reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayCancelledAmt = todayOrders.filter((o) => o.payment_status === "cancelled").reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayVat = todayPaid.reduce((s, o) => s + (o.vat_amount || 0), 0);
+
+  const yesterdayTotal = yesterdayOrders.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const yesterdayCollectedAmt = yesterdayPaid.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const yesterdayNotCollected = yesterdayOrders.filter((o) => o.payment_status === "pending").reduce((s, o) => s + (o.total_amount || 0), 0);
+  const yesterdayCancelledAmt = yesterdayOrders.filter((o) => o.payment_status === "cancelled").reduce((s, o) => s + (o.total_amount || 0), 0);
+
+  const pctChange = (today: number, yesterday: number) => yesterday > 0 ? ((today - yesterday) / yesterday) * 100 : today > 0 ? 100 : 0;
+
+  // Hourly sparkline data
+  const hourlyTotalsMap = new Map<number, number>();
+  const hourlyCollectedMap = new Map<number, number>();
+  for (let h = 0; h < 24; h++) { hourlyTotalsMap.set(h, 0); hourlyCollectedMap.set(h, 0); }
+  todayOrders.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyTotalsMap.set(h, (hourlyTotalsMap.get(h) || 0) + (o.total_amount || 0)); });
+  todayPaid.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyCollectedMap.set(h, (hourlyCollectedMap.get(h) || 0) + (o.total_amount || 0)); });
+  const hourlyTotals: number[] = [];
+  const hourlyCollected: number[] = [];
+  for (let h = 6; h <= 23; h++) { hourlyTotals.push(hourlyTotalsMap.get(h) || 0); hourlyCollected.push(hourlyCollectedMap.get(h) || 0); }
+
+  const collectionSummary: CollectionSummary = {
+    totalAmount: todayTotal,
+    collected: todayCollected,
+    notCollected: todayNotCollected,
+    cancelledAmount: todayCancelledAmt,
+    cancelledCount: cancelledCount,
+    vatCollected: todayVat,
+    totalAmountChange: pctChange(todayTotal, yesterdayTotal),
+    collectedChange: pctChange(todayCollected, yesterdayCollectedAmt),
+    notCollectedChange: pctChange(todayNotCollected, yesterdayNotCollected),
+    cancelledChange: pctChange(todayCancelledAmt, yesterdayCancelledAmt),
+    vatChange: 0,
+    hourlyTotals,
+    hourlyCollected,
+  };
+
+  // === Payment Method Breakdown ===
+  const pmMap = new Map<string, { count: number; amount: number }>();
+  todayPaid.forEach((o) => {
+    const m = o.payment_method || "unknown";
+    const prev = pmMap.get(m) || { count: 0, amount: 0 };
+    pmMap.set(m, { count: prev.count + 1, amount: prev.amount + (o.total_amount || 0) });
+  });
+  const paymentMethodBreakdown: PaymentMethodItem[] = Array.from(pmMap.entries())
+    .map(([method, v]) => ({ method, ...v }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // === Order Type Breakdown ===
+  const otMap = new Map<string, { count: number; amount: number }>();
+  todayOrders.forEach((o) => {
+    const t = o.order_type || "unknown";
+    const prev = otMap.get(t) || { count: 0, amount: 0 };
+    otMap.set(t, { count: prev.count + 1, amount: prev.amount + (o.total_amount || 0) });
+  });
+  const orderTypeBreakdown: OrderTypeItem[] = Array.from(otMap.entries())
+    .map(([type, v]) => ({ type, ...v }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // === Hourly Orders (count, not revenue) ===
+  const hourlyOrderCountMap = new Map<number, number>();
+  const yesterdayHourlyOrderCountMap = new Map<number, number>();
+  for (let h = 0; h < 24; h++) { hourlyOrderCountMap.set(h, 0); yesterdayHourlyOrderCountMap.set(h, 0); }
+  todayOrders.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyOrderCountMap.set(h, (hourlyOrderCountMap.get(h) || 0) + 1); });
+  yesterdayOrders.forEach((o) => { const h = new Date(o.created_at).getHours(); yesterdayHourlyOrderCountMap.set(h, (yesterdayHourlyOrderCountMap.get(h) || 0) + 1); });
+  const hourlyOrders: HourlyOrderItem[] = [];
+  for (let h = 6; h <= 23; h++) {
+    hourlyOrders.push({ hour: String(h).padStart(2, "0"), count: hourlyOrderCountMap.get(h) || 0, yesterdayCount: yesterdayHourlyOrderCountMap.get(h) || 0 });
+  }
+
   const isLoading = branchesQuery.isLoading || staffQuery.isLoading || todayOrdersQuery.isLoading || yesterdayOrdersQuery.isLoading;
 
   return {
     kpiData, quickStats, hourlyRevenue, branchContribution, staffMetrics, keyMetrics, alerts,
     branchCount: branches.length, branchInsights, isLoading,
+    collectionSummary, paymentMethodBreakdown, orderTypeBreakdown, hourlyOrders,
   };
 }

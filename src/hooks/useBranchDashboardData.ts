@@ -12,6 +12,11 @@ import type {
 } from "@/components/dashboard/mockDashboardData";
 import type { DetailKPI } from "@/components/dashboard/BranchDetailKPIStrip";
 import type { ActivityItem } from "@/components/dashboard/RecentActivityFeed";
+import type { CollectionSummary } from "@/components/dashboard/CollectionSummaryStrip";
+import type { TopSellingItem } from "@/components/dashboard/TopSellingItemsCard";
+import type { PaymentMethodItem } from "@/components/dashboard/PaymentMethodChart";
+import type { OrderTypeItem } from "@/components/dashboard/OrderTypeBarChart";
+import type { HourlyOrderItem } from "@/components/dashboard/HourlyOrdersChart";
 
 function todayRange() {
   const now = new Date();
@@ -330,6 +335,89 @@ export function useBranchDashboardData(branchId: string | null) {
   if (todayRevenue > 0 && todayRevenue < yesterdayRevenue) alerts.push({ type: "warning", message: `Revenue down vs yesterday (SAR ${yesterdayRevenue.toFixed(2)}).` });
   if (alerts.length === 0) alerts.push({ type: "success", message: "All systems operational." });
 
+  // === Collection Summary ===
+  const todayTotal = todayOrders.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayCollected = todayPaid.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayNotCollected = todayOrders.filter((o) => o.payment_status === "pending").reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayCancelledAmt = todayOrders.filter((o) => o.payment_status === "cancelled").reduce((s, o) => s + (o.total_amount || 0), 0);
+  const todayVat = todayPaid.reduce((s, o) => s + (o.vat_amount || 0), 0);
+
+  const yesterdayTotal = yesterdayOrders.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const yesterdayCollectedAmt = yesterdayPaid.reduce((s, o) => s + (o.total_amount || 0), 0);
+  const yesterdayNotCollected = yesterdayOrders.filter((o) => o.payment_status === "pending").reduce((s, o) => s + (o.total_amount || 0), 0);
+  const yesterdayCancelledAmt = yesterdayOrders.filter((o) => o.payment_status === "cancelled").reduce((s, o) => s + (o.total_amount || 0), 0);
+
+  const pctChange = (today: number, yesterday: number) => yesterday > 0 ? ((today - yesterday) / yesterday) * 100 : today > 0 ? 100 : 0;
+
+  const hourlyTotalsMap = new Map<number, number>();
+  const hourlyCollectedMap = new Map<number, number>();
+  for (let h = 0; h < 24; h++) { hourlyTotalsMap.set(h, 0); hourlyCollectedMap.set(h, 0); }
+  todayOrders.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyTotalsMap.set(h, (hourlyTotalsMap.get(h) || 0) + (o.total_amount || 0)); });
+  todayPaid.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyCollectedMap.set(h, (hourlyCollectedMap.get(h) || 0) + (o.total_amount || 0)); });
+  const hourlyTotals: number[] = [];
+  const hourlyCollectedArr: number[] = [];
+  for (let h = 6; h <= 23; h++) { hourlyTotals.push(hourlyTotalsMap.get(h) || 0); hourlyCollectedArr.push(hourlyCollectedMap.get(h) || 0); }
+
+  const collectionSummary: CollectionSummary = {
+    totalAmount: todayTotal,
+    collected: todayCollected,
+    notCollected: todayNotCollected,
+    cancelledAmount: todayCancelledAmt,
+    cancelledCount,
+    vatCollected: todayVat,
+    totalAmountChange: pctChange(todayTotal, yesterdayTotal),
+    collectedChange: pctChange(todayCollected, yesterdayCollectedAmt),
+    notCollectedChange: pctChange(todayNotCollected, yesterdayNotCollected),
+    cancelledChange: pctChange(todayCancelledAmt, yesterdayCancelledAmt),
+    vatChange: 0,
+    hourlyTotals,
+    hourlyCollected: hourlyCollectedArr,
+  };
+
+  // === Top Selling Items ===
+  const itemAgg = new Map<string, { quantity: number; revenue: number }>();
+  orderItems.forEach((oi) => {
+    const prev = itemAgg.get(oi.item_name) || { quantity: 0, revenue: 0 };
+    itemAgg.set(oi.item_name, { quantity: prev.quantity + (oi.quantity || 1), revenue: prev.revenue + (oi.line_total || 0) });
+  });
+  const topSellingItems: TopSellingItem[] = Array.from(itemAgg.entries())
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
+  // === Payment Method Breakdown ===
+  const pmMap = new Map<string, { count: number; amount: number }>();
+  todayPaid.forEach((o) => {
+    const m = o.payment_method || "unknown";
+    const prev = pmMap.get(m) || { count: 0, amount: 0 };
+    pmMap.set(m, { count: prev.count + 1, amount: prev.amount + (o.total_amount || 0) });
+  });
+  const paymentMethodBreakdown: PaymentMethodItem[] = Array.from(pmMap.entries())
+    .map(([method, v]) => ({ method, ...v }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // === Order Type Breakdown ===
+  const otMap = new Map<string, { count: number; amount: number }>();
+  todayOrders.forEach((o) => {
+    const t = o.order_type || "unknown";
+    const prev = otMap.get(t) || { count: 0, amount: 0 };
+    otMap.set(t, { count: prev.count + 1, amount: prev.amount + (o.total_amount || 0) });
+  });
+  const orderTypeBreakdownData: OrderTypeItem[] = Array.from(otMap.entries())
+    .map(([type, v]) => ({ type, ...v }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // === Hourly Orders (count) ===
+  const hourlyOrderCountMap = new Map<number, number>();
+  const yesterdayHourlyOrderCountMap = new Map<number, number>();
+  for (let h = 0; h < 24; h++) { hourlyOrderCountMap.set(h, 0); yesterdayHourlyOrderCountMap.set(h, 0); }
+  todayOrders.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyOrderCountMap.set(h, (hourlyOrderCountMap.get(h) || 0) + 1); });
+  yesterdayOrders.forEach((o) => { const h = new Date(o.created_at).getHours(); yesterdayHourlyOrderCountMap.set(h, (yesterdayHourlyOrderCountMap.get(h) || 0) + 1); });
+  const hourlyOrders: HourlyOrderItem[] = [];
+  for (let h = 6; h <= 23; h++) {
+    hourlyOrders.push({ hour: String(h).padStart(2, "0"), count: hourlyOrderCountMap.get(h) || 0, yesterdayCount: yesterdayHourlyOrderCountMap.get(h) || 0 });
+  }
+
   const isLoading = todayOrdersQuery.isLoading || yesterdayOrdersQuery.isLoading || branchStaffQuery.isLoading;
   const isFetching = todayOrdersQuery.isFetching || yesterdayOrdersQuery.isFetching;
 
@@ -337,6 +425,7 @@ export function useBranchDashboardData(branchId: string | null) {
     kpiData, quickStats, hourlyRevenue, keyMetrics, alerts,
     paymentModes, orderTypes, categoryBreakdown, staffList, recentOrders, pendingOrders,
     detailKPIs, yesterdayComparison, recentActivity, lastOrderTime,
+    collectionSummary, topSellingItems, paymentMethodBreakdown, orderTypeBreakdown: orderTypeBreakdownData, hourlyOrders,
     isLoading, isFetching,
   };
 }
