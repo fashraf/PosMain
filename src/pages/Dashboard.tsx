@@ -6,7 +6,7 @@ import { useBranchDashboardData } from "@/hooks/useBranchDashboardData";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 import BOZCompactTable from "@/components/dashboard/BOZCompactTable";
-import BranchComparisonPanel from "@/components/dashboard/BranchComparisonPanel";
+
 import BranchDetailKPIStrip from "@/components/dashboard/BranchDetailKPIStrip";
 import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
 import BranchReportLinks from "@/components/dashboard/BranchReportLinks";
@@ -32,7 +32,7 @@ const ALL_BRANCHES = "__all__";
 
 export default function Dashboard() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>(ALL_BRANCHES);
-  const [comparedBranches, setComparedBranches] = useState<string[]>([]);
+  
 
   const branchesQuery = useQuery({
     queryKey: ["dashboard-branches"],
@@ -61,11 +61,7 @@ export default function Dashboard() {
     setSelectedBranchId(branchId);
   };
 
-  const handleCompareToggle = (branchId: string) => {
-    setComparedBranches((prev) =>
-      prev.includes(branchId) ? prev.filter((id) => id !== branchId) : [...prev, branchId]
-    );
-  };
+
 
   if (isLoading) {
     return (
@@ -97,14 +93,7 @@ export default function Dashboard() {
           {/* 3. Compact Table */}
           <BOZCompactTable data={groupData.branchInsights} onBranchClick={handleBranchClick} />
 
-          {/* 4. Branch Comparison */}
-          <BranchComparisonPanel
-            branches={groupData.branchInsights}
-            selectedIds={comparedBranches}
-            onToggle={handleCompareToggle}
-          />
-
-          {/* 5. Quick Stats */}
+          {/* Quick Stats */}
           <QuickStatsStrip stats={groupData.quickStats} />
 
           {/* 6. Revenue + Hourly Orders side-by-side */}

@@ -17,8 +17,6 @@ const METHOD_COLORS: Record<string, string> = {
   pay_later: "hsl(33 65% 55%)",
 };
 
-const fmtLabel = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0));
-
 export default function PaymentMethodChart({ data }: Props) {
   const total = data.reduce((s, d) => s + d.amount, 0);
   const chartData = data.map((d) => ({
@@ -28,24 +26,27 @@ export default function PaymentMethodChart({ data }: Props) {
   }));
 
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <h3 className="text-sm font-bold text-foreground mb-4">Payment Methods</h3>
+    <div className="bg-card border border-border rounded-xl p-5 hover:shadow-lg transition-shadow">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-1.5 h-5 rounded-full" style={{ background: "linear-gradient(to bottom, hsl(153 58% 47%), hsl(199 52% 44%))" }} />
+        <h3 className="text-sm font-bold text-foreground">Payment Methods</h3>
+      </div>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 50, bottom: 0, left: 70 }}>
+        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 55, bottom: 0, left: 70 }}>
           <XAxis type="number" hide />
           <YAxis
             dataKey="label"
             type="category"
-            tick={{ fontSize: 12, fill: "hsl(240 4% 36%)", fontWeight: 600 }}
+            tick={{ fontSize: 12, fill: "hsl(240 4% 36%)", fontWeight: 700 }}
             width={65}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
             formatter={(v: number) => [`SAR ${v.toLocaleString()}`, "Amount"]}
-            contentStyle={{ fontSize: "12px", borderRadius: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
+            contentStyle={{ fontSize: "12px", borderRadius: "12px", boxShadow: "0 8px 30px rgba(0,0,0,0.12)", border: "1px solid hsl(240 6% 90%)" }}
           />
-          <Bar dataKey="amount" radius={[0, 8, 8, 0]} barSize={24}>
+          <Bar dataKey="amount" radius={[0, 10, 10, 0]} barSize={26}>
             {chartData.map((entry) => (
               <Cell
                 key={entry.method}
@@ -56,20 +57,20 @@ export default function PaymentMethodChart({ data }: Props) {
               dataKey="pct"
               position="right"
               formatter={(v: number) => `${v}%`}
-              style={{ fontSize: 11, fill: "hsl(240 4% 36%)", fontWeight: 700 }}
+              style={{ fontSize: 11, fill: "hsl(240 4% 36%)", fontWeight: 800 }}
             />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-dotted border-muted">
+      <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-dotted border-muted">
         {chartData.map((d) => (
-          <div key={d.method} className="flex items-center gap-1.5 text-[11px]">
+          <div key={d.method} className="flex items-center gap-2 text-[11px]">
             <span
-              className="w-2.5 h-2.5 rounded-full"
+              className="w-3 h-3 rounded-md"
               style={{ background: METHOD_COLORS[d.method] || "hsl(240 4% 66%)" }}
             />
-            <span className="font-semibold text-foreground">{d.count}</span>
-            <span className="text-muted-foreground">orders</span>
+            <span className="font-extrabold text-foreground">{d.count}</span>
+            <span className="text-muted-foreground font-medium">orders</span>
           </div>
         ))}
       </div>
