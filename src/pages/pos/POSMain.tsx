@@ -5,7 +5,7 @@ import { CategoryBar } from "@/components/pos/category";
 import { POSItemGrid } from "@/components/pos/items";
 import { CartPanel } from "@/components/pos/cart";
 import { usePOSCart } from "@/hooks/pos";
-import { usePOSCategories, usePOSItems } from "@/hooks/pos";
+import { usePOSCategories, usePOSItems, usePOSCategoryCounts } from "@/hooks/pos";
 import { CustomizeDrawer } from "@/components/pos/customization";
 import { ItemDetailsModal, CustomizeModal } from "@/components/pos/modals";
 import { CheckoutModal } from "@/components/pos/checkout";
@@ -111,6 +111,7 @@ export default function POSMain() {
   }, [cart, triggerHighlight]);
 
   const { data: categories, isLoading: categoriesLoading } = usePOSCategories();
+  const { data: categoryCounts } = usePOSCategoryCounts();
   const { data: items, isLoading: itemsLoading } = usePOSItems({
     categoryId: showFavorites ? null : selectedCategoryId,
     favoritesOnly: showFavorites,
@@ -173,6 +174,7 @@ export default function POSMain() {
         onCategorySelect={handleCategorySelect}
         onFavoritesSelect={handleFavoritesSelect}
         isLoading={categoriesLoading}
+        categoryCounts={categoryCounts}
       />
       <div className="flex-1 overflow-auto p-4">
         <POSItemGrid
