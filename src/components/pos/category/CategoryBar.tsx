@@ -14,6 +14,7 @@ interface CategoryBarProps {
   onCategorySelect: (categoryId: string | null) => void;
   onFavoritesSelect: () => void;
   isLoading?: boolean;
+  categoryCounts?: { byCategory: Record<string, number>; total: number; favorites: number };
 }
 
 export function CategoryBar({
@@ -23,6 +24,7 @@ export function CategoryBar({
   onCategorySelect,
   onFavoritesSelect,
   isLoading,
+  categoryCounts,
 }: CategoryBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -38,7 +40,7 @@ export function CategoryBar({
   }
 
   return (
-    <div className="sticky top-0 z-10 border-2 border-dashed border-border rounded-lg mx-2 mt-2 bg-background">
+    <div className="sticky top-0 z-10 border-2 border-dashed border-border rounded-lg bg-background">
       <div className="flex items-center">
         {/* Floating Dashboard Home Button */}
         <Tooltip>
@@ -69,13 +71,13 @@ export function CategoryBar({
           ref={scrollRef}
           className={cn(
             "flex items-center gap-2 overflow-x-auto py-3 pr-4",
-            "scrollbar-hide",
-            "snap-x snap-mandatory"
+            "scrollbar-hide"
           )}
         >
           <CategoryPill
             key={`all-${!selectedCategoryId && !showFavorites}`}
             label="All"
+            count={categoryCounts?.total}
             isSelected={!selectedCategoryId && !showFavorites}
             onClick={() => onCategorySelect(null)}
           />
@@ -84,6 +86,7 @@ export function CategoryBar({
             <CategoryPill
               key={`${category.id}-${selectedCategoryId === category.id && !showFavorites}`}
               label={category.name_en}
+              count={categoryCounts?.byCategory[category.id]}
               isSelected={selectedCategoryId === category.id && !showFavorites}
               onClick={() => onCategorySelect(category.id)}
             />
@@ -93,6 +96,7 @@ export function CategoryBar({
             key={`fav-${showFavorites}`}
             label="Favorites"
             icon={<Star className="h-4 w-4" />}
+            count={categoryCounts?.favorites}
             isSelected={showFavorites}
             onClick={onFavoritesSelect}
           />

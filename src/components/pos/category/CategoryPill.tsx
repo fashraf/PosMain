@@ -6,6 +6,7 @@ interface CategoryPillProps {
   icon?: React.ReactNode;
   isSelected: boolean;
   onClick: () => void;
+  count?: number;
 }
 
 export function CategoryPill({
@@ -13,6 +14,7 @@ export function CategoryPill({
   icon,
   isSelected,
   onClick,
+  count,
 }: CategoryPillProps) {
   return (
     <button
@@ -30,6 +32,9 @@ export function CategoryPill({
     >
       {icon}
       <span>{label}</span>
+      {count !== undefined && (
+        <span className="opacity-70">({count})</span>
+      )}
     </button>
   );
 }
