@@ -1,65 +1,52 @@
 
-# POS Category Bar Redesign -- Premium Floating Home + Bouncy Pills
+# Category Bar: Item Counts + Horizontal Scroll + Remove Margins
 
-## What Changes
+## Changes
 
-The CategoryBar on `/pos` gets a complete visual overhaul with a floating Dashboard home button, thicker/shorter selected pill with bouncy spring animation, and a premium dashed-border container.
+### 1. Add item counts to each category pill
+Fetch item counts per category from the `items` table using a new hook `usePOSCategoryCounts`. Each pill will display the count in parentheses: `All (48)`, `Vegetarian (23)`, `Favorites (9)`.
 
----
+### 2. Horizontal scroll when categories overflow
+The pill container already has `overflow-x-auto`, but needs better behavior:
+- Remove `snap-x snap-mandatory` (causes janky scrolling)
+- Add smooth scroll-behavior
+- Ensure pills don't wrap -- they slide left/right naturally when there are more than fit on screen
 
-## Visual Design
-
-```text
-┌─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
-│                                                                           │
-│  [Dashboard]     [All]  Vegetarian  Non-Veg  Drinks  Sheesha  Desserts  Fav  │
-│   (Home icon)    (blue,                                          (star)  │
-│   floating       thick)                                                  │
-└─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┘
-```
-
-### Key visual details:
-- **Dashed border container** around the entire bar (matching app design language)
-- **Dashboard button**: Appears on extreme left, slightly overlapping the bar top/bottom for a floating premium feel. Uses a `Home` icon with tooltip "Dashboard". Links back to `/` (main dashboard)
-- **20% left offset**: Invisible left padding (~20% of bar width) between the Dashboard button and the first pill, pushing categories toward center-right
-- **Selected pill (blue)**: Shorter text but thicker vertical padding (`py-3.5`), indigo/primary background, `rounded-full`, bold white text
-- **Unselected pills**: Light grey background (`bg-slate-100`), dark text, thinner padding
-- **Bouncy animation**: When switching categories, the selected pill uses a CSS spring/bounce keyframe animation (`animate-bounce-in`) -- quick scale from 0.85 to 1.05 back to 1.0
-- **Favorites pill**: Star icon + "Favorites" label, same pill style
+### 3. Remove outer margins
+Remove `mx-2 mt-2` from the CategoryBar container so it sits flush edge-to-edge.
 
 ---
 
 ## Technical Details
 
-### Files to Modify
+### New hook: `src/hooks/pos/usePOSCategoryCounts.ts`
+Fetches a single query grouping active items by `category_id` and returns a `Record<string, number>` map plus a total count and favorites count.
+
+```text
+SELECT category_id, count(*) FROM items WHERE is_active = true GROUP BY category_id
+SELECT count(*) FROM items WHERE is_active = true AND is_favorite = true
+```
+
+Results cached for 5 minutes (same as categories).
+
+### Files to modify
 
 | File | Changes |
 |------|---------|
-| `src/components/pos/category/CategoryBar.tsx` | Add Dashboard home button with `useNavigate`, add left spacer div for 20% offset, wrap in dashed border container |
-| `src/components/pos/category/CategoryPill.tsx` | Update selected/unselected styles (thicker selected, lighter unselected), add bounce animation class when `isSelected` transitions |
-| `src/index.css` | Add `@keyframes bounce-in` animation (scale 0.85 -> 1.05 -> 1.0, 400ms cubic-bezier spring) |
+| `src/hooks/pos/usePOSCategoryCounts.ts` | New hook -- fetches item counts grouped by category_id |
+| `src/hooks/pos/index.ts` | Export the new hook |
+| `src/components/pos/category/CategoryBar.tsx` | Remove `mx-2 mt-2` margins. Pass `count` prop to each `CategoryPill`. Remove `snap-x snap-mandatory`. Accept and use `categoryCounts` prop |
+| `src/components/pos/category/CategoryPill.tsx` | Add optional `count` prop. Display as `Label (count)` inside the pill |
+| `src/pages/pos/POSMain.tsx` | Import and call `usePOSCategoryCounts`, pass counts down to `CategoryBar` |
 
-### Animation Keyframes (added to index.css or tailwind config)
+### CategoryPill display
+- Props: add `count?: number`
+- Render: `{label} {count !== undefined && <span className="opacity-70">({count})</span>}`
+- Same styling otherwise -- selected/unselected states unchanged
 
-```css
-@keyframes bounce-in {
-  0%   { transform: scale(0.85); }
-  50%  { transform: scale(1.08); }
-  75%  { transform: scale(0.97); }
-  100% { transform: scale(1); }
-}
-```
-
-Duration: 400ms with ease-out timing for a "super bouncy" feel. Applied via a `key` prop change on the pill so React re-mounts and re-triggers the animation on selection change.
-
-### Dashboard Button
-- Uses `react-router-dom`'s `useNavigate` to go to `/`
-- Styled as a rounded square button with `Home` icon from lucide-react
-- Positioned with negative margin (`-my-2`) to slightly overlap the bar border
-- Has a `Tooltip` wrapper showing "Dashboard" on hover
-- Subtle shadow for floating effect (`shadow-md`)
-
-### CategoryPill Updates
-- Selected: `bg-indigo-600 text-white py-3.5 px-5 font-bold shadow-sm` + bounce animation
-- Unselected: `bg-slate-100 text-slate-600 py-2.5 px-5 font-medium hover:bg-slate-200`
-- The bounce animation triggers via a CSS class `animate-[bounce-in_0.4s_ease-out]` applied only when `isSelected` is true, using a `key` that includes selection state to force re-mount
+### CategoryBar changes
+- Container: `mx-2 mt-2` removed, becomes flush `mx-0 mt-0`
+- Scrollable div: remove `snap-x snap-mandatory`, keep `overflow-x-auto scrollbar-hide`
+- "All" pill gets total count (sum of all categories)
+- Each category pill gets its specific count from the map
+- "Favorites" pill gets favorites count
