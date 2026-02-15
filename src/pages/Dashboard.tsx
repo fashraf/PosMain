@@ -4,7 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useBranchDashboardData } from "@/hooks/useBranchDashboardData";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import KPIGaugeCard from "@/components/dashboard/KPIGaugeCard";
+import BOZCardGrid from "@/components/dashboard/BOZCardGrid";
+import BOZCompactTable from "@/components/dashboard/BOZCompactTable";
+import BranchComparisonPanel from "@/components/dashboard/BranchComparisonPanel";
+import BranchDetailKPIStrip from "@/components/dashboard/BranchDetailKPIStrip";
+import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
+import BranchReportLinks from "@/components/dashboard/BranchReportLinks";
 import QuickStatsStrip from "@/components/dashboard/QuickStatsStrip";
 import DonutChartCard from "@/components/dashboard/DonutChartCard";
 import RevenueTrendChart from "@/components/dashboard/RevenueTrendChart";
@@ -22,8 +27,8 @@ const ALL_BRANCHES = "__all__";
 
 export default function Dashboard() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>(ALL_BRANCHES);
+  const [comparedBranches, setComparedBranches] = useState<string[]>([]);
 
-  // Fetch active branches
   const branchesQuery = useQuery({
     queryKey: ["dashboard-branches"],
     queryFn: async () => {
@@ -41,25 +46,30 @@ export default function Dashboard() {
   const branches = branchesQuery.data || [];
   const isAllBranches = selectedBranchId === ALL_BRANCHES;
 
-  // Both hooks called unconditionally (React rules)
   const groupData = useDashboardData();
   const branchData = useBranchDashboardData(isAllBranches ? null : selectedBranchId);
 
   const isLoading = branchesQuery.isLoading || (isAllBranches ? groupData.isLoading : branchData.isLoading);
   const isFetching = isAllBranches ? false : branchData.isFetching;
 
+  const handleBranchClick = (branchId: string) => {
+    setSelectedBranchId(branchId);
+  };
+
+  const handleCompareToggle = (branchId: string) => {
+    setComparedBranches((prev) =>
+      prev.includes(branchId) ? prev.filter((id) => id !== branchId) : [...prev, branchId]
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-5">
         <Skeleton className="h-16 w-full rounded-xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-[220px] rounded-lg" />)}
         </div>
         <Skeleton className="h-10 w-full rounded-lg" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-[280px] rounded-lg" />)}
-        </div>
-        <Skeleton className="h-[260px] w-full rounded-lg" />
       </div>
     );
   }
@@ -75,18 +85,23 @@ export default function Dashboard() {
 
       {isAllBranches ? (
         <>
-          {/* All Branches: KPI Gauges (4 cards) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {groupData.kpiData.map((kpi) => (
-              <KPIGaugeCard key={kpi.label} data={kpi} />
-            ))}
-          </div>
+          {/* BOZ Card Grid */}
+          <BOZCardGrid data={groupData.branchInsights} onBranchClick={handleBranchClick} />
+
+          {/* Compact Table */}
+          <BOZCompactTable data={groupData.branchInsights} onBranchClick={handleBranchClick} />
+
+          {/* Branch Comparison */}
+          <BranchComparisonPanel
+            branches={groupData.branchInsights}
+            selectedIds={comparedBranches}
+            onToggle={handleCompareToggle}
+          />
 
           <QuickStatsStrip stats={groupData.quickStats} />
 
           <RevenueTrendChart data={groupData.hourlyRevenue} />
 
-          {/* Branch Contribution + Staff Attendance side-by-side */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <BranchContributionChart data={groupData.branchContribution} />
             <StaffAttendanceCard data={groupData.staffMetrics} />
@@ -98,10 +113,34 @@ export default function Dashboard() {
         </>
       ) : (
         <>
-          {/* Branch view: 3x KPI Gauges */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {branchData.kpiData.map((kpi) => (
-              <KPIGaugeCard key={kpi.label} data={kpi} />
+          {/* Enhanced KPI Strip (6 cards) */}
+          <BranchDetailKPIStrip data={branchData.detailKPIs} />
+
+          {/* Today vs Yesterday Comparison */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {Object.entries(branchData.yesterdayComparison).map(([key, comp]) => (
+              <div key={key} className="bg-card border border-dotted border-muted rounded-lg p-3">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                  {key === "orders" ? "Total Orders" : key === "revenue" ? "Revenue" : "Cancellations"}
+                </p>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-lg font-bold text-foreground">
+                    {key === "revenue" ? `SAR ${comp.today.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : comp.today}
+                  </span>
+                  <div className="text-right">
+                    <p className="text-[10px] text-muted-foreground">
+                      Yesterday: {key === "revenue" ? `SAR ${comp.yesterday.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : comp.yesterday}
+                    </p>
+                    <span className={`text-xs font-semibold ${
+                      key === "cancellations"
+                        ? (comp.change <= 0 ? "text-emerald-600" : "text-orange-600")
+                        : (comp.change >= 0 ? "text-emerald-600" : "text-orange-600")
+                    }`}>
+                      {comp.change >= 0 ? "+" : ""}{comp.change.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -116,11 +155,13 @@ export default function Dashboard() {
 
           <RevenueTrendChart data={branchData.hourlyRevenue} />
 
-          {/* Staff & Metrics */}
+          {/* Activity Feed + Staff/Metrics */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <RecentActivityFeed data={branchData.recentActivity} />
             <CashierDutyTable data={branchData.staffList} />
-            <KeyMetricsGrid data={branchData.keyMetrics} />
           </div>
+
+          <KeyMetricsGrid data={branchData.keyMetrics} />
 
           {/* Scrollable Lists */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -130,6 +171,8 @@ export default function Dashboard() {
           </div>
 
           <AlertsPanel data={branchData.alerts} />
+
+          <BranchReportLinks branchId={selectedBranchId} />
         </>
       )}
     </div>
