@@ -21,6 +21,11 @@ import StaffAttendanceList from "@/components/dashboard/StaffAttendanceList";
 import StaffAttendanceCard from "@/components/dashboard/StaffAttendanceCard";
 import BranchContributionChart from "@/components/dashboard/BranchContributionChart";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
+import CollectionSummaryStrip from "@/components/dashboard/CollectionSummaryStrip";
+import PaymentMethodChart from "@/components/dashboard/PaymentMethodChart";
+import OrderTypeBarChart from "@/components/dashboard/OrderTypeBarChart";
+import HourlyOrdersChart from "@/components/dashboard/HourlyOrdersChart";
+import TopSellingItemsCard from "@/components/dashboard/TopSellingItemsCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const ALL_BRANCHES = "__all__";
@@ -66,8 +71,8 @@ export default function Dashboard() {
     return (
       <div className="space-y-5">
         <Skeleton className="h-16 w-full rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-[220px] rounded-lg" />)}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-[120px] rounded-lg" />)}
         </div>
         <Skeleton className="h-10 w-full rounded-lg" />
       </div>
@@ -85,53 +90,73 @@ export default function Dashboard() {
 
       {isAllBranches ? (
         <>
-          {/* BOZ Card Grid */}
+          {/* 1. Collection Summary Hero Cards */}
+          <CollectionSummaryStrip data={groupData.collectionSummary} />
+
+          {/* 2. BOZ Card Grid */}
           <BOZCardGrid data={groupData.branchInsights} onBranchClick={handleBranchClick} />
 
-          {/* Compact Table */}
+          {/* 3. Compact Table */}
           <BOZCompactTable data={groupData.branchInsights} onBranchClick={handleBranchClick} />
 
-          {/* Branch Comparison */}
+          {/* 4. Branch Comparison */}
           <BranchComparisonPanel
             branches={groupData.branchInsights}
             selectedIds={comparedBranches}
             onToggle={handleCompareToggle}
           />
 
+          {/* 5. Quick Stats */}
           <QuickStatsStrip stats={groupData.quickStats} />
 
-          <RevenueTrendChart data={groupData.hourlyRevenue} />
+          {/* 6. Revenue + Hourly Orders side-by-side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <RevenueTrendChart data={groupData.hourlyRevenue} />
+            <HourlyOrdersChart data={groupData.hourlyOrders} />
+          </div>
 
+          {/* 7. Payment Method + Order Type side-by-side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <PaymentMethodChart data={groupData.paymentMethodBreakdown} />
+            <OrderTypeBarChart data={groupData.orderTypeBreakdown} />
+          </div>
+
+          {/* 8. Branch Contribution + Staff */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <BranchContributionChart data={groupData.branchContribution} />
             <StaffAttendanceCard data={groupData.staffMetrics} />
           </div>
 
+          {/* 9. Key Metrics */}
           <KeyMetricsGrid data={groupData.keyMetrics} />
 
+          {/* 10. Alerts */}
           <AlertsPanel data={groupData.alerts} />
         </>
       ) : (
         <>
-          {/* Enhanced KPI Strip (6 cards) */}
+          {/* 1. Collection Summary */}
+          <CollectionSummaryStrip data={branchData.collectionSummary} />
+
+          {/* 2. Enhanced KPI Strip */}
           <BranchDetailKPIStrip data={branchData.detailKPIs} />
 
-          {/* Today vs Yesterday Comparison */}
+          {/* 3. Today vs Yesterday Comparison */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {Object.entries(branchData.yesterdayComparison).map(([key, comp]) => (
               <div key={key} className="bg-card border border-dotted border-muted rounded-lg p-3">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                   {key === "orders" ? "Total Orders" : key === "revenue" ? "Revenue" : "Cancellations"}
                 </p>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold text-foreground">
+                  <span className="text-lg font-extrabold text-foreground">
                     {key === "revenue" ? `SAR ${comp.today.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : comp.today}
                   </span>
                   <div className="text-right">
                     <p className="text-[10px] text-muted-foreground">
                       Yesterday: {key === "revenue" ? `SAR ${comp.yesterday.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : comp.yesterday}
                     </p>
-                    <span className={`text-xs font-semibold ${
+                    <span className={`text-xs font-bold ${
                       key === "cancellations"
                         ? (comp.change <= 0 ? "text-emerald-600" : "text-orange-600")
                         : (comp.change >= 0 ? "text-emerald-600" : "text-orange-600")
@@ -144,34 +169,48 @@ export default function Dashboard() {
             ))}
           </div>
 
+          {/* 4. Quick Stats */}
           <QuickStatsStrip stats={branchData.quickStats} />
 
-          {/* Donut Charts */}
+          {/* 5. Donut Charts */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <DonutChartCard title="Payment Modes" data={branchData.paymentModes} centerLabel={`${branchData.paymentModes.reduce((s, d) => s + d.value, 0)} orders`} />
             <DonutChartCard title="Sales by Category" data={branchData.categoryBreakdown} centerLabel={`SAR ${branchData.categoryBreakdown.reduce((s, d) => s + d.value, 0).toFixed(0)}`} />
             <DonutChartCard title="Order Types" data={branchData.orderTypes} centerLabel={`${branchData.orderTypes.reduce((s, d) => s + d.value, 0)} orders`} />
           </div>
 
-          <RevenueTrendChart data={branchData.hourlyRevenue} />
+          {/* 6. Revenue + Hourly Orders */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <RevenueTrendChart data={branchData.hourlyRevenue} />
+            <HourlyOrdersChart data={branchData.hourlyOrders} />
+          </div>
 
-          {/* Activity Feed + Staff/Metrics */}
+          {/* 7. Payment Method + Top Selling */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <PaymentMethodChart data={branchData.paymentMethodBreakdown} />
+            <TopSellingItemsCard data={branchData.topSellingItems} />
+          </div>
+
+          {/* 8. Activity Feed + Cashier Duty */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <RecentActivityFeed data={branchData.recentActivity} />
             <CashierDutyTable data={branchData.staffList} />
           </div>
 
+          {/* 9. Key Metrics */}
           <KeyMetricsGrid data={branchData.keyMetrics} />
 
-          {/* Scrollable Lists */}
+          {/* 10. Scrollable Lists */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <RecentOrdersList data={branchData.recentOrders} />
             <SlowestOrdersList data={branchData.pendingOrders} />
             <StaffAttendanceList data={branchData.staffList} />
           </div>
 
+          {/* 11. Alerts */}
           <AlertsPanel data={branchData.alerts} />
 
+          {/* 12. Report Links */}
           <BranchReportLinks branchId={selectedBranchId} />
         </>
       )}
