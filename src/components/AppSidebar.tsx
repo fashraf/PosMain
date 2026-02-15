@@ -1,26 +1,28 @@
 import { useState } from "react";
-import { 
-  LayoutDashboard, 
-  Store, 
-  Carrot, 
-  UtensilsCrossed, 
-  DollarSign, 
+import { useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  UtensilsCrossed,
+  Package,
+  TrendingUp,
+  Users,
   Settings,
+  FileText,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Building2,
-  Package,
   ClipboardList,
+  ChefHat,
   ArrowRightLeft,
   Calendar,
   BarChart3,
-  Wrench,
-  Users,
-  ShoppingCart,
-  ChefHat,
   Shield,
-  TrendingUp,
+  Building2,
+  Printer,
+  Tag,
+  Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -43,78 +45,121 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-const mainNavItems = [
-  { titleKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
-  { titleKey: "nav.order", url: "/pos", icon: ShoppingCart },
-  { titleKey: "nav.orderList", url: "/pos/orders", icon: ClipboardList },
-  { titleKey: "nav.kitchen", url: "/pos/kitchen", icon: ChefHat },
-  { titleKey: "nav.ingredients", url: "/inventory/ingredients", icon: Carrot },
-];
+interface SubItem {
+  titleKey: string;
+  url: string;
+  subItems?: { titleKey: string; url: string }[];
+}
 
-const inventorySubItems = [
-  { 
-    titleKey: "nav.stockOperations", 
-    url: "/inventory/operations",
-    icon: ArrowRightLeft,
+interface NavModule {
+  titleKey: string;
+  icon: LucideIcon;
+  url?: string;
+  subItems?: SubItem[];
+}
+
+const sidebarModules: NavModule[] = [
+  { titleKey: "nav.dashboard", icon: LayoutDashboard, url: "/" },
+  {
+    titleKey: "nav.orders", icon: ShoppingCart,
     subItems: [
-      { titleKey: "nav.stockIssue", url: "/inventory/operations/issue" },
-      { titleKey: "nav.stockTransfer", url: "/inventory/operations/transfer" },
-      { titleKey: "nav.stockAdjustment", url: "/inventory/operations/adjustment" },
-    ]
+      { titleKey: "nav.orderList", url: "/pos/orders" },
+      { titleKey: "nav.kitchen", url: "/pos/kitchen" },
+    ],
   },
-  { titleKey: "nav.batchExpiry", url: "/inventory/batch-expiry", icon: Calendar },
-  { titleKey: "nav.reportsAlerts", url: "/inventory/reports", icon: BarChart3 },
+  {
+    titleKey: "nav.menu", icon: UtensilsCrossed,
+    subItems: [
+      { titleKey: "maintenance.categories", url: "/maintenance/categories" },
+      { titleKey: "maintenance.subcategories", url: "/maintenance/subcategories" },
+      { titleKey: "nav.items", url: "/items" },
+      { titleKey: "nav.itemPricing", url: "/item-pricing" },
+      { titleKey: "maintenance.servingTimes", url: "/maintenance/serving-times" },
+      { titleKey: "maintenance.allergens", url: "/maintenance/allergens" },
+      { titleKey: "maintenance.itemTypes", url: "/maintenance/item-types" },
+    ],
+  },
+  {
+    titleKey: "nav.inventory", icon: Package,
+    subItems: [
+      { titleKey: "nav.ingredients", url: "/inventory/ingredients" },
+      {
+        titleKey: "nav.stockOperations", url: "/inventory/operations",
+        subItems: [
+          { titleKey: "nav.stockIssue", url: "/inventory/operations/issue" },
+          { titleKey: "nav.stockTransfer", url: "/inventory/operations/transfer" },
+          { titleKey: "nav.stockAdjustment", url: "/inventory/operations/adjustment" },
+        ],
+      },
+      { titleKey: "nav.batchExpiry", url: "/inventory/batch-expiry" },
+      { titleKey: "maintenance.storageTypes", url: "/maintenance/storage-types" },
+      { titleKey: "maintenance.units", url: "/maintenance/units" },
+      { titleKey: "nav.reportsAlerts", url: "/inventory/reports" },
+    ],
+  },
+  {
+    titleKey: "finance.title", icon: TrendingUp,
+    subItems: [
+      { titleKey: "finance.overview", url: "/finance" },
+      { titleKey: "finance.revenue", url: "/finance/revenue" },
+      { titleKey: "finance.vat", url: "/finance/vat" },
+      { titleKey: "finance.expenses", url: "/finance/expenses" },
+      { titleKey: "nav.salesChannels", url: "/maintenance/sales-channels" },
+    ],
+  },
+  {
+    titleKey: "nav.staff", icon: Users,
+    subItems: [
+      { titleKey: "nav.users", url: "/users" },
+      { titleKey: "nav.roleMaster", url: "/roles" },
+      { titleKey: "maintenance.employeeTypes", url: "/maintenance/employee-types" },
+      { titleKey: "maintenance.shiftManagement", url: "/maintenance/shifts" },
+    ],
+  },
+  {
+    titleKey: "nav.settings", icon: Settings,
+    subItems: [
+      { titleKey: "branches.title", url: "/branches" },
+      { titleKey: "maintenance.printTemplates", url: "/maintenance/print-templates" },
+      { titleKey: "maintenance.classificationTypes", url: "/maintenance/classification-types" },
+      { titleKey: "nav.maintenance", url: "/settings" },
+    ],
+  },
+  { titleKey: "nav.audit", icon: FileText, url: "/audit" },
 ];
 
-const maintenanceSubItems = [
-  { titleKey: "nav.salesChannels", url: "/maintenance/sales-channels" },
-  { titleKey: "maintenance.categories", url: "/maintenance/categories" },
-  { titleKey: "maintenance.subcategories", url: "/maintenance/subcategories" },
-  { titleKey: "maintenance.servingTimes", url: "/maintenance/serving-times" },
-  { titleKey: "maintenance.allergens", url: "/maintenance/allergens" },
-  { titleKey: "maintenance.itemTypes", url: "/maintenance/item-types" },
-  { titleKey: "maintenance.classificationTypes", url: "/maintenance/classification-types" },
-  { titleKey: "maintenance.units", url: "/maintenance/units" },
-  { titleKey: "maintenance.storageTypes", url: "/maintenance/storage-types" },
-  { titleKey: "maintenance.ingredientGroups", url: "/maintenance/ingredient-groups" },
-  { titleKey: "maintenance.employeeTypes", url: "/maintenance/employee-types" },
-  { titleKey: "maintenance.shiftManagement", url: "/maintenance/shifts" },
-  { titleKey: "maintenance.printTemplates", url: "/maintenance/print-templates" },
-];
-
-const financeSubItems = [
-  { titleKey: "finance.overview", url: "/finance" },
-  { titleKey: "finance.revenue", url: "/finance/revenue" },
-  { titleKey: "finance.vat", url: "/finance/vat" },
-  { titleKey: "finance.cancellations", url: "/finance/cancellations" },
-  { titleKey: "finance.expenses", url: "/finance/expenses" },
-];
-
-const otherNavItems = [
-  { titleKey: "nav.users", url: "/users", icon: Users },
-  { titleKey: "nav.roleMaster", url: "/roles", icon: Shield },
-  { titleKey: "nav.items", url: "/items", icon: UtensilsCrossed },
-  { titleKey: "nav.itemPricing", url: "/item-pricing", icon: DollarSign },
-  { titleKey: "branches.title", url: "/branches", icon: Building2 },
-  { titleKey: "nav.settings", url: "/settings", icon: Settings },
-];
+function isModuleActive(mod: NavModule, pathname: string): boolean {
+  if (mod.url) return mod.url === "/" ? pathname === "/" : pathname.startsWith(mod.url);
+  if (mod.subItems) {
+    return mod.subItems.some((s) => {
+      if (pathname === s.url || pathname.startsWith(s.url + "/")) return true;
+      if (s.subItems) return s.subItems.some((n) => pathname === n.url || pathname.startsWith(n.url + "/"));
+      return false;
+    });
+  }
+  return false;
+}
 
 export function AppSidebar() {
   const { t, isRTL } = useLanguage();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const [inventoryOpen, setInventoryOpen] = useState(true);
-  const [operationsOpen, setOperationsOpen] = useState(false);
-  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
-  const [financeOpen, setFinanceOpen] = useState(false);
+  const location = useLocation();
+  const pathname = location.pathname;
+
+  // Track which modules are open
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
+  const [openNested, setOpenNested] = useState<Record<string, boolean>>({});
+
+  const toggleModule = (key: string) => setOpenModules((p) => ({ ...p, [key]: !p[key] }));
+  const toggleNested = (key: string) => setOpenNested((p) => ({ ...p, [key]: !p[key] }));
+
+  const isOpen = (key: string) => openModules[key] ?? isModuleActive(sidebarModules.find((m) => m.titleKey === key)!, pathname);
 
   return (
     <Sidebar
       collapsible="icon"
-      className={cn(
-        "border-sidebar-border bg-sidebar",
-        isRTL && "border-l border-r-0"
-      )}
+      className={cn("border-sidebar-border bg-sidebar", isRTL && "border-l border-r-0")}
     >
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
@@ -129,214 +174,120 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarHeader>
-      
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* Main nav items */}
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild tooltip={t(item.titleKey)}>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === "/"}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!isCollapsed && <span>{t(item.titleKey)}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {sidebarModules.map((mod) => {
+                const active = isModuleActive(mod, pathname);
 
-              {/* Inventory Menu - Collapsible */}
-              <Collapsible
-                open={inventoryOpen && !isCollapsed}
-                onOpenChange={setInventoryOpen}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip={t("nav.inventory")}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
-                    >
-                      <Package className="h-5 w-5 shrink-0" />
-                      {!isCollapsed && (
-                        <>
-                          <span className="flex-1 text-left">{t("nav.inventory")}</span>
-                          <ChevronDown className={cn(
-                            "h-4 w-4 transition-transform",
-                            inventoryOpen && "rotate-180"
-                          )} />
-                        </>
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {inventorySubItems.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.url}>
-                          {subItem.subItems ? (
-                            <Collapsible
-                              open={operationsOpen}
-                              onOpenChange={setOperationsOpen}
-                            >
-                              <CollapsibleTrigger asChild>
-                                <SidebarMenuSubButton
-                                  className="flex items-center justify-between w-full"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <subItem.icon className="h-4 w-4" />
-                                    {t(subItem.titleKey)}
-                                  </span>
-                                  <ChevronDown className={cn(
-                                    "h-3 w-3 transition-transform",
-                                    operationsOpen && "rotate-180"
-                                  )} />
-                                </SidebarMenuSubButton>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <div className="ps-6 space-y-1 mt-1">
-                                  {subItem.subItems.map((nestedItem) => (
-                                    <SidebarMenuSubButton asChild key={nestedItem.url}>
-                                      <NavLink
-                                        to={nestedItem.url}
-                                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                                        activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                                      >
-                                        {t(nestedItem.titleKey)}
-                                      </NavLink>
-                                    </SidebarMenuSubButton>
-                                  ))}
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          ) : (
-                            <SidebarMenuSubButton asChild>
-                              <NavLink
-                                to={subItem.url}
-                                className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                                activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                              >
-                                <subItem.icon className="h-4 w-4" />
-                                {t(subItem.titleKey)}
-                              </NavLink>
-                            </SidebarMenuSubButton>
+                // Standalone link (no sub-items)
+                if (mod.url && !mod.subItems) {
+                  return (
+                    <SidebarMenuItem key={mod.titleKey}>
+                      <SidebarMenuButton asChild tooltip={t(mod.titleKey)}>
+                        <NavLink
+                          to={mod.url}
+                          end={mod.url === "/"}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors",
+                            active && "border-l-[3px] border-sidebar-primary bg-sidebar-accent font-semibold text-sidebar-primary"
                           )}
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+                          activeClassName="border-l-[3px] border-sidebar-primary bg-sidebar-accent font-semibold text-sidebar-primary"
+                        >
+                          <mod.icon className="h-5 w-5 shrink-0" />
+                          {!isCollapsed && <span>{t(mod.titleKey)}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
 
-              {/* Maintenance Menu - Collapsible */}
-              <Collapsible
-                open={maintenanceOpen && !isCollapsed}
-                onOpenChange={setMaintenanceOpen}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip={t("maintenance.title")}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
-                    >
-                      <Wrench className="h-5 w-5 shrink-0" />
-                      {!isCollapsed && (
-                        <>
-                          <span className="flex-1 text-left">{t("maintenance.title")}</span>
-                          <ChevronDown className={cn(
-                            "h-4 w-4 transition-transform",
-                            maintenanceOpen && "rotate-180"
-                          )} />
-                        </>
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {maintenanceSubItems.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.url}>
-                          <SidebarMenuSubButton asChild>
-                            <NavLink
-                              to={subItem.url}
-                              className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                            >
-                              {t(subItem.titleKey)}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+                // Collapsible module
+                const moduleOpen = isOpen(mod.titleKey) && !isCollapsed;
+                return (
+                  <Collapsible
+                    key={mod.titleKey}
+                    open={moduleOpen}
+                    onOpenChange={() => toggleModule(mod.titleKey)}
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          tooltip={t(mod.titleKey)}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors w-full",
+                            active && "border-l-[3px] border-sidebar-primary bg-sidebar-accent font-semibold text-sidebar-primary"
+                          )}
+                        >
+                          <mod.icon className="h-5 w-5 shrink-0" />
+                          {!isCollapsed && (
+                            <>
+                              <span className="flex-1 text-left">{t(mod.titleKey)}</span>
+                              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", moduleOpen && "rotate-180")} />
+                            </>
+                          )}
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub className="ml-4 border-l border-dotted border-sidebar-border pl-2">
+                          {mod.subItems!.map((sub) => {
+                            // Nested collapsible (Stock Operations)
+                            if (sub.subItems) {
+                              const nestedKey = sub.titleKey;
+                              const nestedOpen = openNested[nestedKey] ?? sub.subItems.some((n) => pathname === n.url);
+                              return (
+                                <SidebarMenuSubItem key={sub.url}>
+                                  <Collapsible open={nestedOpen} onOpenChange={() => toggleNested(nestedKey)}>
+                                    <CollapsibleTrigger asChild>
+                                      <SidebarMenuSubButton className="flex items-center justify-between w-full hover:bg-sidebar-accent/50 rounded-md transition-colors">
+                                        <span>{t(sub.titleKey)}</span>
+                                        <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", nestedOpen && "rotate-180")} />
+                                      </SidebarMenuSubButton>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                      <div className="ml-3 border-l border-dotted border-sidebar-border pl-2 space-y-0.5 mt-0.5">
+                                        {sub.subItems.map((nested) => (
+                                          <SidebarMenuSubButton asChild key={nested.url}>
+                                            <NavLink
+                                              to={nested.url}
+                                              className="flex items-center px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                                            >
+                                              {t(nested.titleKey)}
+                                            </NavLink>
+                                          </SidebarMenuSubButton>
+                                        ))}
+                                      </div>
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                </SidebarMenuSubItem>
+                              );
+                            }
 
-              {/* Finance Menu - Collapsible */}
-              <Collapsible
-                open={financeOpen && !isCollapsed}
-                onOpenChange={setFinanceOpen}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      tooltip={t("finance.title")}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
-                    >
-                      <TrendingUp className="h-5 w-5 shrink-0" />
-                      {!isCollapsed && (
-                        <>
-                          <span className="flex-1 text-left">{t("finance.title")}</span>
-                          <ChevronDown className={cn(
-                            "h-4 w-4 transition-transform",
-                            financeOpen && "rotate-180"
-                          )} />
-                        </>
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {financeSubItems.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.url}>
-                          <SidebarMenuSubButton asChild>
-                            <NavLink
-                              to={subItem.url}
-                              end={subItem.url === "/finance"}
-                              className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                            >
-                              {t(subItem.titleKey)}
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-
-              {/* Other nav items */}
-              {otherNavItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild tooltip={t(item.titleKey)}>
-                    <NavLink 
-                      to={item.url} 
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!isCollapsed && <span>{t(item.titleKey)}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                            // Regular sub-item
+                            return (
+                              <SidebarMenuSubItem key={sub.url}>
+                                <SidebarMenuSubButton asChild>
+                                  <NavLink
+                                    to={sub.url}
+                                    end={sub.url === "/finance"}
+                                    className="flex items-center px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                                    activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                                  >
+                                    {t(sub.titleKey)}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            );
+                          })}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
