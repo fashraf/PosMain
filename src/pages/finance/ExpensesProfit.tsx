@@ -4,7 +4,9 @@ import { useFinanceExpenses } from "@/hooks/useFinanceExpenses";
 import {
   FinanceDateRangePicker,
   FinanceBranchFilter,
-  FinanceBarChart,
+  FinanceGradientBarChart,
+  FinanceAreaChart,
+  FinanceStatStrip,
   FinanceDataTable,
   FinancePLCard,
   ExpenseForm,
@@ -80,51 +82,68 @@ export default function ExpensesProfit() {
       {isLoading ? (
         <Skeleton className="h-[400px]" />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: P&L + Margin */}
-          <div className="lg:col-span-2 space-y-4">
-            <FinancePLCard rows={plRows} />
-            <div className="bg-card border border-border rounded-lg p-4 text-center">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Net Profit Margin</span>
-              <div className={`text-3xl font-bold mt-1 ${margin >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-                {margin.toFixed(1)}%
+        <>
+          {/* Stat Strip */}
+          {finData && (
+            <FinanceStatStrip stats={[
+              { label: "Revenue", value: fmt(finData.totalSales), color: "#00d4ff" },
+              { label: "Total Expenses", value: fmt(finData.totalCOGS + Object.values(finData.expByCategory).reduce((s: number, v: any) => s + (Number(v) || 0), 0)), color: "#ec4899" },
+              { label: "Net Margin", value: `${margin.toFixed(1)}%`, description: margin >= 0 ? "Profitable" : "Loss", color: margin >= 0 ? "#7c3aed" : "#ec4899" },
+            ]} />
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: P&L + Charts */}
+            <div className="lg:col-span-2 space-y-4">
+              <FinancePLCard rows={plRows} />
+
+              {/* Margin Trend */}
+              {finData && (
+                <FinanceAreaChart
+                  title="Profit Trend"
+                  data={finData.trendData}
+                  areas={[
+                    { dataKey: "revenue", color: "#00d4ff", name: "Revenue" },
+                    { dataKey: "cancellations", color: "#ec4899", name: "Expenses/Cancellations" },
+                  ]}
+                />
+              )}
+
+              {/* Expense Breakdown Chart */}
+              {finData && (
+                <FinanceGradientBarChart
+                  title="Expense Breakdown"
+                  data={Object.entries(finData.expByCategory).map(([k, v]) => ({ name: CATEGORY_LABELS[k] || k, value: v as number }))}
+                />
+              )}
+
+              {/* Expense Table */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-sm font-medium text-foreground">Expense Records</h2>
+                  <ExportButtons onExportCSV={() => exportToCSV(expenseTableData, "expenses")} />
+                </div>
+                <FinanceDataTable
+                  columns={[
+                    { key: "date", label: "Date", sortable: true },
+                    { key: "category", label: "Category", sortable: true },
+                    { key: "amount", label: "Amount", sortable: true, align: "right", render: (r: any) => fmt(r.amount) },
+                    { key: "description", label: "Description" },
+                  ]}
+                  data={expenseTableData}
+                />
               </div>
             </div>
 
-            {/* Expense Breakdown Chart */}
-            {finData && (
-              <FinanceBarChart
-                title="Expense Breakdown"
-                data={Object.entries(finData.expByCategory).map(([k, v]) => ({ name: CATEGORY_LABELS[k] || k, value: v as number }))}
-              />
-            )}
-
-            {/* Expense Table */}
+            {/* Right: Add Expense Form */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-sm font-medium text-foreground">Expense Records</h2>
-                <ExportButtons onExportCSV={() => exportToCSV(expenseTableData, "expenses")} />
-              </div>
-              <FinanceDataTable
-                columns={[
-                  { key: "date", label: "Date", sortable: true },
-                  { key: "category", label: "Category", sortable: true },
-                  { key: "amount", label: "Amount", sortable: true, align: "right", render: (r: any) => fmt(r.amount) },
-                  { key: "description", label: "Description" },
-                ]}
-                data={expenseTableData}
-              />
+              <ExpenseForm onSaved={() => {
+                queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+                queryClient.invalidateQueries({ queryKey: ["finance-data"] });
+              }} />
             </div>
           </div>
-
-          {/* Right: Add Expense Form */}
-          <div>
-            <ExpenseForm onSaved={() => {
-              queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
-              queryClient.invalidateQueries({ queryKey: ["finance-data"] });
-            }} />
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

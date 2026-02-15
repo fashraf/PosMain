@@ -4,8 +4,9 @@ import {
   FinanceDateRangePicker,
   FinanceBranchFilter,
   FinanceKPICard,
-  FinanceLineChart,
+  FinanceAreaChart,
   FinanceDonutChart,
+  FinanceStatStrip,
   FinanceDataTable,
   ExportButtons,
   exportToCSV,
@@ -63,16 +64,25 @@ export default function CancellationsReport() {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <FinanceKPICard title="Total Cancellations" value={String(data.cancellationCount)} sparklineData={data.cancelSpark} color="#dc8c3c" icon={<XCircle className="h-4 w-4" />} />
-            <FinanceKPICard title="Refund Amount" value={fmt(data.totalCancellations)} sparklineData={data.cancelSpark} color="#dc8c3c" icon={<DollarSign className="h-4 w-4" />} />
-            <FinanceKPICard title="Cancel Rate" value={`${cancellationRate.toFixed(1)}%`} sparklineData={[cancellationRate]} color="#dc8c3c" icon={<Percent className="h-4 w-4" />} />
-            <FinanceKPICard title="Top Reason" value={topReason} sparklineData={[0]} color="#a09888" icon={<AlertTriangle className="h-4 w-4" />} />
+            <FinanceKPICard title="Total Cancellations" value={String(data.cancellationCount)} sparklineData={data.cancelSpark} color="#ec4899" icon={<XCircle className="h-4 w-4" />} />
+            <FinanceKPICard title="Refund Amount" value={fmt(data.totalCancellations)} sparklineData={data.cancelSpark} color="#ec4899" icon={<DollarSign className="h-4 w-4" />} />
+            <FinanceKPICard title="Cancel Rate" value={`${cancellationRate.toFixed(1)}%`} sparklineData={[cancellationRate]} color="#ec4899" icon={<Percent className="h-4 w-4" />} />
+            <FinanceKPICard title="Top Reason" value={topReason} sparklineData={[0]} color="#a78bfa" icon={<AlertTriangle className="h-4 w-4" />} />
           </div>
 
-          {/* Trend */}
-          <FinanceLineChart
+          {/* Stat Strip */}
+          <FinanceStatStrip stats={[
+            { label: "Cancelled Orders", value: String(data.cancellationCount), color: "#ec4899" },
+            { label: "Total Refunded", value: fmt(data.totalCancellations), color: "#7c3aed" },
+            { label: "Cancellation Rate", value: `${cancellationRate.toFixed(1)}%`, color: "#6366f1" },
+          ]} />
+
+          {/* Trend - Area Chart */}
+          <FinanceAreaChart
+            title="Cancellation Trend"
             data={data.trendData}
-            lines={[{ dataKey: "cancellations", color: "#dc8c3c", name: "Cancellations" }]}
+            areas={[{ dataKey: "cancellations", color: "#ec4899", name: "Cancellations" }]}
+            showLabels
           />
 
           {/* Charts + Table */}
@@ -95,6 +105,7 @@ export default function CancellationsReport() {
             <FinanceDonutChart
               title="Cancellation Reasons"
               data={Object.entries(data.cancelReasons).map(([name, value]) => ({ name, value: value as number }))}
+              centerLabel={String(data.cancellationCount)}
             />
           </div>
         </>
