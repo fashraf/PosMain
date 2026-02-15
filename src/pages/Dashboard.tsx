@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useBranchDashboardData } from "@/hooks/useBranchDashboardData";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import BOZCardGrid from "@/components/dashboard/BOZCardGrid";
+
 import BOZCompactTable from "@/components/dashboard/BOZCompactTable";
 import BranchComparisonPanel from "@/components/dashboard/BranchComparisonPanel";
 import BranchDetailKPIStrip from "@/components/dashboard/BranchDetailKPIStrip";
@@ -93,8 +93,6 @@ export default function Dashboard() {
           {/* 1. Collection Summary Hero Cards */}
           <CollectionSummaryStrip data={groupData.collectionSummary} />
 
-          {/* 2. BOZ Card Grid */}
-          <BOZCardGrid data={groupData.branchInsights} onBranchClick={handleBranchClick} />
 
           {/* 3. Compact Table */}
           <BOZCompactTable data={groupData.branchInsights} onBranchClick={handleBranchClick} />
