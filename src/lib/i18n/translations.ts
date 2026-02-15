@@ -3,7 +3,11 @@ export const translations = {
     // Navigation
     nav: {
       dashboard: "Dashboard",
+      orders: "Orders",
       order: "Order",
+      menu: "Menu",
+      staff: "Staff",
+      myProfile: "My Profile",
       salesChannels: "Sales Channels",
       ingredients: "Ingredients",
       items: "Items",
@@ -11,6 +15,8 @@ export const translations = {
       itemIngredients: "Item Ingredients",
       categories: "Categories",
       settings: "Settings",
+      audit: "Audit",
+      maintenance: "Maintenance",
       inventory: "Inventory",
       itemMaster: "Item Master",
       ingredientMaster: "Ingredient Master",
@@ -289,6 +295,17 @@ export const translations = {
       wiseQuote: "A WISE QUOTE",
       getEverything: "Get Everything You Want",
       motivationalText: "You can get everything you want if you work hard, trust the process, and stick to the plan.",
+      changePassword: "Change Password",
+    },
+    // Profile
+    profile: {
+      account: "Account Overview",
+      role: "Role & Permissions",
+      darkMode: "Dark Mode",
+      alerts: "Alerts & Notifications",
+      activities: "Recent Activities",
+      quickLinks: "Quick Links",
+      language: "Language",
     },
     // Roles
     roles: {
@@ -849,7 +866,11 @@ export const translations = {
     // Navigation
     nav: {
       dashboard: "لوحة التحكم",
+      orders: "الطلبات",
       order: "طلب",
+      menu: "القائمة",
+      staff: "الموظفين",
+      myProfile: "ملفي الشخصي",
       salesChannels: "قنوات البيع",
       ingredients: "المكونات",
       items: "الأصناف",
@@ -857,6 +878,8 @@ export const translations = {
       itemIngredients: "مكونات الأصناف",
       categories: "الفئات",
       settings: "الإعدادات",
+      audit: "التدقيق",
+      maintenance: "الصيانة",
       users: "المستخدمون",
       orderList: "قائمة الطلبات",
       kitchen: "المطبخ",
@@ -921,6 +944,17 @@ export const translations = {
       noAccount: "ليس لديك حساب؟",
       hasAccount: "لديك حساب بالفعل؟",
       createAccount: "إنشاء حساب",
+      changePassword: "تغيير كلمة المرور",
+    },
+    // Profile
+    profile: {
+      account: "نظرة عامة على الحساب",
+      role: "الدور والصلاحيات",
+      darkMode: "الوضع الداكن",
+      alerts: "التنبيهات والإشعارات",
+      activities: "الأنشطة الأخيرة",
+      quickLinks: "روابط سريعة",
+      language: "اللغة",
     },
     // Roles
     roles: {
@@ -1209,7 +1243,11 @@ export const translations = {
     // Navigation
     nav: {
       dashboard: "ڈیش بورڈ",
+      orders: "آرڈرز",
       order: "آرڈر",
+      menu: "مینو",
+      staff: "عملہ",
+      myProfile: "میری پروفائل",
       salesChannels: "سیلز چینلز",
       ingredients: "اجزاء",
       items: "اشیاء",
@@ -1217,8 +1255,11 @@ export const translations = {
       itemIngredients: "اشیاء کے اجزاء",
       categories: "زمرے",
       settings: "سیٹنگز",
+      audit: "آڈٹ",
+      maintenance: "دیکھ بھال",
       users: "صارفین",
       orderList: "آرڈر لسٹ",
+      kitchen: "کچن",
     },
     // Common
     common: {
@@ -1280,6 +1321,17 @@ export const translations = {
       noAccount: "کوئی اکاؤنٹ نہیں ہے؟",
       hasAccount: "پہلے سے اکاؤنٹ ہے؟",
       createAccount: "اکاؤنٹ بنائیں",
+      changePassword: "پاس ورڈ تبدیل کریں",
+    },
+    // Profile
+    profile: {
+      account: "اکاؤنٹ کا جائزہ",
+      role: "کردار اور اجازتیں",
+      darkMode: "ڈارک موڈ",
+      alerts: "الرٹس اور اطلاعات",
+      activities: "حالیہ سرگرمیاں",
+      quickLinks: "فوری لنکس",
+      language: "زبان",
     },
     // Roles
     roles: {
