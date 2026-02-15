@@ -1,173 +1,185 @@
-# Dashboard Enhancement -- Rich Charts, KPIs & Financial Breakdowns
 
-## What Changes
 
-The dashboard will be significantly enhanced with new financial summary cards, collection status breakdowns, order type distribution charts, payment method analysis, and improved visual presentation across both the "All Branches" and single-branch views.
+# Sidebar Restructure, TopBar Redesign & User Profile Panel
 
----
+## Overview
 
-## New Components
-
-### 1. `CollectionSummaryStrip` (new)
-
-A prominent row of 4-5 hero cards showing financial collection status:
-
-- **Total Amount** (all orders today) -- big bold SAR number
-- **Collected** (paid orders) -- green accent with percentage of total
-- **Not Collected** (pending orders) -- orange accent with count
-- **Cancelled/Refunded** -- red accent with count and SAR value
-- **VAT Collected** -- purple accent with SAR amount
-
-Each card uses the existing `SparklineChart` underneath for hourly trend and shows vs-yesterday percentage change.
-
-### 2. `PaymentMethodChart` (new)
-
-A horizontal bar chart showing cash vs card vs both vs pay_later breakdown:
-
-- Each bar shows SAR amount and order count
-- Color-coded bars (Cash: green, Card: blue, Both: purple, Pay Later: orange)
-- Percentage labels on each bar
-
-### 3. `OrderTypeBarChart` (new)
-
-A vertical bar chart (Recharts) showing dine-in, takeaway, delivery, self-pickup:
-
-- Gradient bars matching the finance chart style
-- Value labels on top of each bar
-- Order count + SAR revenue dual axis
-
-### 4. `HourlyOrdersChart` (new)
-
-A bar chart showing order count per hour (complementing the existing revenue trend):
-
-- Today bars solid, yesterday bars outlined/dashed
-- Highlights peak hour with a badge
-
-### 5. `TopSellingItemsCard` (new)
-
-A ranked list of top 10 selling items by revenue:
-
-- Item name, quantity sold, total revenue
-- Small horizontal progress bar showing relative contribution
-- Only shown in single-branch view (uses `orderItemsQuery` data already fetched)
+This plan covers three major changes:
+1. **Sidebar** -- Complete restructuring to match the new menu hierarchy with collapsible modules
+2. **TopBar** -- Remove branch selector dropdown, add user profile avatar/dropdown with rich menu (like the reference image)
+3. **User Profile Page** -- New `/profile` page with Account, Role, Change Password, Activities, Dark Mode, Alerts, Quick Links, and Language sections
 
 ---
 
-## Data Hook Enhancements
+## Part 1: Sidebar Restructure
 
-### `useDashboardData.ts` -- Add to "All Branches" view:
+The sidebar menu items will be reorganized into the following hierarchy. All top-level modules are always visible; sub-items collapse by default and expand on click. Active items get a left accent bar (4px indigo border) and bold text.
 
-- `collectionSummary`: object with `{ totalAmount, collected, notCollected, cancelled, vatCollected }` and their yesterday comparisons
-- `paymentMethodBreakdown`: array `{ method, count, amount }` from `todayPaid`
-- `orderTypeBreakdown`: array `{ type, count, amount }` from `todayOrders`
-- `hourlyOrders`: array `{ hour, count, yesterdayCount }` (order count, not revenue)
+```text
+Dashboard              (LayoutDashboard icon)
+Orders                 (ShoppingCart icon)  -- collapsible
+  - Order List
+  - Kitchen
+Menu                   (UtensilsCrossed icon)  -- collapsible
+  - Categories
+  - Subcategories
+  - Items
+  - Item Pricing
+  - Serving Times
+  - Allergens
+  - Item Types
+Inventory              (Package icon)  -- collapsible
+  - Ingredients
+  - Stock Operations   -- nested collapsible (Issue, Transfer, Adjustment)
+  - Batch & Expiry
+  - Storage Groups
+  - Units
+  - Reports & Alerts
+Finance                (TrendingUp icon)  -- collapsible
+  - Overview
+  - Revenue Report
+  - VAT Report
+  - Expenses & Profit
+  - Sales Channels
+Staff                  (Users icon)  -- collapsible
+  - Users
+  - Role Master
+  - Employee Types
+  - Shift Management
+Settings               (Settings icon)  -- collapsible
+  - Branches
+  - Print Templates
+  - Classification Types
+  - Maintenance
+Audit                  (FileText icon)  -- standalone (placeholder page)
+```
 
-### `useBranchDashboardData.ts` -- Add to single-branch view:
-
-- `collectionSummary`: same structure as above but branch-filtered
-- `topSellingItems`: array `{ name, quantity, revenue }` from `orderItemsQuery` data (already fetched)
-- `hourlyOrders`: order count per hour for bar chart
+### Visual styling
+- Active state: 4px left indigo border + lighter background (`bg-sidebar-accent`) + bold text + primary icon color
+- Hover: subtle `bg-sidebar-accent/50` transition
+- Sub-items indented with dotted left border line for visual hierarchy
+- Collapse/expand uses ChevronDown with rotation animation
+- Mini-sidebar mode (icon-only) already supported via existing `collapsible="icon"` prop
 
 ---
 
-## Dashboard Layout Changes
+## Part 2: TopBar Redesign
 
-### All Branches View (new layout order):
+### Remove
+- Branch selector dropdown (the `Select` component with "All Branches")
 
-1. **DashboardHeader** (unchanged)
-2. **CollectionSummaryStrip** (NEW -- hero financial cards)
-3. **BOZCardGrid** (existing branch cards)
-4. **BOZCompactTable** (existing compact table)
-5. **BranchComparisonPanel** (existing)
-6. **QuickStatsStrip** (existing, refined)
-7. **Two charts side-by-side**: RevenueTrendChart + HourlyOrdersChart (NEW)
-8. **Two charts side-by-side**: PaymentMethodChart (NEW) + OrderTypeBarChart (NEW)
-9. **Two charts side-by-side**: BranchContributionChart (existing) + StaffAttendanceCard (existing)
-10. **KeyMetricsGrid** (existing)
-11. **AlertsPanel** (existing)
+### Keep
+- SidebarTrigger (hamburger)
 
-### Single Branch View (new layout order):
+### New right-side layout (matching reference image)
+Left side: SidebarTrigger only
+Right side (left to right):
+1. **Language switcher** -- compact globe icon with current language code (e.g., "US")
+2. **Grid/layout toggle** -- small icon buttons (optional, decorative)
+3. **User avatar + name** -- circular avatar with green online ring, clicking opens a rich dropdown
 
-1. **DashboardHeader** (unchanged)
-2. **CollectionSummaryStrip** (NEW -- branch-specific)
-3. **BranchDetailKPIStrip** (existing 6-card strip)
-4. **Today vs Yesterday comparison** (existing inline strip)
-5. **QuickStatsStrip** (existing)
-6. **Three Donut Charts** (existing: Payment Modes, Category, Order Types)
-7. **Two charts side-by-side**: RevenueTrendChart + HourlyOrdersChart (NEW)
-8. **Two charts side-by-side**: PaymentMethodChart (NEW) + TopSellingItemsCard (NEW)
-9. **Two cards side-by-side**: RecentActivityFeed + CashierDutyTable (existing)
-10. **KeyMetricsGrid** (existing)
-11. **Three scrollable lists** (existing: Recent Orders, Slowest, Staff)
-12. **AlertsPanel** (existing)
-13. **BranchReportLinks** (existing)
+### User dropdown menu items
+- **Profile header**: Avatar, full name, email, role badge
+- **My Profile** -- links to `/profile`
+- **Change Password** -- links to `/profile#password`
+- **Dark Mode** -- inline toggle switch
+- **Language** -- sub-menu or links to `/profile#language`
+- Separator
+- **Logout** -- destructive action
 
 ---
 
-## Visual Design
+## Part 3: User Profile Page (`/profile`)
 
-- **CollectionSummaryStrip cards**: Large `text-2xl font-bold` numbers, colored left border (4px), subtle gradient background matching the card's accent color at 5% opacity, sparkline underneath
-- **PaymentMethodChart**: Horizontal bars with rounded ends, value + percentage labels, gradient fills
-- **OrderTypeBarChart**: Uses the same gradient style as `FinanceGradientBarChart` (purple-to-cyan)
-- **HourlyOrdersChart**: Clean vertical bars, today (solid teal) vs yesterday (light grey outline)
-- **TopSellingItemsCard**: Numbered list with horizontal mini-bars showing relative revenue share
+A new full page accessible from the user dropdown. Organized as a tabbed or sectioned card layout:
 
-Color palette remains consistent: Teal (#2c8cb4), Mint (#32c080), Orange (#dc8c3c), Cyan (#64b4e0), Purple (#8b5cf6)
+### Sections
+
+**1. Account Overview** (read-only card)
+- Full name, email, role badge, employee ID (from profiles table), join date, last login
+- Profile photo placeholder (circular avatar)
+- "Edit" button for non-sensitive fields (display name, photo)
+
+**2. Role & Permissions** (read-only card)
+- Current role name with colored badge
+- Description of access level
+- List of granted permissions (fetched from `role_permissions` if available, otherwise static display)
+
+**3. Change Password** (interactive card)
+- Current password, new password, confirm new password fields
+- Password strength meter
+- Calls existing `reset-password` edge function
+- Success message with auto-redirect
+
+**4. Activities** (scrollable card)
+- Timeline of recent actions (placeholder/mock data for now)
+- Filter by date range
+- Shows: login events, order actions, clock-in/out
+
+**5. Dark Mode** (toggle card)
+- Light/Dark toggle switch
+- Uses `next-themes` (already installed) to apply theme
+- Persists preference
+
+**6. Alerts / Notifications** (settings card)
+- Toggle switches for notification types
+- Alert: "Order not closed for 30+ min"
+- Alert: "New shift assignment"
+- View recent alerts list
+
+**7. Quick Links** (grid of shortcut cards)
+- Dashboard, Order, Order List, Kitchen
+- Role-based visibility
+- Icon + label, clickable navigation
+
+**8. Language** (selector card)
+- Reuses the existing language selector pattern from Settings page
+- 3 language cards (English, Arabic, Urdu)
 
 ---
 
 ## Technical Details
 
-### File Summary
+### Files to Create
 
+| File | Purpose |
+|------|---------|
+| `src/pages/Profile.tsx` | Main profile page with all sections |
+| `src/components/profile/AccountCard.tsx` | Read-only account info card |
+| `src/components/profile/RoleCard.tsx` | Role & permissions display |
+| `src/components/profile/ChangePasswordCard.tsx` | Password change form |
+| `src/components/profile/ActivitiesCard.tsx` | Activity timeline (mock) |
+| `src/components/profile/DarkModeCard.tsx` | Theme toggle card |
+| `src/components/profile/AlertsCard.tsx` | Notification preferences |
+| `src/components/profile/QuickLinksCard.tsx` | Shortcut navigation grid |
+| `src/components/profile/LanguageCard.tsx` | Language selector card |
 
-| File                                                  | Action                                                                                    |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `src/components/dashboard/CollectionSummaryStrip.tsx` | Create -- hero financial cards row                                                        |
-| `src/components/dashboard/PaymentMethodChart.tsx`     | Create -- horizontal bar chart for cash/card/etc                                          |
-| `src/components/dashboard/OrderTypeBarChart.tsx`      | Create -- vertical bar chart for dine-in/takeaway/etc                                     |
-| `src/components/dashboard/HourlyOrdersChart.tsx`      | Create -- bar chart for order count by hour                                               |
-| `src/components/dashboard/TopSellingItemsCard.tsx`    | Create -- ranked item list for branch view                                                |
-| `src/hooks/useDashboardData.ts`                       | Update -- add collectionSummary, paymentMethodBreakdown, orderTypeBreakdown, hourlyOrders |
-| `src/hooks/useBranchDashboardData.ts`                 | Update -- add collectionSummary, topSellingItems, hourlyOrders                            |
-| `src/pages/Dashboard.tsx`                             | Update -- integrate new components into both views                                        |
+### Files to Update
 
+| File | Changes |
+|------|---------|
+| `src/components/AppSidebar.tsx` | Complete restructure of nav items to match new hierarchy |
+| `src/components/TopBar.tsx` | Remove branch selector, add avatar + rich dropdown |
+| `src/components/AdminLayout.tsx` | Remove `selectedBranch` state (no longer in TopBar) |
+| `src/App.tsx` | Add `/profile` route, add `/audit` placeholder route |
+| `src/index.css` | Dark mode variables already exist; ensure sidebar active state styles |
 
-### Data Computation (in hooks)
+### Routing changes
+- New route: `/profile` -- Profile page
+- New route: `/audit` -- Placeholder page (coming soon)
+- Existing routes for menu items that moved groups (e.g., Categories from `/maintenance/categories` stays the same URL, just sidebar grouping changes)
 
-**collectionSummary** (computed from existing `todayOrders` and `yesterdayOrders`):
+### Sidebar URL mapping for new groups
+- **Orders**: `/pos` (Order), `/pos/orders` (Order List), `/pos/kitchen` (Kitchen)
+- **Menu**: `/maintenance/categories`, `/maintenance/subcategories`, `/items`, `/item-pricing`, `/maintenance/serving-times`, `/maintenance/allergens`, `/maintenance/item-types`
+- **Inventory**: `/inventory/ingredients`, stock ops sub-menu, `/inventory/batch-expiry`, `/maintenance/storage-types`, `/maintenance/units`, `/inventory/reports`
+- **Finance**: `/finance`, `/finance/revenue`, `/finance/vat`, `/finance/expenses`, `/maintenance/sales-channels`
+- **Staff**: `/users`, `/roles`, `/maintenance/employee-types`, `/maintenance/shifts`
+- **Settings**: `/branches`, `/maintenance/print-templates`, `/maintenance/classification-types`, `/settings` (general maintenance)
+- **Audit**: `/audit` (placeholder)
 
-```
-totalAmount = sum of all orders' total_amount
-collected = sum of paid orders' total_amount  
-notCollected = sum of pending orders' total_amount
-cancelledAmount = sum of cancelled orders' total_amount
-vatCollected = sum of paid orders' vat_amount
-```
+### Dark mode integration
+- Wrap the app with `ThemeProvider` from `next-themes`
+- Add toggle in profile page and TopBar dropdown
+- CSS variables for `.dark` class already defined in `index.css`
 
-Each field includes a `change` percentage vs yesterday.
-
-**paymentMethodBreakdown** (from `todayPaid`):
-
-```
-Group by payment_method -> { method, count, amount }
-```
-
-**orderTypeBreakdown** (from `todayOrders`):
-
-```
-Group by order_type -> { type, count, amount }
-```
-
-**topSellingItems** (from existing `orderItemsQuery` in branch hook):
-
-```
-Group by item_name -> { name, quantity: sum(qty), revenue: sum(line_total) }
-Sort by revenue desc, take top 10
-```
-
-No new database queries needed -- all data is already fetched by existing queries. These are purely computed aggregations.  
-  
-/ page  
-  
-also font should be darker / bolder brighter and focused. 
