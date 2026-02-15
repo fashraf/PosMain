@@ -9,6 +9,7 @@ import type {
   KeyMetric,
   DashboardAlert,
 } from "@/components/dashboard/mockDashboardData";
+import type { BranchInsight } from "@/components/dashboard/BranchInsightCard";
 
 function todayRange() {
   const now = new Date();
@@ -40,7 +41,7 @@ export function useDashboardData() {
     staleTime: 60000,
   });
 
-  // Active staff count
+  // Active staff count + branch assignments
   const staffQuery = useQuery({
     queryKey: ["dashboard-staff"],
     queryFn: async () => {
@@ -48,6 +49,19 @@ export function useDashboardData() {
         .from("profiles")
         .select("id, full_name, is_active")
         .eq("is_active", true);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 60000,
+  });
+
+  // User-branch assignments for per-branch staff count
+  const userBranchesQuery = useQuery({
+    queryKey: ["dashboard-user-branches"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_branches")
+        .select("user_id, branch_id");
       if (error) throw error;
       return data || [];
     },
@@ -78,7 +92,7 @@ export function useDashboardData() {
       const { from, to } = yesterdayRange();
       const { data, error } = await supabase
         .from("pos_orders")
-        .select("id, total_amount, payment_status, created_at")
+        .select("id, total_amount, payment_status, branch_id, created_at")
         .gte("created_at", from)
         .lt("created_at", to);
       if (error) throw error;
@@ -89,6 +103,7 @@ export function useDashboardData() {
 
   const branches = branchesQuery.data || [];
   const staff = staffQuery.data || [];
+  const userBranches = userBranchesQuery.data || [];
   const todayOrders = todayOrdersQuery.data || [];
   const yesterdayOrders = yesterdayOrdersQuery.data || [];
 
@@ -104,6 +119,52 @@ export function useDashboardData() {
   const revChange = yesterdayRevenue > 0
     ? (((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100).toFixed(0)
     : todayRevenue > 0 ? "+100" : "0";
+
+  // === Branch Insights for BOZ ===
+  const branchInsights: BranchInsight[] = branches.map((b) => {
+    const branchTodayOrders = todayOrders.filter((o) => o.branch_id === b.id);
+    const branchYesterdayOrders = yesterdayOrders.filter((o) => o.branch_id === b.id);
+    const branchPaid = branchTodayOrders.filter((o) => o.payment_status === "paid");
+    const branchYestPaid = branchYesterdayOrders.filter((o) => o.payment_status === "paid");
+    const branchRevenue = branchPaid.reduce((s, o) => s + (o.total_amount || 0), 0);
+    const branchYestRevenue = branchYestPaid.reduce((s, o) => s + (o.total_amount || 0), 0);
+    const branchCancelled = branchTodayOrders.filter((o) => o.payment_status === "cancelled").length;
+    const branchYestCancelled = branchYesterdayOrders.filter((o) => o.payment_status === "cancelled").length;
+
+    // Last placed order
+    const sortedOrders = [...branchTodayOrders].sort((a, c) => new Date(c.created_at).getTime() - new Date(a.created_at).getTime());
+    const lastPlacedAt = sortedOrders.length > 0 ? sortedOrders[0].created_at : null;
+
+    // Staff for this branch
+    const branchStaffIds = userBranches.filter((ub) => ub.branch_id === b.id).map((ub) => ub.user_id);
+    const activeStaff = staff.filter((s) => branchStaffIds.includes(s.id));
+
+    // Order type breakdown
+    const typeMap = new Map<string, number>();
+    branchTodayOrders.forEach((o) => {
+      const t = (o.order_type || "unknown").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      typeMap.set(t, (typeMap.get(t) || 0) + 1);
+    });
+    const total = branchTodayOrders.length || 1;
+    const orderTypeBreakdown = Array.from(typeMap.entries()).map(([type, count]) => ({
+      type,
+      pct: Math.round((count / total) * 100),
+    }));
+
+    return {
+      branchId: b.id,
+      branchName: b.name,
+      totalOrders: branchTodayOrders.length,
+      lastPlacedAt,
+      cancellations: branchCancelled,
+      cancellationChange: branchYestCancelled > 0 ? ((branchCancelled - branchYestCancelled) / branchYestCancelled) * 100 : 0,
+      staffOnDuty: activeStaff.length,
+      totalStaff: branchStaffIds.length,
+      revenue: branchRevenue,
+      revenueChange: branchYestRevenue > 0 ? ((branchRevenue - branchYestRevenue) / branchYestRevenue) * 100 : 0,
+      orderTypeBreakdown,
+    };
+  });
 
   // KPIs
   const kpiData: KPIData[] = [
@@ -163,58 +224,30 @@ export function useDashboardData() {
     { label: "Active Staff", value: String(staff.length) },
   ];
 
-  // Hourly revenue: today vs yesterday
+  // Hourly revenue
   const hourlyMap = new Map<number, number>();
   const yesterdayHourlyMap = new Map<number, number>();
-  for (let h = 0; h < 24; h++) {
-    hourlyMap.set(h, 0);
-    yesterdayHourlyMap.set(h, 0);
-  }
-  todayPaid.forEach((o) => {
-    const h = new Date(o.created_at).getHours();
-    hourlyMap.set(h, (hourlyMap.get(h) || 0) + (o.total_amount || 0));
-  });
-  yesterdayPaid.forEach((o) => {
-    const h = new Date(o.created_at).getHours();
-    yesterdayHourlyMap.set(h, (yesterdayHourlyMap.get(h) || 0) + (o.total_amount || 0));
-  });
-
-  // Only show hours 6-23
+  for (let h = 0; h < 24; h++) { hourlyMap.set(h, 0); yesterdayHourlyMap.set(h, 0); }
+  todayPaid.forEach((o) => { const h = new Date(o.created_at).getHours(); hourlyMap.set(h, (hourlyMap.get(h) || 0) + (o.total_amount || 0)); });
+  yesterdayPaid.forEach((o) => { const h = new Date(o.created_at).getHours(); yesterdayHourlyMap.set(h, (yesterdayHourlyMap.get(h) || 0) + (o.total_amount || 0)); });
   const hourlyRevenue: HourlyRevenue[] = [];
   for (let h = 6; h <= 23; h++) {
-    hourlyRevenue.push({
-      hour: String(h).padStart(2, "0"),
-      revenue: Math.round((hourlyMap.get(h) || 0) * 100) / 100,
-      yesterday: Math.round((yesterdayHourlyMap.get(h) || 0) * 100) / 100,
-    });
+    hourlyRevenue.push({ hour: String(h).padStart(2, "0"), revenue: Math.round((hourlyMap.get(h) || 0) * 100) / 100, yesterday: Math.round((yesterdayHourlyMap.get(h) || 0) * 100) / 100 });
   }
 
   // Branch contribution
   const branchContribution: BranchContribution[] = branches.map((b) => {
-    const branchRevenue = todayPaid
-      .filter((o) => o.branch_id === b.id)
-      .reduce((s, o) => s + (o.total_amount || 0), 0);
-    return {
-      name: b.name,
-      percentage: todayRevenue > 0 ? Math.round((branchRevenue / todayRevenue) * 100) : 0,
-      revenue: Math.round(branchRevenue * 100) / 100,
-    };
+    const branchRevenue = todayPaid.filter((o) => o.branch_id === b.id).reduce((s, o) => s + (o.total_amount || 0), 0);
+    return { name: b.name, percentage: todayRevenue > 0 ? Math.round((branchRevenue / todayRevenue) * 100) : 0, revenue: Math.round(branchRevenue * 100) / 100 };
   }).sort((a, b) => b.revenue - a.revenue);
 
-  // Staff metrics (real count, rest placeholder)
+  // Staff metrics
   const staffMetrics: StaffMetrics = {
-    scheduled: staff.length,
-    clocked: staff.length,
-    overtime: 0,
-    attendance: staff.length > 0 ? 100 : 0,
-    absenteeism: 0,
-    salesPerHour: 0,
-    avgTip: 0,
-    topBranch: branches.length > 0 ? branches[0].name : "—",
-    topBranchSalesPerHour: 0,
+    scheduled: staff.length, clocked: staff.length, overtime: 0, attendance: staff.length > 0 ? 100 : 0,
+    absenteeism: 0, salesPerHour: 0, avgTip: 0, topBranch: branches.length > 0 ? branches[0].name : "—", topBranchSalesPerHour: 0,
   };
 
-  // Key metrics from real data
+  // Key metrics
   const keyMetrics: KeyMetric[] = [
     { label: "Today Revenue", value: `SAR ${todayRevenue.toFixed(2)}`, trend: `vs SAR ${yesterdayRevenue.toFixed(2)} yesterday`, trendDirection: todayRevenue >= yesterdayRevenue ? "up" : "down", icon: "target" },
     { label: "Paid Orders", value: String(todayPaid.length), trend: `Yesterday: ${yesterdayPaid.length}`, trendDirection: todayPaid.length >= yesterdayPaid.length ? "up" : "down", icon: "clock" },
@@ -226,39 +259,18 @@ export function useDashboardData() {
 
   // Alerts
   const alerts: DashboardAlert[] = [];
-  if (todayOrders.length === 0) {
-    alerts.push({ type: "warning", message: "No orders today yet. Waiting for first order." });
-  }
-  if (cancelledCount > 0) {
-    alerts.push({ type: "warning", message: `${cancelledCount} order(s) cancelled today.` });
-  }
-  if (pendingCount > 0) {
-    alerts.push({ type: "action", message: `${pendingCount} order(s) pending payment — follow up with cashiers.` });
-  }
-  if (todayRevenue > yesterdayRevenue && yesterdayRevenue > 0) {
-    alerts.push({ type: "success", message: `Revenue is up ${revChange}% compared to yesterday!` });
-  }
-  if (todayRevenue > 0 && todayRevenue < yesterdayRevenue) {
-    alerts.push({ type: "warning", message: `Revenue is down compared to yesterday (SAR ${yesterdayRevenue.toFixed(2)}).` });
-  }
-  if (branches.length === 0) {
-    alerts.push({ type: "warning", message: "No active branches found." });
-  }
-  if (alerts.length === 0) {
-    alerts.push({ type: "success", message: "All systems operational. Dashboard ready." });
-  }
+  if (todayOrders.length === 0) alerts.push({ type: "warning", message: "No orders today yet. Waiting for first order." });
+  if (cancelledCount > 0) alerts.push({ type: "warning", message: `${cancelledCount} order(s) cancelled today.` });
+  if (pendingCount > 0) alerts.push({ type: "action", message: `${pendingCount} order(s) pending payment — follow up with cashiers.` });
+  if (todayRevenue > yesterdayRevenue && yesterdayRevenue > 0) alerts.push({ type: "success", message: `Revenue is up ${revChange}% compared to yesterday!` });
+  if (todayRevenue > 0 && todayRevenue < yesterdayRevenue) alerts.push({ type: "warning", message: `Revenue is down compared to yesterday (SAR ${yesterdayRevenue.toFixed(2)}).` });
+  if (branches.length === 0) alerts.push({ type: "warning", message: "No active branches found." });
+  if (alerts.length === 0) alerts.push({ type: "success", message: "All systems operational. Dashboard ready." });
 
   const isLoading = branchesQuery.isLoading || staffQuery.isLoading || todayOrdersQuery.isLoading || yesterdayOrdersQuery.isLoading;
 
   return {
-    kpiData,
-    quickStats,
-    hourlyRevenue,
-    branchContribution,
-    staffMetrics,
-    keyMetrics,
-    alerts,
-    branchCount: branches.length,
-    isLoading,
+    kpiData, quickStats, hourlyRevenue, branchContribution, staffMetrics, keyMetrics, alerts,
+    branchCount: branches.length, branchInsights, isLoading,
   };
 }
