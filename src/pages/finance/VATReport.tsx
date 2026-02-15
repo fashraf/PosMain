@@ -4,6 +4,8 @@ import {
   FinanceDateRangePicker,
   FinanceBranchFilter,
   FinanceKPICard,
+  FinanceAreaChart,
+  FinanceStatStrip,
   FinanceDataTable,
   ExportButtons,
   exportToCSV,
@@ -44,10 +46,28 @@ export default function VATReport() {
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FinanceKPICard title="Total Taxable" value={fmt(data.totalSales - data.totalVAT)} sparklineData={data.salesSpark} color="#2c8cb4" icon={<Receipt className="h-4 w-4" />} />
-            <FinanceKPICard title="Total VAT (15%)" value={fmt(data.totalVAT)} sparklineData={data.vatSpark} color="#64b4e0" icon={<Receipt className="h-4 w-4" />} />
-            <FinanceKPICard title="Total Inclusive" value={fmt(data.totalSales)} sparklineData={data.salesSpark} color="#32c080" icon={<Receipt className="h-4 w-4" />} />
+            <FinanceKPICard title="Total Taxable" value={fmt(data.totalSales - data.totalVAT)} sparklineData={data.salesSpark} color="#00d4ff" icon={<Receipt className="h-4 w-4" />} />
+            <FinanceKPICard title="Total VAT (15%)" value={fmt(data.totalVAT)} sparklineData={data.vatSpark} color="#7c3aed" icon={<Receipt className="h-4 w-4" />} />
+            <FinanceKPICard title="Total Inclusive" value={fmt(data.totalSales)} sparklineData={data.salesSpark} color="#6366f1" icon={<Receipt className="h-4 w-4" />} />
           </div>
+
+          {/* Big Number Strip */}
+          <FinanceStatStrip stats={[
+            { label: "Taxable Amount", value: fmt(data.totalSales - data.totalVAT), color: "#00d4ff" },
+            { label: "VAT Collected", value: fmt(data.totalVAT), color: "#7c3aed" },
+            { label: "Total Inclusive", value: fmt(data.totalSales), color: "#6366f1" },
+          ]} />
+
+          {/* VAT Trend */}
+          <FinanceAreaChart
+            title="VAT Trend Over Time"
+            data={data.trendData}
+            areas={[
+              { dataKey: "revenue", color: "#00d4ff", name: "Revenue (Incl.)" },
+              { dataKey: "vat", color: "#7c3aed", name: "VAT" },
+            ]}
+            showLabels
+          />
 
           {/* Branch VAT Table */}
           <div>

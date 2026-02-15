@@ -5,9 +5,10 @@ import {
   FinanceDateRangePicker,
   FinanceBranchFilter,
   FinanceKPICard,
-  FinanceLineChart,
-  FinanceBarChart,
+  FinanceAreaChart,
+  FinanceGradientBarChart,
   FinanceDonutChart,
+  FinanceStatStrip,
   FinanceDataTable,
   ExportButtons,
   exportToCSV,
@@ -42,13 +43,11 @@ export default function FinanceOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Finance Overview</h1>
         <p className="text-sm text-muted-foreground">Branch-wise financial dashboard</p>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-4 flex-wrap">
         <FinanceDateRangePicker value={dateRange} onChange={setDateRange} />
         <FinanceBranchFilter value={branchId} onChange={setBranchId} />
@@ -57,33 +56,39 @@ export default function FinanceOverview() {
       {isLoading ? (
         <div className="grid grid-cols-3 lg:grid-cols-6 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-[120px] rounded-lg" />
+            <Skeleton key={i} className="h-[120px] rounded-xl" />
           ))}
         </div>
       ) : data ? (
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <FinanceKPICard title="Total Sales" value={fmt(data.totalSales)} sparklineData={data.salesSpark} color="#2c8cb4" icon={<DollarSign className="h-4 w-4" />} changeDirection="up" change={0} />
-            <FinanceKPICard title="VAT Collected" value={fmt(data.totalVAT)} sparklineData={data.vatSpark} color="#64b4e0" icon={<Receipt className="h-4 w-4" />} changeDirection="neutral" />
-            <FinanceKPICard title="Cancellations" value={fmt(data.totalCancellations)} sparklineData={data.cancelSpark} color="#dc8c3c" icon={<XCircle className="h-4 w-4" />} changeDirection={data.totalCancellations > 0 ? "down" : "neutral"} change={data.cancellationCount} />
-            <FinanceKPICard title="COGS" value={fmt(data.totalCOGS)} sparklineData={[0]} color="#a09888" icon={<TrendingDown className="h-4 w-4" />} changeDirection="neutral" />
-            <FinanceKPICard title="Gross Profit" value={fmt(data.grossProfit)} sparklineData={data.salesSpark.map((s, i) => s - (data.totalCOGS / 7))} color="#32c080" icon={<TrendingUp className="h-4 w-4" />} changeDirection={data.grossProfit > 0 ? "up" : "down"} />
-            <FinanceKPICard title="Net Profit" value={fmt(data.netProfit)} sparklineData={data.salesSpark.map((s) => s * 0.3)} color="#8b5cf6" icon={<Wallet className="h-4 w-4" />} changeDirection={data.netProfit > 0 ? "up" : "down"} />
+            <FinanceKPICard title="Total Sales" value={fmt(data.totalSales)} sparklineData={data.salesSpark} color="#00d4ff" icon={<DollarSign className="h-4 w-4" />} changeDirection="up" change={0} />
+            <FinanceKPICard title="VAT Collected" value={fmt(data.totalVAT)} sparklineData={data.vatSpark} color="#6366f1" icon={<Receipt className="h-4 w-4" />} changeDirection="neutral" />
+            <FinanceKPICard title="Cancellations" value={fmt(data.totalCancellations)} sparklineData={data.cancelSpark} color="#ec4899" icon={<XCircle className="h-4 w-4" />} changeDirection={data.totalCancellations > 0 ? "down" : "neutral"} change={data.cancellationCount} />
+            <FinanceKPICard title="COGS" value={fmt(data.totalCOGS)} sparklineData={[0]} color="#a78bfa" icon={<TrendingDown className="h-4 w-4" />} changeDirection="neutral" />
+            <FinanceKPICard title="Gross Profit" value={fmt(data.grossProfit)} sparklineData={data.salesSpark.map((s: number, i: number) => s - (data.totalCOGS / 7))} color="#7c3aed" icon={<TrendingUp className="h-4 w-4" />} changeDirection={data.grossProfit > 0 ? "up" : "down"} />
+            <FinanceKPICard title="Net Profit" value={fmt(data.netProfit)} sparklineData={data.salesSpark.map((s: number) => s * 0.3)} color="#00d4ff" icon={<Wallet className="h-4 w-4" />} changeDirection={data.netProfit > 0 ? "up" : "down"} />
           </div>
 
-          {/* Revenue Trend */}
-          <div>
-            <h2 className="text-sm font-medium text-foreground mb-2">Revenue Trend</h2>
-            <FinanceLineChart
-              data={data.trendData}
-              lines={[
-                { dataKey: "revenue", color: "#2c8cb4", name: "Revenue" },
-                { dataKey: "vat", color: "#64b4e0", name: "VAT" },
-                { dataKey: "cancellations", color: "#dc8c3c", name: "Cancellations" },
-              ]}
-            />
-          </div>
+          {/* Stat Strip */}
+          <FinanceStatStrip stats={[
+            { label: "Avg Order Value", value: fmt(data.paidOrders.length > 0 ? data.totalSales / data.paidOrders.length : 0), description: "Per paid order average", color: "#00d4ff" },
+            { label: "Total Orders", value: String(data.paidOrders.length + data.cancellationCount), description: "Paid + cancelled combined", color: "#7c3aed" },
+            { label: "Profit Margin", value: `${data.totalSales > 0 ? ((data.netProfit / data.totalSales) * 100).toFixed(1) : 0}%`, description: "Net profit as % of revenue", color: "#6366f1" },
+          ]} />
+
+          {/* Revenue Trend - Area Chart */}
+          <FinanceAreaChart
+            title="Revenue Trend"
+            data={data.trendData}
+            areas={[
+              { dataKey: "revenue", color: "#00d4ff", name: "Revenue" },
+              { dataKey: "vat", color: "#7c3aed", name: "VAT" },
+              { dataKey: "cancellations", color: "#ec4899", name: "Cancellations" },
+            ]}
+            showLabels
+          />
 
           {/* Branch Summary Table */}
           <div>
@@ -100,7 +105,7 @@ export default function FinanceOverview() {
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <FinanceBarChart
+            <FinanceGradientBarChart
               title="Branch Revenue Comparison"
               data={data.branchSummary.map((b: any) => ({ name: b.name, value: b.sales }))}
               layout="horizontal"

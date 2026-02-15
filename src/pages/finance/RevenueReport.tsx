@@ -5,8 +5,9 @@ import {
   FinanceDateRangePicker,
   FinanceBranchFilter,
   FinanceDataTable,
-  FinanceBarChart,
+  FinanceGradientBarChart,
   FinanceDonutChart,
+  FinanceAreaChart,
   ExportButtons,
   exportToCSV,
 } from "@/components/finance";
@@ -29,7 +30,6 @@ export default function RevenueReport() {
 
   const { data, isLoading } = useFinanceData({ branchId, dateRange });
 
-  // Category-level data
   const { data: itemData = [] } = useQuery({
     queryKey: ["finance-items", branchId, dateRange.from, dateRange.to],
     queryFn: async () => {
@@ -45,7 +45,6 @@ export default function RevenueReport() {
 
   const fmt = (n: number) => `SAR ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  // Top items
   const itemMap: Record<string, { name: string; qty: number; revenue: number }> = {};
   itemData.forEach((i: any) => {
     const k = i.item_name;
@@ -81,6 +80,12 @@ export default function RevenueReport() {
             <div className="flex justify-end">
               <ExportButtons onExportCSV={() => exportToCSV(data.branchSummary, "revenue-branch")} onExportPDF={() => window.print()} />
             </div>
+            <FinanceAreaChart
+              title="Revenue Over Time"
+              data={data.trendData}
+              areas={[{ dataKey: "revenue", color: "#00d4ff", name: "Revenue" }]}
+              showLabels
+            />
             <FinanceDataTable
               columns={[
                 { key: "name", label: "Branch", sortable: true },
@@ -90,7 +95,7 @@ export default function RevenueReport() {
               ]}
               data={data.branchSummary}
             />
-            <FinanceBarChart data={data.branchSummary.map((b: any) => ({ name: b.name, value: b.sales }))} title="Revenue by Branch" />
+            <FinanceGradientBarChart data={data.branchSummary.map((b: any) => ({ name: b.name, value: b.sales }))} title="Revenue by Branch" />
           </TabsContent>
 
           <TabsContent value="payment" className="space-y-4">
@@ -111,6 +116,10 @@ export default function RevenueReport() {
             <div className="flex justify-end">
               <ExportButtons onExportCSV={() => exportToCSV(topItems, "top-items")} />
             </div>
+            <FinanceGradientBarChart
+              title="Top Items by Revenue"
+              data={topItems.slice(0, 10).map((item) => ({ name: item.name, value: item.revenue }))}
+            />
             <FinanceDataTable
               columns={[
                 { key: "name", label: "Item", sortable: true },
