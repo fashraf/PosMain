@@ -58,6 +58,8 @@ import RolesEdit from "@/pages/RolesEdit";
 // POS Module
 import { POSMain, OrderComplete, OrderList, KitchenDisplay } from "@/pages/pos";
 import { POSLayout } from "@/components/pos/layout";
+// Finance Module
+import { FinanceOverview, RevenueReport, VATReport, CancellationsReport, ExpensesProfit } from "@/pages/finance";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -169,6 +171,12 @@ const App = () => (
                       <Route path="/roles" element={<Roles />} />
                       <Route path="/roles/add" element={<RolesAdd />} />
                       <Route path="/roles/:id/edit" element={<RolesEdit />} />
+                      {/* Finance Module Routes */}
+                      <Route path="/finance" element={<FinanceOverview />} />
+                      <Route path="/finance/revenue" element={<RevenueReport />} />
+                      <Route path="/finance/vat" element={<VATReport />} />
+                      <Route path="/finance/cancellations" element={<CancellationsReport />} />
+                      <Route path="/finance/expenses" element={<ExpensesProfit />} />
                       {/* Catch-all for 404 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

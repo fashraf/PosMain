@@ -20,6 +20,7 @@ import {
   ShoppingCart,
   ChefHat,
   Shield,
+  TrendingUp,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -81,6 +82,14 @@ const maintenanceSubItems = [
   { titleKey: "maintenance.printTemplates", url: "/maintenance/print-templates" },
 ];
 
+const financeSubItems = [
+  { titleKey: "finance.overview", url: "/finance" },
+  { titleKey: "finance.revenue", url: "/finance/revenue" },
+  { titleKey: "finance.vat", url: "/finance/vat" },
+  { titleKey: "finance.cancellations", url: "/finance/cancellations" },
+  { titleKey: "finance.expenses", url: "/finance/expenses" },
+];
+
 const otherNavItems = [
   { titleKey: "nav.users", url: "/users", icon: Users },
   { titleKey: "nav.roleMaster", url: "/roles", icon: Shield },
@@ -97,6 +106,7 @@ export function AppSidebar() {
   const [inventoryOpen, setInventoryOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [financeOpen, setFinanceOpen] = useState(false);
 
   return (
     <Sidebar
@@ -254,6 +264,51 @@ export function AppSidebar() {
                           <SidebarMenuSubButton asChild>
                             <NavLink
                               to={subItem.url}
+                              className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                            >
+                              {t(subItem.titleKey)}
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Finance Menu - Collapsible */}
+              <Collapsible
+                open={financeOpen && !isCollapsed}
+                onOpenChange={setFinanceOpen}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={t("finance.title")}
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full"
+                    >
+                      <TrendingUp className="h-5 w-5 shrink-0" />
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1 text-left">{t("finance.title")}</span>
+                          <ChevronDown className={cn(
+                            "h-4 w-4 transition-transform",
+                            financeOpen && "rotate-180"
+                          )} />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {financeSubItems.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.url}>
+                          <SidebarMenuSubButton asChild>
+                            <NavLink
+                              to={subItem.url}
+                              end={subItem.url === "/finance"}
                               className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                               activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                             >

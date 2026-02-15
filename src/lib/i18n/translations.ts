@@ -353,6 +353,15 @@ export const translations = {
        viewAttendanceLogs: "View Attendance Logs",
        lastUpdatedBy: "Last updated by {{name}} on {{date}}",
      },
+    // Finance
+    finance: {
+      title: "Finance",
+      overview: "Overview",
+      revenue: "Revenue Report",
+      vat: "VAT Report",
+      cancellations: "Cancellations",
+      expenses: "Expenses & Profit",
+    },
     // Languages
     languages: {
       title: "Language",
@@ -976,6 +985,15 @@ export const translations = {
        viewAttendanceLogs: "عرض سجلات الحضور",
        lastUpdatedBy: "آخر تحديث بواسطة {{name}} في {{date}}",
      },
+    // Finance
+    finance: {
+      title: "المالية",
+      overview: "نظرة عامة",
+      revenue: "تقرير الإيرادات",
+      vat: "تقرير الضريبة",
+      cancellations: "الإلغاءات",
+      expenses: "المصاريف والأرباح",
+    },
     // Languages
     languages: {
       title: "اللغة",
@@ -1326,6 +1344,15 @@ export const translations = {
        viewAttendanceLogs: "حاضری کے ریکارڈز دیکھیں",
        lastUpdatedBy: "{{name}} نے {{date}} کو اپ ڈیٹ کیا",
      },
+    // Finance
+    finance: {
+      title: "مالیات",
+      overview: "جائزہ",
+      revenue: "آمدنی رپورٹ",
+      vat: "ٹیکس رپورٹ",
+      cancellations: "منسوخی",
+      expenses: "اخراجات اور منافع",
+    },
     // Languages
     languages: {
       title: "زبان",
